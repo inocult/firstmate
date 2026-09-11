@@ -2,7 +2,7 @@
 from mcp.server.fastmcp import FastMCP
 
 server = FastMCP("plane-test")
-ticket = {"id": "item-1", "name": "Add export", "description_stripped": "Export all rows", "state": "ready"}
+ticket = {"id": "item-1", "name": "Add export", "description_stripped": "Export all rows", "state": "ready", "labels": ["label-ready"]}
 
 
 @server.tool()
@@ -20,7 +20,14 @@ def workitem(action: str, project_id: str = "", workitem_id: str = "", state: st
 
 @server.tool()
 def state(action: str, project_id: str = "") -> list[dict]:
-    return [{"id": "ready", "name": "Ready for agent"}]
+    return [{"id": "ready", "name": "Backlog", "group": "backlog"}]
+
+
+@server.tool()
+def label(action: str, project_id: str = "", cursor: str | None = None, per_page: int = 100) -> dict:
+    if cursor is None:
+        return {"results": [{"id": "other", "name": "other"}], "next_cursor": "labels-2", "next_page_results": True}
+    return {"results": [{"id": "label-ready", "name": "ready-for-agent"}], "next_page_results": False}
 
 
 @server.tool()

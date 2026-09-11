@@ -60,6 +60,7 @@ class Plane:
     async def call(self, resource, action, **arguments):
         legacy = {
             ("state", "list"): "list_states",
+            ("label", "list"): "list_labels",
             ("workitem", "list"): "list_work_items",
             ("workitem", "retrieve"): "retrieve_work_item",
             ("workitem", "update"): "update_work_item",

@@ -24,7 +24,7 @@ from fm_plane.cli import Missions, bind_task, check_task, key_for, load_config, 
 class FakePlane:
     def __init__(self):
         self.ticket = {"id": "item-1", "state": "ready", "name": "Export",
-                       "description_stripped": "Acceptance: exports all rows", "assignees": ["human-a"]}
+                       "description_stripped": "Acceptance: exports all rows", "assignees": ["human-a"], "labels": ["label-ready", "other"]}
         self.links = []
         self.relations = {"dependencies": {"blocked_by": []}, "custom": {}}
         self.calls = []
@@ -63,7 +63,7 @@ class AdapterTests(unittest.TestCase):
         subprocess.run(["git", "init", "--bare", "-q", self.remote], check=True)
         self.config = {"plane_url": "https://plane.example.com", "workspace_slug": "team", "project_id": "project-1",
                        "repository_url": "https://github.com/example/product", "coordination_remote": self.remote,
-                       "executor": "mathieu", "states": {"ready": "ready", "implementing": "active", "review": "review", "done": "done"},
+                       "executor": "mathieu", "ready_label_id": "label-ready", "pickup_state_ids": ["ready", "todo"], "states": { "implementing": "active", "review": "review", "done": "done"},
                        "mcp": {"command": sys.executable, "args": [str(ROOT / "tests/plane_mcp_fixture.py")]}}
         self.registry = self.new_registry()
         self.plane = FakePlane()
@@ -76,6 +76,36 @@ class AdapterTests(unittest.TestCase):
 
     def claim(self):
         return asyncio.run(self.service.claim("item-1", "request-a"))
+
+    def test_label_required_and_active_or_done_tickets_excluded(self):
+        for labels, state in [([], "ready"), (["label-ready"], "active"),
+                              (["label-ready"], "review"), (["label-ready"], "done")]:
+            self.plane.ticket.update(labels=labels, state=state)
+            with self.assertRaises(AdapterError):
+                self.claim()
+            self.assertIsNone(self.registry.read()[1])
+
+    def test_expanded_label_and_todo_pickup_release(self):
+        labels = [{"id": "label-ready", "name": "ready-for-agent"}, {"id": "other"}]
+        self.plane.ticket.update(labels=labels, state="todo")
+        record = self.claim()
+        args = Namespace(command="release", item="item-1", execution=record["execution"],
+                         work_preserved=True, reason="Handoff saved")
+        with patch("fm_plane.cli.Plane", return_value=self.plane):
+            asyncio.run(run(args, self.config))
+        self.assertEqual(self.plane.ticket["state"], "todo")
+        self.assertEqual(self.plane.ticket["labels"], labels)
+        self.assertEqual(self.plane.ticket["assignees"], ["human-a"])
+
+    def test_label_removed_during_interrupted_claim_stops_dispatch(self):
+        self.plane.fail_update = True
+        with self.assertRaises(AdapterError):
+            self.claim()
+        self.plane.fail_update = False
+        self.plane.ticket["labels"] = []
+        with self.assertRaises(AdapterError):
+            self.claim()
+        self.assertEqual(self.registry.read()[1]["phase"], "reserved")
 
     def test_two_remote_claim_creates_have_one_winner(self):
         barrier = threading.Barrier(2)
@@ -238,13 +268,18 @@ class AdapterTests(unittest.TestCase):
         async def exercise():
             async with Plane(self.config["mcp"]) as plane:
                 states = rows(await plane.call("state", "list", project_id="project-1"))
-                self.assertEqual(states[0]["name"], "Ready for agent")
+                self.assertEqual(states[0]["name"], "Backlog")
+                labels = rows(await plane.call("label", "list", project_id="project-1", cursor="labels-2"))
+                self.assertEqual(labels[0]["name"], "ready-for-agent")
                 page = await plane.call("workitem", "list", project_id="project-1")
                 self.assertEqual(page["next_cursor"], "page-2")
                 service = Missions(self.config, plane, self.registry)
                 claimed = await service.claim("item-1", "mcp-request")
                 self.assertEqual(claimed["phase"], "implementing")
         asyncio.run(exercise())
+        doctor = asyncio.run(run(Namespace(command="doctor"), self.config))
+        self.assertEqual(doctor["suggested_ready_label_id"], "label-ready")
+        self.assertEqual(doctor["suggested_pickup_state_ids"], ["ready"])
 
 
 if __name__ == "__main__":

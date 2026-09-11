@@ -37,10 +37,18 @@ def load_config(path, setup=False):
     if not config["plane_url"].startswith("https://"):
         raise AdapterError("plane_url must use HTTPS")
     states = config.get("states", {})
-    if not setup and any(not states.get(key) for key in ("ready", "implementing", "review", "done")):
-        raise AdapterError("configure ready, implementing, review and done Plane state IDs")
-    if not setup and len(set(states[key] for key in ("ready", "implementing", "review", "done"))) != 4:
+    if not setup and any(not states.get(key) for key in ("implementing", "review", "done")):
+        raise AdapterError("configure implementing, review and done Plane state IDs")
+    if not setup and len(set(states[key] for key in ("implementing", "review", "done"))) != 3:
         raise AdapterError("Plane lifecycle states must be distinct")
+    if not setup:
+        if not isinstance(config.get("ready_label_id"), str) or not config["ready_label_id"].strip():
+            raise AdapterError("configure the ready-for-agent label ID")
+        pickup = config.get("pickup_state_ids")
+        if not isinstance(pickup, list) or not pickup or any(not isinstance(s, str) or not s for s in pickup):
+            raise AdapterError("configure eligible backlog/unstarted pickup_state_ids")
+        if set(pickup) & set(states.values()):
+            raise AdapterError("pickup states must be separate from lifecycle states")
     mcp = config.get("mcp", {})
     if bool(mcp.get("command")) == bool(mcp.get("url")):
         raise AdapterError("configure exactly one MCP stdio command or streamable HTTP url")
@@ -77,10 +85,19 @@ class Missions:
             raise AdapterError("Plane returned an unexpected work item")
         return data
 
+    def ready(self, ticket):
+        labels = ticket.get("labels", [])
+        if not isinstance(labels, list):
+            raise AdapterError("unrecognized ticket labels")
+        ids = [label.get("id") if isinstance(label, dict) else label for label in labels]
+        if self.config["ready_label_id"] not in ids:
+            raise AdapterError("ticket lacks the ready-for-agent label")
+        if state_id(ticket) not in self.config["pickup_state_ids"]:
+            raise AdapterError("ticket is not in an eligible pickup state")
+
     async def eligible(self, item):
         ticket = await self.retrieve(item)
-        if state_id(ticket) != self.config["states"]["ready"]:
-            raise AdapterError("ticket is not Ready")
+        self.ready(ticket)
         if ticket.get("archived_at") or ticket.get("is_draft"):
             raise AdapterError("archived or draft ticket is not eligible")
         if not ticket.get("name") or not description(ticket):
@@ -134,10 +151,10 @@ class Missions:
             raise AdapterError("ticket is already reserved or complete; resume its existing execution")
         if record and request_id in record.get("past_requests", []):
             raise AdapterError("this request was retired; use a new request ID for new work")
-        await self.eligible(item)
+        ticket = await self.eligible(item)
         # The remote expected-SHA check chooses one winner across all machines.
         next_record = {
-            "schema": 1, "item": item, "project": self.config["project_id"],
+            "schema": 1, "pickup_state": state_id(ticket), "item": item, "project": self.config["project_id"],
             "repository_url": self.config["repository_url"],
             "execution": str(uuid.uuid4()), "executor": self.config["executor"],
             "request_id": request_id, "phase": "reserved", "pr": None,
@@ -153,7 +170,9 @@ class Missions:
         current = await self.retrieve(record["item"])
         allowed = [self.config["states"]["implementing"], self.config["states"]["review"]]
         if phase == "reserved":
-            allowed = [self.config["states"]["ready"], self.config["states"]["implementing"]]
+            allowed = [record.get("pickup_state"), self.config["states"]["implementing"]]
+            if state_id(current) != self.config["states"]["implementing"]:
+                self.ready(current)
         if state_id(current) not in allowed:
             raise AdapterError("Plane state changed externally; reservation retained for reconciliation")
         if record.get("pr"):
@@ -280,10 +299,23 @@ async def run(args, config):
     async with Plane(config["mcp"]) as plane:
         if args.command == "doctor":
             states = rows(await plane.call("state", "list", project_id=config["project_id"]))
-            candidates = [s for s in states if s.get("name", "").strip().casefold() in
-                          ("ready for agent", "ready for agents")]
+            labels = []
+            cursor = None
+            while True:
+                page = await plane.call("label", "list", project_id=config["project_id"],
+                                        per_page=100, **({"cursor": cursor} if cursor else {}))
+                labels.extend(rows(page))
+                if not isinstance(page, dict) or not page.get("next_page_results"):
+                    break
+                next_cursor = page.get("next_cursor")
+                if not next_cursor or next_cursor == cursor:
+                    raise AdapterError("label pagination did not advance")
+                cursor = next_cursor
+            candidates = [label for label in labels if label.get("name") == "ready-for-agent"]
             return {"mcp_tools": sorted(plane.tools), "project": config["project_id"], "states": states,
-                    "suggested_ready_state": candidates[0]["id"] if len(candidates) == 1 else None,
+                    "labels": labels,
+                    "suggested_ready_label_id": candidates[0]["id"] if len(candidates) == 1 else None,
+                    "suggested_pickup_state_ids": [s["id"] for s in states if s.get("group") in ("backlog", "unstarted")],
                     "executor": config["executor"], "note": "MCP connected; no ticket or claim changed"}
         if args.command == "list":
             # Preserve pagination; listing is candidate discovery, not claim authority.
@@ -325,10 +357,16 @@ async def run(args, config):
             elif args.command == "release":
                 if record.get("pr") or not args.work_preserved or not args.reason.strip():
                     raise AdapterError("release requires preserved work, a reason and no registered PR; hand off PR work instead")
+                pickup = record.get("pickup_state")
+                if pickup not in config["pickup_state_ids"]:
+                    raise AdapterError("original pickup state unavailable; reconcile before release")
+                current = await service.retrieve(args.item)
+                if state_id(current) not in (pickup, config["states"]["implementing"]):
+                    raise AdapterError("Plane state changed externally; reconcile before release")
                 await plane.call("workitem", "update", project_id=record["project"], workitem_id=args.item,
-                                 state=config["states"]["ready"])
-                if state_id(await service.retrieve(args.item)) != config["states"]["ready"]:
-                    raise AdapterError("Ready state was not confirmed; claim retained")
+                                 state=pickup)
+                if state_id(await service.retrieve(args.item)) != pickup:
+                    raise AdapterError("original pickup state was not confirmed; claim retained")
                 record = dict(record, phase="released", updated_at=int(time.time()))
             elif args.command == "transfer":
                 if not args.previous_stopped or not args.reason.strip():

@@ -29,7 +29,7 @@ Each instance needs its own explicit `FM_HOME` and executor name.
 
 Store the following configuration privately at `FM_HOME/config/plane.json`.
 Replace example values with actual repository, workspace, project and state identifiers.
-No actual At Bryde ticket or state IDs are bundled.
+No actual At Bryde ticket, label or state IDs are bundled.
 
 ```json
 {
@@ -39,8 +39,9 @@ No actual At Bryde ticket or state IDs are bundled.
   "repository_url": "https://github.com/YOUR_ORG/YOUR_MONOREPO",
   "coordination_remote": "git@github.com:YOUR_ORG/YOUR_MONOREPO.git",
   "executor": "mathieu-control",
+  "ready_label_id": "READY_FOR_AGENT_LABEL_UUID",
+  "pickup_state_ids": ["BACKLOG_STATE_UUID", "TODO_STATE_UUID"],
   "states": {
-    "ready": "READY_FOR_AGENT_STATE_UUID",
     "implementing": "IN_PROGRESS_STATE_UUID",
     "review": "IN_REVIEW_STATE_UUID",
     "done": "DONE_STATE_UUID"
@@ -64,10 +65,14 @@ The MCP workspace/base environment values must match this configuration.
 For a remote streamable HTTP server, replace `mcp` with `url` and optional `headers_from`, a map from header names to environment-variable names containing complete header values.
 Interactive OAuth setup remains with your MCP client; this adapter does not implement an OAuth login flow.
 
-Run `doctor` before configuring state IDs.
-It lists the project's actual states and suggests an unambiguous Ready for agent or Ready for agents state.
-Missing or duplicate candidates require selecting the intended ID; no fallback to a general backlog state is assumed.
-The configured Ready state is the planning team's promise that the ticket has sufficient scope and acceptance criteria.
+Run `doctor` before configuring label and state IDs.
+It lists the project's actual states and labels, suggests the exact `ready-for-agent` label ID, and suggests pickup states in the backlog or unstarted groups.
+Set `ready_label_id` and `pickup_state_ids` from those confirmed results; a missing or ambiguous label needs explicit configuration.
+The label is the planning team's promise that the ticket has sufficient scope and acceptance criteria.
+Pickup requires both this label and an eligible Backlog/Todo state, plus the existing dependency and shared-claim checks.
+In Progress, In Review, Done and cancelled states must never be configured as pickup states.
+The adapter preserves labels and assignees throughout delivery; the shared claim and lifecycle state prevent duplicate pickup even while the label remains.
+Old configurations using `states.ready` must migrate to these two fields; the label is not a workflow state.
 
 All colleagues must use the same canonical `plane_url`, workspace, project and `coordination_remote` for the same queue.
 Prefer a private coordination repository if even opaque work-item IDs and executor names are sensitive.
@@ -118,7 +123,7 @@ A failed Plane update retains the claim, and Control must retry or reconcile bef
 Lifecycle operations for one execution should be serialized by its owning Control instance.
 Remote transport failures may leave a successful write without its response; reread the record before retrying.
 
-The adapter checks configured Ready status, description, existing PR links and native blocked-by/start-after/finish-after prerequisites.
+The adapter checks the configured readiness label, eligible pickup state, description, existing PR links and native blocked-by/start-after/finish-after prerequisites.
 Temporal prerequisites are conservatively required to be complete.
 Custom relations and cross-project dependencies require explicit review and a supported mapping before automatic pickup.
 The adapter cannot infer dependencies mentioned only in prose; the planning workflow must encode them or Control must stop and clarify.
@@ -131,6 +136,7 @@ Claims never expire automatically.
 After a crash, use `status` and inspect the branch/PR before resuming.
 `release` is restricted to executions without a registered PR and requires a preservation acknowledgement and reason.
 Keep the reason and preserved-work location in the team handoff before releasing.
+Release restores the original Backlog/Todo state recorded at pickup and leaves labels unchanged; removing the readiness label prevents a later new claim.
 `transfer` requires confirmation that the previous operative stopped and returns a new execution token for the destination executor.
 It retains PR history and invalidates the old token for adapter checks.
 It does not revoke a previous worker's independent Git credentials.
