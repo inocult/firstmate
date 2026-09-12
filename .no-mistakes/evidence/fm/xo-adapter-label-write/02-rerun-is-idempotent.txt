@@ -1,0 +1,48 @@
+# Second /prep run over the same project (the store already holds all five)
+$ bin/fm-plane.py ensure-label --name needs-triage
+{
+  "project": "project-1",
+  "name": "needs-triage",
+  "id": "lbl-dfe0cf9b",
+  "created": false
+}
+exit=0
+$ bin/fm-plane.py ensure-label --name needs-info
+{
+  "project": "project-1",
+  "name": "needs-info",
+  "id": "lbl-3b5dc228",
+  "created": false
+}
+exit=0
+$ bin/fm-plane.py ensure-label --name ready-for-agent
+{
+  "project": "project-1",
+  "name": "ready-for-agent",
+  "id": "lbl-0ccf9bd9",
+  "created": false
+}
+exit=0
+$ bin/fm-plane.py ensure-label --name ready-for-human
+{
+  "project": "project-1",
+  "name": "ready-for-human",
+  "id": "lbl-7cf4776f",
+  "created": false
+}
+exit=0
+$ bin/fm-plane.py ensure-label --name wontfix
+{
+  "project": "project-1",
+  "name": "wontfix",
+  "id": "lbl-bb030731",
+  "created": false
+}
+exit=0
+
+# Vocabulary after the second run - still five labels, same ids, nothing duplicated:
+  lbl-dfe0cf9b  needs-triage
+  lbl-3b5dc228  needs-info
+  lbl-0ccf9bd9  ready-for-agent
+  lbl-7cf4776f  ready-for-human
+  lbl-bb030731  wontfix

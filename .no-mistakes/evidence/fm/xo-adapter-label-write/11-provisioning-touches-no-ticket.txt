@@ -1,0 +1,19 @@
+# Every MCP tool call the server received while provisioning the five canonical labels.
+# The intent requires provisioning to touch the project vocabulary only, never a ticket.
+
+  {"tool": "label", "action": "list", "name": ""}
+  {"tool": "label", "action": "create", "name": "needs-triage"}
+  {"tool": "label", "action": "list", "name": ""}
+  {"tool": "label", "action": "create", "name": "needs-info"}
+  {"tool": "label", "action": "list", "name": ""}
+  {"tool": "label", "action": "list", "name": ""}
+  {"tool": "label", "action": "create", "name": "ready-for-agent"}
+  {"tool": "label", "action": "list", "name": ""}
+  {"tool": "label", "action": "list", "name": ""}
+  {"tool": "label", "action": "create", "name": "ready-for-human"}
+  {"tool": "label", "action": "list", "name": ""}
+  {"tool": "label", "action": "list", "name": ""}
+  {"tool": "label", "action": "list", "name": ""}
+  {"tool": "label", "action": "create", "name": "wontfix"}
+
+# work-item or ticket-mutating calls received: 0

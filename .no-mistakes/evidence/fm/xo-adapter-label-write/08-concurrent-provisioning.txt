@@ -1,0 +1,61 @@
+# Two homes run /prep against the same Plane project at the same moment.
+# The server injects the rival's label into the window between this caller's listing and its create.
+$ bin/fm-plane.py ensure-label --name needs-triage   # rival creates 'needs-triage' in the same window
+{
+  "project": "project-1",
+  "name": "needs-triage",
+  "id": "lbl-09a3eef9",
+  "created": true
+}
+exit=0
+
+# Project now holds the duplicate the two homes produced:
+  lbl-rival-29bc  needs-triage
+  lbl-09a3eef9  needs-triage
+
+# The next run sees the genuine duplicate and asks a human to reconcile it:
+$ bin/fm-plane.py ensure-label --name needs-triage
+{"error": "that label name already exists more than once; reconcile it before provisioning"}
+exit=1
+
+==============================================================
+
+# Two real CLI processes provisioning the same five names in parallel (no injection; genuine race)
+
+# home-a exit codes per label:
+  0 needs-triage
+  0 needs-info
+  0 ready-for-agent
+  0 ready-for-human
+  0 wontfix
+
+# home-b exit codes per label:
+  0 needs-triage
+  0 needs-info
+  0 ready-for-agent
+  0 ready-for-human
+  0 wontfix
+
+# Final vocabulary:
+  lbl-981c0d86  needs-triage
+  lbl-638c74f8  needs-triage
+  lbl-2b504b56  needs-info
+  lbl-9aa40a70  needs-info
+  lbl-5d2407c9  ready-for-agent
+  lbl-9345791d  ready-for-human
+  lbl-ce38aaf5  wontfix
+
+# home-a needs-triage output:
+  {
+    "project": "project-1",
+    "name": "needs-triage",
+    "id": "lbl-638c74f8",
+    "created": true
+  }
+# home-b needs-triage output:
+  {
+    "project": "project-1",
+    "name": "needs-triage",
+    "id": "lbl-981c0d86",
+    "created": true
+  }

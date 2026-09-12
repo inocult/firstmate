@@ -1,0 +1,11 @@
+# Same project ('Needs-Triage' id lbl-conflict-01), same command, two builds of the CLI.
+
+# BEFORE (parent commit fc68b7e) - the actionable message never reached the operator:
+$ bin/fm-plane.py ensure-label --name needs-triage
+{"error": "adapter operation failed; claim retained; inspect connectivity/configuration"}
+exit=1
+
+# AFTER (this branch, 90e738d):
+$ bin/fm-plane.py ensure-label --name needs-triage
+{"error": "existing label 'Needs-Triage' (id lbl-conflict-01) differs from 'needs-triage' only by case, separators or punctuation; reconcile it in Plane before provisioning"}
+exit=1

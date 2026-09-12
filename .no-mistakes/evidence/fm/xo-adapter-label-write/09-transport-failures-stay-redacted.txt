@@ -1,0 +1,24 @@
+# The error path now unwraps adapter errors; these runs check it still never relays server secrets.
+# The stand-in server's failures all carry: plane_api_key=SECRET-TOKEN-42 ticket='private customer contents'
+
+# server failure mode: tool_error
+$ bin/fm-plane.py ensure-label --name needs-triage
+{"error": "Plane MCP rejected label/list; claim retained"}
+exit=1
+
+# server failure mode: app_error
+$ bin/fm-plane.py ensure-label --name needs-triage
+{"error": "Plane returned an application error for label/list"}
+exit=1
+
+# server failure mode: crash
+$ bin/fm-plane.py ensure-label --name needs-triage
+{"error": "adapter operation failed; claim retained; inspect connectivity/configuration"}
+exit=1
+
+# MCP server binary missing entirely (transport failure):
+$ bin/fm-plane.py ensure-label --name needs-triage
+{"error": "adapter operation failed; claim retained; inspect connectivity/configuration"}
+exit=1
+
+# Occurrences of the secret in the operator-visible CLI output above: 0

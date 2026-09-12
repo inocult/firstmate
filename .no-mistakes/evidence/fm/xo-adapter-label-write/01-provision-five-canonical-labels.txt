@@ -1,0 +1,69 @@
+$ bin/fm-plane.py --config setup-config.json ensure-label --name needs-triage
+{
+  "project": "project-1",
+  "name": "needs-triage",
+  "id": "lbl-dfe0cf9b",
+  "created": true
+}
+exit=0
+$ bin/fm-plane.py --config setup-config.json ensure-label --name needs-info
+{
+  "project": "project-1",
+  "name": "needs-info",
+  "id": "lbl-3b5dc228",
+  "created": true
+}
+exit=0
+$ bin/fm-plane.py --config setup-config.json ensure-label --name ready-for-agent
+{
+  "project": "project-1",
+  "name": "ready-for-agent",
+  "id": "lbl-0ccf9bd9",
+  "created": true
+}
+exit=0
+$ bin/fm-plane.py --config setup-config.json ensure-label --name ready-for-human
+{
+  "project": "project-1",
+  "name": "ready-for-human",
+  "id": "lbl-7cf4776f",
+  "created": true
+}
+exit=0
+$ bin/fm-plane.py --config setup-config.json ensure-label --name wontfix
+{
+  "project": "project-1",
+  "name": "wontfix",
+  "id": "lbl-bb030731",
+  "created": true
+}
+exit=0
+
+# Label vocabulary persisted in the stand-in Plane project:
+[
+  {
+    "id": "lbl-dfe0cf9b",
+    "name": "needs-triage",
+    "project_id": "project-1"
+  },
+  {
+    "id": "lbl-3b5dc228",
+    "name": "needs-info",
+    "project_id": "project-1"
+  },
+  {
+    "id": "lbl-0ccf9bd9",
+    "name": "ready-for-agent",
+    "project_id": "project-1"
+  },
+  {
+    "id": "lbl-7cf4776f",
+    "name": "ready-for-human",
+    "project_id": "project-1"
+  },
+  {
+    "id": "lbl-bb030731",
+    "name": "wontfix",
+    "project_id": "project-1"
+  }
+]

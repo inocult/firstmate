@@ -1,0 +1,24 @@
+# Project already carries a hand-made vocabulary; 'wontfix' (lbl-hand-wontfix) sits on page 2 of a 2-per-page listing
+$ bin/fm-plane.py ensure-label --name needs-triage
+{
+  "project": "project-1",
+  "name": "needs-triage",
+  "id": "lbl-bad30363",
+  "created": true
+}
+exit=0
+$ bin/fm-plane.py ensure-label --name wontfix
+{
+  "project": "project-1",
+  "name": "wontfix",
+  "id": "lbl-hand-wontfix",
+  "created": false
+}
+exit=0
+
+# Existing label kept its id and was not duplicated:
+  lbl-bug  bug
+  lbl-docs  documentation
+  lbl-hand-wontfix  wontfix
+  lbl-chore  chore
+  lbl-bad30363  needs-triage

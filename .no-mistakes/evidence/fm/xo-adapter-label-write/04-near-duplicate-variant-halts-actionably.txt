@@ -1,0 +1,39 @@
+# Each run: a project holding one hand-made variant, then 'ensure-label' for the canonical name.
+# Regression check: before the fix these all printed the generic 'adapter operation failed' text.
+
+# project holds label 'Needs-Triage' (id lbl-conflict-01)
+$ bin/fm-plane.py ensure-label --name needs-triage
+{"error": "existing label 'Needs-Triage' (id lbl-conflict-01) differs from 'needs-triage' only by case, separators or punctuation; reconcile it in Plane before provisioning"}
+exit=1
+# labels after: ['Needs-Triage', 'bug']
+
+# project holds label 'Needs Triage' (id lbl-conflict-02)
+$ bin/fm-plane.py ensure-label --name needs-triage
+{"error": "existing label 'Needs Triage' (id lbl-conflict-02) differs from 'needs-triage' only by case, separators or punctuation; reconcile it in Plane before provisioning"}
+exit=1
+# labels after: ['Needs Triage', 'bug']
+
+# project holds label 'needs_triage' (id lbl-conflict-03)
+$ bin/fm-plane.py ensure-label --name needs-triage
+{"error": "existing label 'needs_triage' (id lbl-conflict-03) differs from 'needs-triage' only by case, separators or punctuation; reconcile it in Plane before provisioning"}
+exit=1
+# labels after: ['needs_triage', 'bug']
+
+# project holds label 'Needs-Triage.' (id lbl-conflict-04)
+$ bin/fm-plane.py ensure-label --name needs-triage
+{"error": "existing label 'Needs-Triage.' (id lbl-conflict-04) differs from 'needs-triage' only by case, separators or punctuation; reconcile it in Plane before provisioning"}
+exit=1
+# labels after: ['Needs-Triage.', 'bug']
+
+# project holds label 'Ready For Agent' (id lbl-conflict-05)
+$ bin/fm-plane.py ensure-label --name ready-for-agent
+{"error": "existing label 'Ready For Agent' (id lbl-conflict-05) differs from 'ready-for-agent' only by case, separators or punctuation; reconcile it in Plane before provisioning"}
+exit=1
+# labels after: ['Ready For Agent', 'bug']
+
+# project holds label 'WontFix' (id lbl-conflict-06)
+$ bin/fm-plane.py ensure-label --name wontfix
+{"error": "existing label 'WontFix' (id lbl-conflict-06) differs from 'wontfix' only by case, separators or punctuation; reconcile it in Plane before provisioning"}
+exit=1
+# labels after: ['WontFix', 'bug']
+

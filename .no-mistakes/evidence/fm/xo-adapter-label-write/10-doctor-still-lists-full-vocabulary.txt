@@ -1,0 +1,57 @@
+# doctor (whose paginated label read this change refactored) after provisioning: the whole
+# vocabulary still comes back across 3 pages and the ready-for-agent id is still suggested.
+$ bin/fm-plane.py --config setup-config.json doctor
+{
+  "mcp_tools": [
+    "label",
+    "state",
+    "workitem"
+  ],
+  "project": "project-1",
+  "states": [
+    {
+      "id": "state-backlog",
+      "name": "Backlog",
+      "group": "backlog"
+    },
+    {
+      "id": "state-active",
+      "name": "In Progress",
+      "group": "started"
+    }
+  ],
+  "labels": [
+    {
+      "id": "lbl-dfe0cf9b",
+      "name": "needs-triage",
+      "project_id": "project-1"
+    },
+    {
+      "id": "lbl-3b5dc228",
+      "name": "needs-info",
+      "project_id": "project-1"
+    },
+    {
+      "id": "lbl-0ccf9bd9",
+      "name": "ready-for-agent",
+      "project_id": "project-1"
+    },
+    {
+      "id": "lbl-7cf4776f",
+      "name": "ready-for-human",
+      "project_id": "project-1"
+    },
+    {
+      "id": "lbl-bb030731",
+      "name": "wontfix",
+      "project_id": "project-1"
+    }
+  ],
+  "suggested_ready_label_id": "lbl-0ccf9bd9",
+  "suggested_pickup_state_ids": [
+    "state-backlog"
+  ],
+  "executor": "home-a",
+  "note": "MCP connected; no ticket or claim changed"
+}
+exit=0

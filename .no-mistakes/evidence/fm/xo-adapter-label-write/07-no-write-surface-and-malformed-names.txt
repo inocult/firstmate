@@ -1,0 +1,20 @@
+# Home whose Plane token cannot create labels: the server refuses label/create.
+$ bin/fm-plane.py ensure-label --name needs-triage
+{"error": "Plane MCP rejected label/create; claim retained"}
+exit=1
+# vocabulary unchanged: ['bug']
+
+# Malformed names are refused before any write reaches Plane:
+$ bin/fm-plane.py ensure-label --name ''
+{"error": "label name must be non-empty without surrounding whitespace"}
+exit=1
+$ bin/fm-plane.py ensure-label --name \ needs-info\ 
+{"error": "label name must be non-empty without surrounding whitespace"}
+exit=1
+$ bin/fm-plane.py ensure-label --name $'needs\ttriage'
+{"error": "label name must not contain control characters"}
+exit=1
+$ bin/fm-plane.py ensure-label --name $'needs\ntriage'
+{"error": "label name must not contain control characters"}
+exit=1
+# vocabulary unchanged: ['bug']

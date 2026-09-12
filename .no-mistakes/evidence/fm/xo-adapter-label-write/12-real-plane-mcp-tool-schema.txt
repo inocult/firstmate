@@ -1,0 +1,23 @@
+# Schema compatibility check against the operator's real Plane MCP server
+#
+# Not a live drive of the adapter: no label was created in this workspace, and no
+# adapter config with Plane credentials exists in this environment. This only records
+# that the call shape ensure_label issues matches the tool the real server advertises.
+#
+# Adapter issues (bin/fm_plane/cli.py):
+#     plane.call("label", "list",   project_id=..., per_page=100, cursor=...)
+#     plane.call("label", "create", project_id=..., name=...)
+#
+# Tool advertised by the connected Plane MCP server ("Plane - At Bryde Ud"):
+#
+#   name: label   -- "Labels within a project."
+#   actions:
+#     list     (project_id; optional cursor, per_page)
+#     retrieve (project_id, label_id)
+#     create   (project_id, name; optional color, description, parent, sort_order,
+#               external_source, external_id)
+#     update   (project_id, label_id; ...)
+#     delete   (project_id, label_id)
+#
+# The server is resource/action style, so Plane.call dispatches "label" directly rather
+# than through the legacy name map, and create takes exactly (project_id, name).

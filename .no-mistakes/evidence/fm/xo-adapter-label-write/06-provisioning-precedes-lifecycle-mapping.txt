@@ -1,0 +1,14 @@
+# A brand-new home: config has no states / ready_label_id / pickup_state_ids yet (the mapping /prep has not produced).
+$ bin/fm-plane.py --config setup-config.json ensure-label --name ready-for-agent
+{
+  "project": "project-1",
+  "name": "ready-for-agent",
+  "id": "lbl-f9f13281",
+  "created": true
+}
+exit=0
+
+# The same setup-stage config cannot drive ticket commands - the lifecycle mapping is still required there:
+$ bin/fm-plane.py --config setup-config.json list
+{"error": "configure implementing, review and done Plane state IDs"}
+exit=1
