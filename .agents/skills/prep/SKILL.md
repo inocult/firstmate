@@ -84,5 +84,7 @@ Never write firstmate's own `AGENTS.md` from this skill, because `firstmate-codi
 
 ## Completion
 
-Report what was verified and how far that reaches, which canonical roles this prep created, any variant conflict left with the captain, the confirmed pickup states, and the layout the worker landed.
+Report only what has actually happened: what was verified and how far that reaches, which canonical roles this prep created, any conflict left with the captain, the confirmed pickup states, and that the project half has been commissioned, naming the delivery path it went through.
+Commissioning is dispatch, not delivery. The project half's documents land under the project's own delivery path and merge authority, on that path's schedule rather than this skill's, so never report the layout as landed here.
+The repository is prepped only once those documents are on its default branch. That is a later condition to confirm separately, and no mission should assume it from this report.
 Arming automatic pickup is a separate captain decision that `/overwatch on` owns.
