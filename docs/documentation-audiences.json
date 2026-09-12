@@ -538,7 +538,7 @@
       "audience": "operator-current"
     },
     {
-      "path": ".agents/skills/rig/SKILL.md",
+      "path": ".agents/skills/prep/SKILL.md",
       "audience": "agent-runtime"
     }
   ]

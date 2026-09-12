@@ -185,7 +185,7 @@ Claude and grok use the slash form shown here; codex uses the same names with `$
 
 | Skill              | What it does                                                                                                                                  |
 | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/rig`             | Prepare this home and a repository for Plane missions: Control writes the home's private Plane configuration, a dispatched worker lands the project's domain-doc and tracker layout |
+| `/prep`            | Prepare this home and a repository for Plane missions: Control writes the home's private Plane configuration, a dispatched worker lands the project's domain-doc and tracker layout |
 | `/overwatch on/off/status` | Enable, pause or inspect bounded automatic pickup of ready-for-agent Plane tickets |
 | `/breach PLAT-27` | Dispatch one claimed ticket through the Pocock-adapted implementation workflow |
 | `/afk`             | Enter away-mode supervision: the sub-supervisor self-handles routine notifications in bash, escalates captain-relevant events and bounded declared-external-wait rechecks as batched digests, and actively alerts if delivery gets stuck while you step away |

@@ -253,7 +253,7 @@ Cloning or registering a project is add intake and uses the same trigger.
 That skill owns registry syntax, delivery-mode selection, outward-facing consent, clone and initialization procedure, safe rollback, and removal preflight.
 Project creation never authorizes an unmentioned remote, and project removal never bypasses that preflight or unlanded-work checks; hard rule 1's concrete captain-approved project operation exception remains available when its exact conditions are met.
 
-Load `rig` when the captain invokes `/rig`, or before the first mission against a repository this home has not prepared for Plane.
+Load `prep` when the captain invokes `/prep`, or before the first mission against a repository this home has not prepared for Plane.
 It owns the split between the home half Control performs directly and the project half a worker delivers.
 
 Load `secondmate-provisioning` before creating, seeding, validating, launching, handing backlog to, recovering, pushing inherited local material into, or retiring a secondmate home, and before editing `data/secondmates.md`.
