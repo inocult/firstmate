@@ -536,6 +536,10 @@
     {
       "path": "docs/control-delivery-workflow.md",
       "audience": "operator-current"
+    },
+    {
+      "path": ".agents/skills/prep/SKILL.md",
+      "audience": "agent-runtime"
     }
   ]
 }

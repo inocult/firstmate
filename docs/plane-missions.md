@@ -24,6 +24,7 @@ For the full planning, implementation and separate-review flow, read [Control de
 
 ## Control skills
 
+Use `/prep` to prepare this home and a repository for missions before the first one is dispatched.
 Use `/breach <ticket>` for one directed implementation or `/overwatch on` for bounded automatic queue pickup.
 Use `/overwatch off` to stop new intake while preserving active work, and `/overwatch status` to inspect its scope and bounds.
 Codex uses the same skill names with `$` instead of `/`.
@@ -34,6 +35,9 @@ The timer only wakes Control; selection, reasoning and dispatch require a live s
 No new daemon is installed and no idle heartbeat behavior is changed.
 
 ## Setup
+
+`/prep` performs this setup and owns the split between the home half Control writes directly and the project half a worker delivers.
+The schema below remains the authority on what that configuration contains.
 
 Requires Git, Python 3.10+, the optional MCP SDK in `bin/requirements-plane.txt`, and a reachable authenticated Plane MCP server.
 Install the optional SDK into a virtual environment and set `FM_PLANE_PYTHON` to that environment's Python executable when launching Firstmate.
