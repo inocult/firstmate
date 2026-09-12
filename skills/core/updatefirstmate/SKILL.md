@@ -12,8 +12,8 @@ metadata:
 # updatefirstmate
 
 Self-update firstmate in place.
-Firstmate is its own repo, behind the same no-mistakes gate as any project, so new tracked material (`AGENTS.md`, `bin/`, `.agents/skills/`, and public `skills/`) reaches `main` and then sits there until each running firstmate pulls it.
-Only `AGENTS.md`, `bin/`, and `.agents/skills/` are a running firstmate instruction surface; public `skills/` is installer-facing and is not loaded by firstmate.
+Firstmate is its own repo, behind the same no-mistakes gate as any project, so new tracked material (`AGENTS.md`, `bin/`, the `skills/` tree, and its `.agents/skills/` activation links) reaches `main` and then sits there until each running firstmate pulls it.
+A running firstmate's instruction surface is `AGENTS.md`, `bin/`, and the skills reached through the `.agents/skills/` activation links into `skills/<category>/<name>/`, so a change under `skills/` counts as an instruction change even when no link moved.
 This skill performs that pull for the running main firstmate and every secondmate, without disturbing any in-flight work.
 
 Pulling the files is only half of it.
@@ -50,7 +50,7 @@ This touches only the firstmate repo and its own worktrees, never anything under
    A mate reaches neither set only because its home was skipped, because it has no live endpoint recorded here, or because its endpoint was positively classified as dead or missing - none of those need any action from you.
 
 2. **Re-read AGENTS.md if your own instructions changed.**
-   When the updater printed `reread-firstmate: yes`, the tracked instruction surface (`AGENTS.md`, `bin/`, or `.agents/skills/`) just advanced under you.
+   When the updater printed `reread-firstmate: yes`, the tracked instruction surface (`AGENTS.md`, `bin/`, `skills/`, or the `.agents/skills/` activation links) just advanced under you.
    **Read `AGENTS.md` now** (CLAUDE.md is a real `@AGENTS.md` pointer to it) to refresh your operating instructions before doing anything else, so you are acting on the new instructions rather than the stale ones you were started with.
    When it printed `reread-firstmate: no`, nothing changed for you - skip the re-read.
 
