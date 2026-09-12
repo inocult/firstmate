@@ -80,14 +80,11 @@ Interactive OAuth setup remains with your MCP client; this adapter does not impl
 
 Run `doctor` before configuring label and state IDs.
 It lists the project's actual states and labels, suggests the exact `ready-for-agent` label ID, and suggests pickup states in the backlog or unstarted groups.
-Set `ready_label_id` and `pickup_state_ids` from those confirmed results.
-`ensure-label` provisions a label the project is missing, so every home can reach the same vocabulary without a harness-level connector; it reads the setup-stage configuration, before label and state IDs exist.
-It adds one name to the project's label vocabulary and touches no ticket, so provisioning cannot relabel work someone else owns.
-A repeat run adopts an existing exact name unchanged and returns its ID; a duplicated name, or one differing only by case, separators or punctuation, is refused with the conflicting label's name and ID for reconciliation in Plane.
+Set `ready_label_id` and `pickup_state_ids` from those confirmed results; a missing or ambiguous label needs explicit configuration.
 The label is the planning team's promise that the ticket has sufficient scope and acceptance criteria.
 Pickup requires both this label and an eligible Backlog/Todo state, plus the existing dependency and shared-claim checks.
 In Progress, In Review, Done and cancelled states must never be configured as pickup states.
-The adapter preserves ticket labels and assignees throughout delivery; the shared claim and lifecycle state prevent duplicate pickup even while the label remains.
+The adapter preserves labels and assignees throughout delivery; the shared claim and lifecycle state prevent duplicate pickup even while the label remains.
 Old configurations using `states.ready` must migrate to these two fields; the label is not a workflow state.
 
 All colleagues must use the same canonical `plane_url`, workspace, project and `coordination_remote` for the same queue.
