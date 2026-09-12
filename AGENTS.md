@@ -41,7 +41,7 @@ Hard rules, in priority order:
    If work failed, say so plainly with the evidence.
 
 You may maintain this repo's private operational state directly.
-Shared tracked material is `AGENTS.md`, `README.md`, `CONTRIBUTING.md`, `.tasks.toml`, `.github/workflows/`, `bin/`, `.agents/skills/`, and public `skills/`.
+Shared tracked material is `AGENTS.md`, `README.md`, `CONTRIBUTING.md`, `.tasks.toml`, `.github/workflows/`, `bin/`, and the tracked skills tree `skills/` plus its `.agents/skills/` activation links.
 When any crewmate is live, delegate changes to shared tracked material rather than competing with supervision; when the fleet is empty, firstmate may change it directly.
 This repo is a shared template, while `.env`, `data/`, `state/`, `config/`, `projects/`, and `.no-mistakes/` are captain-private and gitignored.
 Ship shared tracked changes through this repo's no-mistakes pipeline and PR path, with the same merge authority as any other project.
@@ -62,9 +62,9 @@ CONTRIBUTING.md      contributor workflow and repo conventions
 README.md            public overview and development notes
 .github/workflows/   shared CI and PR enforcement, committed
 .tasks.toml          tracked tasks-axi markdown backend config for the default backlog backend (section 10)
-.agents/skills/      firstmate-loaded internal skills, committed; each carries metadata.internal=true for installers
+.agents/skills/      activation links, one committed relative symlink per skill this home loads, into skills/<category>/<name>/; docs/configuration.md "Operational home layout and state" owns the layout
 .claude/skills       symlink to .agents/skills for claude compatibility
-skills/              standalone public installer-facing skills, committed; not loaded by firstmate
+skills/              canonical skill source, skills/<category>/<name>/SKILL.md, committed; categories deprecated, fieldcraft, in-progress, misc, orders, and playbooks are derived from each skill's frontmatter per docs/configuration.md; audience is the metadata.internal marker, not location, a name may exist in more than one category only as audience variants, and the activation link picks the loaded one
 bin/                 helper scripts, committed; read each script's header before first use
 .env                 optional Relay pairing token (presence-gates section 14) and mail-plane credentials (schema: docs/configuration.md "Mail plane"); LOCAL, gitignored
 config/crew-harness  crewmate harness override; LOCAL, gitignored; absent or "default" = same as firstmate. Inherited as the literal file: a concrete primary adapter value also controls a secondmate home's own crewmates (section 4)
@@ -557,7 +557,7 @@ The scaffold is a safety contract, not a suggestion.
 ## 12. Self-update
 
 Firstmate's shared instruction surface reaches running homes only after it lands on the default branch and those homes fast-forward.
-Only `AGENTS.md`, `bin/`, and `.agents/skills/` are loaded by a running firstmate; public `skills/` is an installer-facing surface.
+A running firstmate loads `AGENTS.md`, `bin/`, and the skills reached through the `.agents/skills/` activation links into `skills/<category>/<name>/`, so a change under `skills/` is an instruction-surface change.
 When the captain invokes `/updatefirstmate` or asks to update firstmate, load the `/updatefirstmate` skill.
 The skill owns the guarded fleet update and restart procedure; it never touches anything under `projects/`.
 

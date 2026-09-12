@@ -12,7 +12,7 @@
 #     fast-forward of one worktree never disturbs another worktree's checkout
 #     or the shared default branch.
 #   - The caller-action summary is correct: reread-firstmate flips to yes only
-#     when the instruction surface (AGENTS.md / bin / .agents/skills) changed, and
+#     when the instruction surface (AGENTS.md / bin / .agents/skills / skills) changed, and
 #     the two secondmate action sets are disjoint and correctly gated -
 #     restart-secondmates carries EVERY live mate this pass left on origin's tip
 #     whose recorded runtime can prove a restart, INCLUDING one that was already
@@ -113,7 +113,8 @@ add_sm() {
 
 # Advance origin by one commit. mode=instr changes the whole instruction surface
 # (AGENTS.md, bin, .agents/skills) plus README; mode=bin changes only bin/, which
-# a running agent re-executes rather than holding; mode=readme changes only README.
+# a running agent re-executes rather than holding; mode=skills changes only the
+# canonical skills/ tree the activation links load; mode=readme changes only README.
 bump_origin() {
   local w=$1 mode=$2
   git -C "$w/seed" pull -q origin main >/dev/null 2>&1 || true
@@ -125,6 +126,10 @@ bump_origin() {
   fi
   if [ "$mode" = bin ]; then
     printf 'echo b-%s\n' "$RANDOM" > "$w/seed/bin/tool.sh"
+  fi
+  if [ "$mode" = skills ]; then
+    mkdir -p "$w/seed/skills/orders/note"
+    printf 's-%s\n' "$RANDOM" > "$w/seed/skills/orders/note/SKILL.md"
   fi
   git -C "$w/seed" add -A
   git -C "$w/seed" commit -qm "bump-$mode"
@@ -209,6 +214,23 @@ test_bin_only_advance_restarts() {
   assert_contains "$out" "restart-secondmates: fm-sm1" "a bin/-only advance must still restart the live mate"
   assert_contains "$out" "nudge-secondmates: none" "a restarted secondmate must not also be nudged"
   pass "T3b a bin/-only advance restarts the secondmate"
+}
+
+# --- T3d: a skills/-only advance is an instruction-surface advance ----------
+# The canonical skills/ tree is what the .agents/skills/ activation links load,
+# and a diff scoped to the links alone never sees it, so a change there must
+# reread and restart exactly like an AGENTS.md change.
+test_skills_only_advance_rereads() {
+  local w out
+  w=$(new_world t3d)
+  add_sm "$w" sm1
+  bump_origin "$w" skills
+
+  out=$(run_update "$w")
+
+  assert_contains "$out" "reread-firstmate: yes" "a skills/ change is an instruction-surface advance"
+  assert_contains "$out" "restart-secondmates: fm-sm1" "a skills/-only advance must still restart the live mate"
+  pass "T3d a skills/-only advance rereads and restarts the secondmate"
 }
 
 # --- T3c: an unverifiable runtime receives the fallback nudge ----------------
@@ -474,6 +496,7 @@ test_unsafe_secondmate_home_skipped_before_git_update() {
 test_updates_main_and_secondmate
 test_reread_gate_is_instruction_only
 test_bin_only_advance_restarts
+test_skills_only_advance_rereads
 test_unprovable_runtime_gets_fallback_nudge
 test_dead_secondmate_gets_no_action
 test_legacy_remote_advance_restarts

@@ -105,6 +105,7 @@ init_changed_fixture_repo() {
     fm-daemon.test.sh \
     fm-harness-adapter-instructions-live-e2e.test.sh \
     fm-harness-adapter-references.test.sh \
+    fm-skills-installer-live-e2e.test.sh \
     fm-backend-herdr-smoke.test.sh \
     fm-secondmate-safety.test.sh \
     fm-session-start.test.sh \
@@ -145,13 +146,24 @@ init_changed_fixture_repo() {
   printf '# .claude/settings.json\n# .pi/extensions/fm-primary-turnend-guard.ts\n' \
     >>"$repo/tests/fm-cd-pretool-check.test.sh"
   printf '# .pi/extensions/fm-primary-pi-watch.ts\n' >>"$repo/tests/fm-pi-watch-extension.test.sh"
+  mkdir -p "$repo/.agents/skills" "$repo/.claude" "$repo/.pi/extensions" "$repo/docs" "$repo/src"
+  # The skills tree: skills/<category>/<name>/ is the source, .agents/skills/
+  # <name> an activation link into it, and a skill asset that a suite names by
+  # its activation-link spelling.
   mkdir -p \
-    "$repo/.agents/skills/example" \
-    "$repo/.agents/skills/harness-adapters/references/common" \
-    "$repo/.claude" "$repo/.pi/extensions" "$repo/docs" "$repo/src"
-  : >"$repo/.agents/skills/example/SKILL.md"
-  : >"$repo/.agents/skills/harness-adapters/SKILL.md"
-  : >"$repo/.agents/skills/harness-adapters/references/common/dispatch.md"
+    "$repo/skills/playbooks/example" \
+    "$repo/skills/playbooks/harness-adapters/references/common" \
+    "$repo/skills/playbooks/quota-array-dispatch" \
+    "$repo/skills/playbooks/board/assets"
+  : >"$repo/skills/playbooks/example/SKILL.md"
+  : >"$repo/skills/playbooks/example/LICENSE"
+  : >"$repo/skills/playbooks/harness-adapters/SKILL.md"
+  : >"$repo/skills/playbooks/harness-adapters/references/common/dispatch.md"
+  : >"$repo/skills/playbooks/quota-array-dispatch/SKILL.md"
+  : >"$repo/skills/playbooks/board/assets/template.html"
+  ln -s ../../skills/playbooks/example "$repo/.agents/skills/example"
+  ln -s ../../skills/playbooks/harness-adapters "$repo/.agents/skills/harness-adapters"
+  printf '# .agents/skills/board/assets/template.html\n' >>"$repo/tests/fm-bearings-snapshot.test.sh"
   : >"$repo/.claude/settings.json"
   : >"$repo/.pi/extensions/fm-primary-pi-watch.ts"
   : >"$repo/.pi/extensions/fm-primary-turnend-guard.ts"
@@ -330,17 +342,18 @@ test_changed_dependency_selection_and_unmapped_failure() {
   git -C "$repo" add bin/fm-supervisor-target-lib.sh
   git -C "$repo" -c user.name=test -c user.email=test@example.invalid commit -qm supervisor-change
 
-  printf '\n' >>"$repo/.agents/skills/example/SKILL.md"
+  printf '\n' >>"$repo/skills/playbooks/example/SKILL.md"
   printf '\n' >>"$repo/.claude/settings.json"
   printf '\n' >>"$repo/.pi/extensions/fm-primary-pi-watch.ts"
   printf '\n' >>"$repo/.pi/extensions/fm-primary-turnend-guard.ts"
   listed=$(cd "$repo" && bin/fm-test-run.sh --list --changed --base HEAD)
   assert_contains "$listed" "tests/fm-ask-user-authority.test.sh" "skill source selects pure contract coverage"
+  assert_contains "$listed" "tests/fm-skills-installer-live-e2e.test.sh" "skill source selects the opt-in installer guard"
   assert_contains "$listed" "tests/fm-cd-pretool-check.test.sh" "Claude and Pi source selects hook coverage"
   assert_contains "$listed" "tests/fm-pi-watch-extension.test.sh" "Pi source selects watcher coverage"
   assert_contains "$listed" "tests/fm-pi-windows-shell-invocation.test.sh" \
     "turn-end extension selects native-Windows shell coverage"
-  git -C "$repo" add .agents .claude .pi
+  git -C "$repo" add skills .claude .pi
   git -C "$repo" -c user.name=test -c user.email=test@example.invalid commit -qm non-bin-source-change
 
   printf '\n' >>"$repo/.pi/extensions/lib/fm-operational-input.ts"
@@ -350,19 +363,44 @@ test_changed_dependency_selection_and_unmapped_failure() {
   git -C "$repo" add .pi/extensions/lib/fm-operational-input.ts
   git -C "$repo" -c user.name=test -c user.email=test@example.invalid commit -qm operational-input-source-change
 
-  printf '\n' >>"$repo/.agents/skills/harness-adapters/references/common/dispatch.md"
+  printf '\n' >>"$repo/skills/playbooks/harness-adapters/references/common/dispatch.md"
   listed=$(cd "$repo" && bin/fm-test-run.sh --list --changed --base HEAD)
   assert_contains "$listed" "tests/fm-harness-adapter-references.test.sh" "harness adapter reference selects portable structural coverage"
   assert_contains "$listed" "tests/fm-harness-adapter-instructions-live-e2e.test.sh" "harness adapter reference selects opt-in instruction coverage"
-  git -C "$repo" add .agents/skills/harness-adapters
+  git -C "$repo" add skills/playbooks/harness-adapters
   git -C "$repo" -c user.name=test -c user.email=test@example.invalid commit -qm harness-adapter-reference-change
 
-  printf '\n' >>"$repo/.agents/skills/harness-adapters/SKILL.md"
+  printf '\n' >>"$repo/skills/playbooks/harness-adapters/SKILL.md"
   listed=$(cd "$repo" && bin/fm-test-run.sh --list --changed --base HEAD)
   assert_contains "$listed" "tests/fm-harness-adapter-references.test.sh" "harness adapter router selects portable structural coverage"
   assert_contains "$listed" "tests/fm-harness-adapter-instructions-live-e2e.test.sh" "harness adapter router selects opt-in instruction coverage"
-  git -C "$repo" add .agents/skills/harness-adapters/SKILL.md
+  git -C "$repo" add skills/playbooks/harness-adapters/SKILL.md
   git -C "$repo" -c user.name=test -c user.email=test@example.invalid commit -qm harness-adapter-router-change
+
+  printf '\n' >>"$repo/skills/playbooks/quota-array-dispatch/SKILL.md"
+  listed=$(cd "$repo" && bin/fm-test-run.sh --list --changed --base HEAD)
+  assert_contains "$listed" "tests/fm-ask-user-authority.test.sh" "quota dispatch owner selects pure contract coverage"
+  assert_contains "$listed" "tests/fm-harness-adapter-instructions-live-e2e.test.sh" "quota dispatch owner selects opt-in live coverage"
+  git -C "$repo" add skills/playbooks/quota-array-dispatch/SKILL.md
+  git -C "$repo" -c user.name=test -c user.email=test@example.invalid commit -qm quota-owner-change
+
+  git -C "$repo" rm -q .agents/skills/example
+  listed=$(cd "$repo" && bin/fm-test-run.sh --list --changed --base HEAD)
+  assert_contains "$listed" "tests/fm-ask-user-authority.test.sh" "a removed activation link selects pure contract coverage"
+  git -C "$repo" -c user.name=test -c user.email=test@example.invalid commit -qm activation-link-removed
+
+  printf '\n' >>"$repo/skills/playbooks/board/assets/template.html"
+  listed=$(cd "$repo" && bin/fm-test-run.sh --list --changed --base HEAD)
+  assert_contains "$listed" "tests/fm-bearings-snapshot.test.sh" "a skill asset named by its activation-link spelling selects the referencing suite"
+  git -C "$repo" add skills/playbooks/board/assets/template.html
+  git -C "$repo" -c user.name=test -c user.email=test@example.invalid commit -qm skill-asset-change
+
+  printf '\n' >>"$repo/skills/playbooks/example/LICENSE"
+  listed=$(cd "$repo" && bin/fm-test-run.sh --list --changed --base HEAD) \
+    || fail "a skill file no suite names must not abort changed selection: $listed"
+  assert_contains "$listed" "tests/fm-ask-user-authority.test.sh" "a skill file no suite names selects the skills-tree structural coverage"
+  git -C "$repo" add skills/playbooks/example/LICENSE
+  git -C "$repo" -c user.name=test -c user.email=test@example.invalid commit -qm skill-unreferenced-file-change
 
   printf '\n' >>"$repo/bin/fm-procevent-quota.sh"
   printf '\n' >>"$repo/bin/fm-quota-choose.sh"

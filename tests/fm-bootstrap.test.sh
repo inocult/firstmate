@@ -718,6 +718,56 @@ test_treehouse_lease_check_follows_resolved_backend() {
   pass "bootstrap: the treehouse lease check follows the resolved backend's worktree provider"
 }
 
+test_skills_activation_links_checked_out_as_files_are_reported() {
+  local case_dir fakebin out
+  # A core.symlinks=false checkout (the Git for Windows default) materializes
+  # each .agents/skills/<name> activation link as a regular file holding the
+  # link target, so no bundled skill loads. Bootstrap reports it and never
+  # repairs it.
+  case_dir="$TMP_ROOT/skills-links-as-files"
+  mkdir -p "$case_dir/home/config" "$case_dir/home/.agents/skills" "$case_dir/home/skills/orders/ahoy" "$case_dir/home/skills/orders/stow"
+  printf '%s\n' manual > "$case_dir/home/config/backlog-backend"
+  : >"$case_dir/home/skills/orders/ahoy/SKILL.md"
+  : >"$case_dir/home/skills/orders/stow/SKILL.md"
+  ln -s ../../skills/orders/ahoy "$case_dir/home/.agents/skills/ahoy"
+  ln -s ../../skills/orders/stow "$case_dir/home/.agents/skills/stow"
+  printf '%s\n' 'skill' > "$case_dir/home/.agents/skills/note.md"
+  git -C "$case_dir/home" init -q
+  git -C "$case_dir/home" add .agents skills
+  git -C "$case_dir/home" -c user.name=test -c user.email=test@example.invalid commit -qm links
+  rm "$case_dir/home/.agents/skills/ahoy" "$case_dir/home/.agents/skills/stow"
+  git -C "$case_dir/home" -c core.symlinks=false checkout -q -- .agents/skills
+  [ -f "$case_dir/home/.agents/skills/ahoy" ] && [ ! -L "$case_dir/home/.agents/skills/ahoy" ] \
+    || fail "fixture: core.symlinks=false checkout should materialize the link as a regular file"
+  fakebin=$(make_fake_toolchain "$case_dir")
+  out=$(PATH="$fakebin:$BASE_PATH" FM_HOME="$case_dir/home" FM_ROOT_OVERRIDE="$case_dir/home" \
+    "$ROOT/bin/fm-bootstrap.sh")
+  assert_contains "$out" "MISSING_MANUAL: skills activation links (.agents/skills/ahoy, .agents/skills/stow are regular files, not symlinks; run git config core.symlinks true, then re-checkout .agents/skills so the links resolve)" \
+    "activation links checked out as regular files are reported by name with the manual repair"
+  [ "$(printf '%s\n' "$out" | grep -c 'skills activation links')" = 1 ] \
+    || fail "the activation-link diagnostic must be exactly one line, got: $out"
+  [ -f "$case_dir/home/.agents/skills/ahoy" ] && [ ! -L "$case_dir/home/.agents/skills/ahoy" ] \
+    || fail "bootstrap must not repair the checked-out link files itself"
+
+  case_dir="$TMP_ROOT/skills-links-as-symlinks"
+  mkdir -p "$case_dir/home/config" "$case_dir/home/.agents/skills" "$case_dir/home/skills/orders/ahoy"
+  printf '%s\n' manual > "$case_dir/home/config/backlog-backend"
+  : >"$case_dir/home/skills/orders/ahoy/SKILL.md"
+  ln -s ../../skills/orders/ahoy "$case_dir/home/.agents/skills/ahoy"
+  git -C "$case_dir/home" init -q
+  git -C "$case_dir/home" add .agents skills
+  git -C "$case_dir/home" -c user.name=test -c user.email=test@example.invalid commit -qm links
+  [ "$(git -C "$case_dir/home" ls-files -s -- .agents/skills | grep -c '^120000 ')" -ge 1 ] \
+    || fail "fixture: the control checkout must track at least one activation link as a symlink"
+  [ -L "$case_dir/home/.agents/skills/ahoy" ] \
+    || fail "fixture: the control checkout must hold a real symlink for the tracked activation link"
+  fakebin=$(make_fake_toolchain "$case_dir")
+  out=$(PATH="$fakebin:$BASE_PATH" FM_HOME="$case_dir/home" FM_ROOT_OVERRIDE="$case_dir/home" \
+    "$ROOT/bin/fm-bootstrap.sh")
+  assert_not_contains "$out" "skills activation links" "real activation symlinks print no diagnostic"
+  pass "bootstrap: activation links checked out as regular files are reported, real symlinks are silent"
+}
+
 test_fleet_sync_timeout_scales_with_origin_backed_project_count() {
   local case_dir home fakebin fake_root out
   case_dir="$TMP_ROOT/fleet-timeout-scaled"
@@ -1173,6 +1223,7 @@ test_cmux_bundled_cli_satisfies_dependency
 test_unknown_backend_reports_invalid_configuration
 test_json_backends_require_jq_not_tmux
 test_treehouse_lease_check_follows_resolved_backend
+test_skills_activation_links_checked_out_as_files_are_reported
 test_fleet_sync_timeout_scales_with_origin_backed_project_count
 test_fleet_sync_timeout_floor_preserves_small_fleets
 test_fleet_sync_timeout_explicit_override_wins

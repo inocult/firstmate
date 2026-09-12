@@ -6,7 +6,7 @@ metadata:
   internal: true
 ---
 
-<!-- maintainers: this is the firstmate-internal skill. The public, installer-facing counterpart lives at skills/stow/SKILL.md - deliberately a separate file with no shared code or environment branching. Keep them independent. -->
+<!-- maintainers: this is the firstmate-internal skill. The public, installer-facing counterpart lives at skills/fieldcraft/stow/SKILL.md - deliberately a separate file with no shared code or environment branching. Keep them independent. -->
 
 # stow
 
@@ -305,5 +305,5 @@ The session is reset-safe only when every home is within its own budget with no 
 The stow pass itself must never store, create, or edit a skill as a destination for any finding.
 The exclusion binds the pass as a writer: proposing an offload and letting the migration step execute a captain-approved candidate later is not the pass storing a skill.
 Every Firstmate-home skill that migration produces is user-owned and local under the destinations hard rule, while an approved project-level destination is produced and shipped through that project's registered delivery path, never by stow.
-Changing firstmate's tracked `.agents/skills/` or public `skills/` remains a deliberately scoped Firstmate repository task through its pipeline, never a stow product.
+Changing firstmate's tracked `skills/` tree or its `.agents/skills/` activation links remains a deliberately scoped Firstmate repository task through its pipeline, never a stow product.
 Outside a captain-approved offload, generalizable knowledge still routes to shared tracked material through its pipeline and fleet-local knowledge to `data/`.

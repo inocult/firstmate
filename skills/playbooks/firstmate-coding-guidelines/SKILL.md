@@ -22,7 +22,7 @@ Before writing a new fact anywhere in this repo, ask where it belongs, in this o
 1. Does the firstmate AGENT need this on every session or every turn to operate?
    If yes: `AGENTS.md`, inline.
 2. Does the agent need it only in a nameable situation - a spawn, a recovery, a specific wake type, a specific lifecycle step?
-   If yes: an agent-only skill under `.agents/skills/`, plus a one-line trigger pointer left inline in `AGENTS.md` (usually section 13).
+   If yes: an agent-only skill at `skills/<category>/<name>/SKILL.md` with an `.agents/skills/<name>` activation link (`docs/configuration.md` "Operational home layout and state" owns the layout and categories), plus a one-line trigger pointer left inline in `AGENTS.md` (usually section 13).
 3. Is it public product, setup, or user/operator reference?
    If yes: the surface classified for that audience in [`docs/documentation-audiences.md`](../../../docs/documentation-audiences.md), limited to current behavior, setup, supported limits, stable invariants, concise rationale, and current verification entry points.
 4. Is it contributor/maintainer architecture?

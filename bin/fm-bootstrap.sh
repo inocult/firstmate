@@ -8,6 +8,7 @@
 #          Lines: "MISSING: <tool> (install: <command>)",
 #                 "PRESENTATION_UNAVAILABLE: lavish-axi (requires >=<floor>; install: <command>) - nonvisual work may proceed with plain-text decisions and reports; install or upgrade before using Lavish",
 #                 "MISSING_MANUAL: <tool> (instructions: <url>)", "NEEDS_GH_AUTH",
+#                 "MISSING_MANUAL: skills activation links (.agents/skills/<name>[, ...] are regular files, not symlinks; run git config core.symlinks true, then re-checkout .agents/skills so the links resolve)",
 #                 "BACKEND_INVALID: <name> (known: <names>)",
 #                 "STARTUP_MEMORY_BUDGET: invalid config/startup-memory-budget - <reason>",
 #                 "CREW_DISPATCH: invalid config/crew-dispatch.json - <reason>",
@@ -1445,6 +1446,25 @@ detect_local_tools() {
   if command -v tasks-axi >/dev/null 2>&1 && ! fm_tasks_axi_compatible; then
     echo "MISSING: tasks-axi (install: $(install_cmd tasks-axi))"
   fi
+  detect_skills_activation_links
+}
+
+# Every bundled skill this home loads is reached through a committed symlink at
+# .agents/skills/<name>. A checkout made with core.symlinks=false (the Git for
+# Windows default) materializes each such entry as a regular file holding the
+# target path, so no skill loads and nothing errors. The index says which
+# entries are symlinks (mode 120000); the worktree says what was checked out.
+# Detect only; the repair is the captain's.
+detect_skills_activation_links() {
+  local entry files=""
+  [ -d "$FM_ROOT/.agents/skills" ] || return 0
+  while IFS= read -r entry; do
+    [ -n "$entry" ] || continue
+    if [ ! -L "$FM_ROOT/$entry" ] && [ -f "$FM_ROOT/$entry" ]; then
+      files="${files:+$files, }$entry"
+    fi
+  done < <(git -C "$FM_ROOT" ls-files -s -- .agents/skills 2>/dev/null | awk -F'\t' '$1 ~ /^120000 / { print $2 }')
+  [ -z "$files" ] || echo "MISSING_MANUAL: skills activation links ($files are regular files, not symlinks; run git config core.symlinks true, then re-checkout .agents/skills so the links resolve)"
 }
 
 detect_local_config() {

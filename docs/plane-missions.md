@@ -29,15 +29,15 @@ Use `/operation` for an effort too big for one mission: it charts the effort as 
 Use `/breach <ticket>` for one directed implementation or `/overwatch on` for bounded automatic queue pickup.
 Use `/overwatch off` to stop new intake while preserving active work, and `/overwatch status` to inspect its scope and bounds.
 Codex uses the same skill names with `$` instead of `/`.
-The [Overwatch skill](../.agents/skills/overwatch/SKILL.md) owns the pickup policy, recovery and watcher integration.
-The [Breach skill](../.agents/skills/breach/SKILL.md) owns the attributed adaptation of Pocock's implementation entrypoint.
+The [Overwatch skill](../skills/in-progress/overwatch/SKILL.md) owns the pickup policy, recovery and watcher integration.
+The [Breach skill](../skills/in-progress/breach/SKILL.md) owns the attributed adaptation of Pocock's implementation entrypoint.
 `bin/fm-overwatch.py --help` owns timer and policy command syntax.
 The timer only wakes Control; selection, reasoning and dispatch require a live supported Firstmate agent session.
 No new daemon is installed and no idle heartbeat behavior is changed.
 
 ## Setup
 
-The [prep skill](../.agents/skills/prep/SKILL.md) owns the setup procedure: `/prep` walks it end to end, preparing this home and commissioning the repository's own documentation through a worker on the project's delivery path.
+The [prep skill](../skills/in-progress/prep/SKILL.md) owns the setup procedure: `/prep` walks it end to end, preparing this home and commissioning the repository's own documentation through a worker on the project's delivery path.
 This section owns what that setup has to produce, and is what the skill and a by-hand operator both work from: the prerequisites, the configuration schema, and the rule each value has to satisfy, so an operator configuring `plane.json` by hand satisfies what is below rather than following a second procedure.
 
 Requires Git, Python 3.10+, the optional MCP SDK in `bin/requirements-plane.txt`, and a reachable authenticated Plane MCP server.

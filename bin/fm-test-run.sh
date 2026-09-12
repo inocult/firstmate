@@ -281,7 +281,7 @@ family_for_basename() {
     fm-kimi-harness.test.sh|fm-muse-harness.test.sh|fm-rovo-harness.test.sh|fm-omp-harness.test.sh|fm-herdr-lab.test.sh|fm-lint.test.sh|\
     fm-lint-workflows.test.sh|\
     fm-operational-input.test.sh|fm-pi-primary-types.test.sh|\
-    fm-harness-adapter-references.test.sh|\
+    fm-harness-adapter-references.test.sh|fm-skills-tree.test.sh|\
     fm-send-popup-settle.test.sh|fm-send-settle.test.sh|\
     fm-subagent-pretool-check.test.sh|\
     fm-supervision-instructions.test.sh|fm-task-delivery.test.sh|\
@@ -348,6 +348,7 @@ family_for_basename() {
     fm-pi-branch-responsiveness-live-e2e.test.sh|\
     fm-pi-primary-live-e2e.test.sh|fm-pi-codex-native.test.sh|fm-omp-primary-live-e2e.test.sh|\
     fm-sessionstart-hook-live-e2e.test.sh|fm-sessionstart-instruction-refresh-live-e2e.test.sh|\
+    fm-skills-installer-live-e2e.test.sh|\
     fm-quota-array-dispatch-live-e2e.test.sh|fm-send-secondmate-marker-herdr-e2e.test.sh|\
     fm-send-inbox-doorbell-live-e2e.test.sh|\
     fm-herdr-submit-confirm-live-e2e.test.sh)
@@ -762,6 +763,7 @@ tests/fm-sessionstart-hook-live-e2e.test.sh 20
 tests/fm-sessionstart-instruction-refresh-live-e2e.test.sh 22
 tests/fm-sessionstart-nudge.test.sh 66194
 tests/fm-shared-captain-inheritance.test.sh 6108
+tests/fm-skills-installer-live-e2e.test.sh 21
 tests/fm-spawn-dispatch-profile.test.sh 63996
 tests/fm-spawn-pool-base-freshen.test.sh 34920
 tests/fm-spawn-worktree-settle.test.sh 5687
@@ -1518,16 +1520,40 @@ families_for_changed_path() {
     bin/fm-ff-lib.sh|bin/fm-gotmp*|bin/*pretool*)
       printf '%s\n' pure-contract-unit
       ;;
-    .agents/skills/quota-array-dispatch/SKILL.md)
+    skills/*/quota-array-dispatch/SKILL.md)
       printf '%s\n' pure-contract-unit
       printf '%s\n' live-harness-optin
       ;;
-    .agents/skills/harness-adapters/SKILL.md|.agents/skills/harness-adapters/references/*)
+    skills/*/harness-adapters/SKILL.md|skills/*/harness-adapters/references/*)
       printf '%s\n' pure-contract-unit
       printf '%s\n' live-harness-optin
       ;;
-    .agents/skills/*/SKILL.md)
+    skills/*/*/SKILL.md)
+      # A canonical skill also selects the opt-in installer guard
+      # (fm-skills-installer-live-e2e), since a frontmatter name or category
+      # change can alter which variant `--skill <name>` resolves to.
       printf '%s\n' pure-contract-unit
+      printf '%s\n' live-harness-optin
+      ;;
+    .agents/skills/*)
+      # An activation link added, removed, or retargeted: the skills-tree
+      # structural suite (fm-skills-tree) is pure-contract-unit.
+      printf '%s\n' pure-contract-unit
+      ;;
+    skills/*/*/*)
+      # Any other file inside a canonical skill directory, such as an asset or
+      # a nested reference. A test may name it by the canonical path or by the
+      # .agents/skills/<name>/... spelling that resolves through the activation
+      # link, so the reference scan looks for both. A file no suite names still
+      # belongs to the tree whose shape the skills-tree structural suite
+      # (pure-contract-unit) pins. A deleted file has no consuming suite left to
+      # select, the same rule the fixture case applies.
+      if [ -e "$path" ]; then
+        families_for_test_reference "$path" ".agents/skills/${path#skills/*/}" \
+          || printf '%s\n' pure-contract-unit
+      else
+        families_for_test_reference "$path" ".agents/skills/${path#skills/*/}" || true
+      fi
       ;;
     .github/workflows/ci.yml|.no-mistakes.yaml)
       printf '%s\n' pure-contract-unit
