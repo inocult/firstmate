@@ -90,7 +90,7 @@ class AdapterTests(unittest.TestCase):
         return asyncio.run(self.service.claim("item-1", "request-a"))
 
     def ensure(self, **overrides):
-        fields = dict({"command": "ensure-label", "name": "needs-triage", "color": "", "description": ""}, **overrides)
+        fields = dict({"command": "ensure-label", "name": "needs-triage"}, **overrides)
         with patch("fm_plane.cli.Plane", return_value=self.plane):
             return asyncio.run(run(Namespace(**fields), self.config))
 
@@ -99,7 +99,7 @@ class AdapterTests(unittest.TestCase):
 
     def test_label_is_provisioned_once_and_adopted_on_every_later_run(self):
         self.plane.labels = [{"id": "label-ready", "name": "ready-for-agent"}]
-        created = self.ensure(color="#EF4444", description="Needs triage")
+        created = self.ensure()
         self.assertTrue(created["created"])
         self.assertEqual(self.label_names(), ["ready-for-agent", "needs-triage"])
         again = self.ensure()
@@ -108,14 +108,26 @@ class AdapterTests(unittest.TestCase):
         self.assertEqual((adopted["created"], adopted["id"]), (False, "label-ready"))
         self.assertEqual(self.label_names(), ["ready-for-agent", "needs-triage"])
         creates = [args for resource, action, args in self.plane.calls if (resource, action) == ("label", "create")]
-        self.assertEqual(creates, [{"project_id": "project-1", "name": "needs-triage",
-                                    "color": "#EF4444", "description": "Needs triage"}])
+        self.assertEqual(creates, [{"project_id": "project-1", "name": "needs-triage"}])
 
-    def test_provisioning_refuses_near_duplicates_and_invalid_input_without_writing(self):
-        self.plane.labels = [{"id": "label-1", "name": "Needs-Triage"}]
-        for overrides in ({}, {"name": "wontfix", "color": "red"}, {"name": " needs-info "}, {"name": ""}):
+    def test_a_name_longer_than_a_convention_expects_is_still_provisioned(self):
+        long_name = "needs-triage-" + "x" * 200
+        self.assertTrue(self.ensure(name=long_name)["created"])
+        self.assertEqual(self.label_names(), [long_name])
+
+    def test_a_variant_that_normalizes_onto_the_name_halts_naming_the_label_and_its_id(self):
+        for existing in ("Needs-Triage", "Needs Triage", "needs_triage", "Needs-Triage.", "needstriage"):
+            self.plane.labels = [{"id": "label-x", "name": existing}]
+            with self.assertRaises(AdapterError) as caught:
+                self.ensure()
+            self.assertIn(existing, str(caught.exception))
+            self.assertIn("label-x", str(caught.exception))
+        self.assertNotIn("create", [action for resource, action, _ in self.plane.calls if resource == "label"])
+
+    def test_provisioning_refuses_invalid_names_and_ambiguous_duplicates_without_writing(self):
+        for name in ("", " needs-info ", "needs\ttriage"):
             with self.assertRaises(AdapterError):
-                self.ensure(**overrides)
+                self.ensure(name=name)
         self.plane.labels = [{"id": "label-1", "name": "needs-triage"}, {"id": "label-2", "name": "needs-triage"}]
         with self.assertRaises(AdapterError):
             self.ensure()
@@ -394,7 +406,7 @@ class AdapterTests(unittest.TestCase):
                 self.assertEqual(labels[0]["name"], "ready-for-agent")
                 page = await plane.call("workitem", "list", project_id="project-1")
                 self.assertEqual(page["next_cursor"], "page-2")
-                provisioned = await ensure_label(plane, "project-1", "needs-triage", "#EF4444")
+                provisioned = await ensure_label(plane, "project-1", "needs-triage")
                 self.assertTrue(provisioned["created"])
                 adopted = await ensure_label(plane, "project-1", "needs-triage")
                 self.assertEqual((adopted["created"], adopted["id"]), (False, provisioned["id"]))

@@ -80,15 +80,14 @@ def description(item):
 def label_name(name):
     if not isinstance(name, str) or not name or name != name.strip():
         raise AdapterError("label name must be non-empty without surrounding whitespace")
-    if len(name) > 100 or re.search(r"[\x00-\x1f\x7f]", name):
-        raise AdapterError("label name must be at most 100 characters without control characters")
+    if re.search(r"[\x00-\x1f\x7f]", name):
+        raise AdapterError("label name must not contain control characters")
     return name
 
 
-def label_color(color):
-    if color and not re.fullmatch(r"#[0-9A-Fa-f]{6}", color):
-        raise AdapterError("label color must be a hex code such as #EF4444")
-    return color
+def label_key(name):
+    """Fold case, whitespace, separators and punctuation so near-duplicates collide."""
+    return re.sub(r"[\W_]+", "", name.casefold())
 
 
 async def project_labels(plane, project):
@@ -116,22 +115,21 @@ def label_named(labels, name):
     return matches[0] if matches else None
 
 
-async def ensure_label(plane, project, name, color="", note=""):
+async def ensure_label(plane, project, name):
     """Add one label to the project vocabulary, or adopt the existing one unchanged."""
-    name, color = label_name(name), label_color(color)
+    name = label_name(name)
     existing = await project_labels(plane, project)
     adopted = label_named(existing, name)
     if adopted:
         return {"project": project, "name": name, "id": adopted["id"], "created": False}
-    if any(isinstance(label, dict) and isinstance(label.get("name"), str)
-           and label["name"].casefold() == name.casefold() for label in existing):
-        raise AdapterError("a label differing only in case already exists; reconcile it before provisioning")
-    arguments = {"project_id": project, "name": name}
-    if color:
-        arguments["color"] = color
-    if note:
-        arguments["description"] = note
-    await plane.call("label", "create", **arguments)
+    key = label_key(name)
+    conflict = next((label for label in existing if isinstance(label, dict)
+                     and isinstance(label.get("name"), str) and label_key(label["name"]) == key), None)
+    if conflict:
+        raise AdapterError(f"existing label {conflict['name']!r} (id {conflict.get('id') or 'unknown'}) "
+                           f"differs from {name!r} only by case, separators or punctuation; "
+                           "reconcile it in Plane before provisioning")
+    await plane.call("label", "create", project_id=project, name=name)
     # Confirm from the project's own listing; a create response is not proof it persisted.
     created = label_named(await project_labels(plane, project), name)
     if not created:
@@ -371,7 +369,7 @@ async def run(args, config):
                     "suggested_pickup_state_ids": [s["id"] for s in states if s.get("group") in ("backlog", "unstarted")],
                     "executor": config["executor"], "note": "MCP connected; no ticket or claim changed"}
         if args.command == "ensure-label":
-            return await ensure_label(plane, config["project_id"], args.name, args.color, args.description)
+            return await ensure_label(plane, config["project_id"], args.name)
         if args.command == "list":
             # Preserve pagination; listing is candidate discovery, not claim authority.
             return await plane.call("workitem", "list", project_id=config["project_id"],
@@ -443,8 +441,6 @@ def main():
     sub.add_parser("doctor", help="connect to MCP and inspect available tools without writing")
     label = sub.add_parser("ensure-label", help="add one label to the project vocabulary; an existing one is adopted")
     label.add_argument("--name", required=True, help="exact label name; repeat runs adopt it instead of duplicating it")
-    label.add_argument("--color", default="", help="hex code such as #EF4444, applied only when the label is created")
-    label.add_argument("--description", default="", help="applied only when the label is created")
     listing = sub.add_parser("list", help="read one page of work items; preserve pagination")
     listing.add_argument("--cursor", default="")
     check = sub.add_parser("check", help="validate shared ownership for a bound task, without MCP")

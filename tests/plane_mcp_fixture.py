@@ -25,10 +25,10 @@ def state(action: str, project_id: str = "") -> list[dict]:
 
 
 @server.tool()
-def label(action: str, project_id: str = "", name: str = "", color: str = "", description: str = "",
+def label(action: str, project_id: str = "", name: str = "",
           cursor: str | None = None, per_page: int = 100) -> dict:
     if action == "create":
-        labels.append({"id": f"label-{len(labels) + 1}", "name": name, "color": color})
+        labels.append({"id": f"label-{len(labels) + 1}", "name": name})
         return labels[-1]
     if action != "list":
         raise ValueError("unsupported operation")
