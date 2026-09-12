@@ -202,17 +202,15 @@ Bearings invocation examples:
 - `/bearings file` replaces today's `data/status-report-<YYYY-MM-DD>.md` from scratch and links it from the four-section chat digest.
 - `/bearings file include PRs` combines the dated report with live PR enrichment.
 
-Agent-only reference skills live under `.agents/skills/` and are loaded by firstmate at the trigger points named in [`AGENTS.md`](AGENTS.md).
+Agent-only reference skills live in the same `skills/` tree and are loaded by firstmate at the trigger points named in [`AGENTS.md`](AGENTS.md).
 
-### Two-tier skill layout
+### Skills tree
 
-Firstmate's skills live in two separate places with different audiences:
-
-- `.agents/skills/` - agent-loaded skills (this section's table, plus firstmate's agent-only reference skills). Every one of these assumes a live firstmate home and is meaningless, or actively misleading, installed anywhere else, so each carries `metadata.internal: true` in its frontmatter. That flag hides them from installer discovery (tools like the [skills.sh](https://skills.sh) `npx skills add` installer) without affecting how firstmate itself loads them - frontmatter metadata is inert to the agent's own skill loader.
-- `skills/` - public, installer-facing skills meant to be installed standalone into any project, independent of firstmate.
-  Each one is a self-contained skill with no dependency on firstmate's paths, tools, or vocabulary.
-  Today that is `skills/stow`, a generic session-knowledge-sweep skill that routes findings by explicit instruction first, then existing local conventions, then a private `.stow-notes.md` fallback, and curates tiered entries through decay, local archival, and user-approved on-demand offload proposals.
-  It intentionally shares no code with the firstmate-internal `.agents/skills/stow` it is named after, so the two can evolve independently.
+Every bundled skill lives once at `skills/<category>/<name>/SKILL.md`, laid out like an installer-facing skills repository so you can install one skill without taking the whole distribution.
+The category says what to expect: `core` is the operating contracts every home relies on, `missions` is the Plane ticket tier, `experimental` is backend- or integration-specific, and `deprecated` is redirect stubs kept for in-flight work.
+`.agents/skills/<name>` is a relative symlink into that tree for each skill this home actually loads, so activation is expressed by which links exist, and `.claude/skills` points at `.agents/skills`.
+Skills that assume a live firstmate home carry `metadata.internal: true` in their frontmatter, which hides them from installer discovery (tools like the [skills.sh](https://skills.sh) `npx skills add` installer) without affecting how firstmate itself loads them.
+[`docs/configuration.md`](docs/configuration.md#operational-home-layout-and-state) owns the layout and category scheme.
 
 ## Documentation
 

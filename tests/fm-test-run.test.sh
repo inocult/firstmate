@@ -152,6 +152,21 @@ init_changed_fixture_repo() {
   : >"$repo/.agents/skills/example/SKILL.md"
   : >"$repo/.agents/skills/harness-adapters/SKILL.md"
   : >"$repo/.agents/skills/harness-adapters/references/common/dispatch.md"
+  # The canonical skills tree beside the legacy spelling: skills/<category>/
+  # <name>/ is the source, .agents/skills/<name> an activation link into it,
+  # and a skill asset that a suite names by its activation-link spelling.
+  mkdir -p \
+    "$repo/skills/core/tree-example" \
+    "$repo/skills/core/harness-adapters/references/common" \
+    "$repo/skills/core/quota-array-dispatch" \
+    "$repo/skills/core/board/assets"
+  : >"$repo/skills/core/tree-example/SKILL.md"
+  : >"$repo/skills/core/harness-adapters/SKILL.md"
+  : >"$repo/skills/core/harness-adapters/references/common/dispatch.md"
+  : >"$repo/skills/core/quota-array-dispatch/SKILL.md"
+  : >"$repo/skills/core/board/assets/template.html"
+  ln -s ../../skills/core/tree-example "$repo/.agents/skills/tree-example"
+  printf '# .agents/skills/board/assets/template.html\n' >>"$repo/tests/fm-bearings-snapshot.test.sh"
   : >"$repo/.claude/settings.json"
   : >"$repo/.pi/extensions/fm-primary-pi-watch.ts"
   : >"$repo/.pi/extensions/fm-primary-turnend-guard.ts"
@@ -363,6 +378,45 @@ test_changed_dependency_selection_and_unmapped_failure() {
   assert_contains "$listed" "tests/fm-harness-adapter-instructions-live-e2e.test.sh" "harness adapter router selects opt-in instruction coverage"
   git -C "$repo" add .agents/skills/harness-adapters/SKILL.md
   git -C "$repo" -c user.name=test -c user.email=test@example.invalid commit -qm harness-adapter-router-change
+
+  # The same map by the canonical skills/<category>/<name>/ spelling.
+  printf '\n' >>"$repo/skills/core/tree-example/SKILL.md"
+  listed=$(cd "$repo" && bin/fm-test-run.sh --list --changed --base HEAD)
+  assert_contains "$listed" "tests/fm-ask-user-authority.test.sh" "canonical skill source selects pure contract coverage"
+  git -C "$repo" add skills/core/tree-example/SKILL.md
+  git -C "$repo" -c user.name=test -c user.email=test@example.invalid commit -qm canonical-skill-change
+
+  printf '\n' >>"$repo/skills/core/harness-adapters/references/common/dispatch.md"
+  listed=$(cd "$repo" && bin/fm-test-run.sh --list --changed --base HEAD)
+  assert_contains "$listed" "tests/fm-harness-adapter-references.test.sh" "canonical harness adapter reference selects portable structural coverage"
+  assert_contains "$listed" "tests/fm-harness-adapter-instructions-live-e2e.test.sh" "canonical harness adapter reference selects opt-in instruction coverage"
+  git -C "$repo" add skills/core/harness-adapters
+  git -C "$repo" -c user.name=test -c user.email=test@example.invalid commit -qm canonical-harness-adapter-reference-change
+
+  printf '\n' >>"$repo/skills/core/harness-adapters/SKILL.md"
+  listed=$(cd "$repo" && bin/fm-test-run.sh --list --changed --base HEAD)
+  assert_contains "$listed" "tests/fm-harness-adapter-references.test.sh" "canonical harness adapter router selects portable structural coverage"
+  assert_contains "$listed" "tests/fm-harness-adapter-instructions-live-e2e.test.sh" "canonical harness adapter router selects opt-in instruction coverage"
+  git -C "$repo" add skills/core/harness-adapters/SKILL.md
+  git -C "$repo" -c user.name=test -c user.email=test@example.invalid commit -qm canonical-harness-adapter-router-change
+
+  printf '\n' >>"$repo/skills/core/quota-array-dispatch/SKILL.md"
+  listed=$(cd "$repo" && bin/fm-test-run.sh --list --changed --base HEAD)
+  assert_contains "$listed" "tests/fm-ask-user-authority.test.sh" "canonical quota dispatch owner selects pure contract coverage"
+  assert_contains "$listed" "tests/fm-harness-adapter-instructions-live-e2e.test.sh" "canonical quota dispatch owner selects opt-in live coverage"
+  git -C "$repo" add skills/core/quota-array-dispatch/SKILL.md
+  git -C "$repo" -c user.name=test -c user.email=test@example.invalid commit -qm canonical-quota-owner-change
+
+  git -C "$repo" rm -q .agents/skills/tree-example
+  listed=$(cd "$repo" && bin/fm-test-run.sh --list --changed --base HEAD)
+  assert_contains "$listed" "tests/fm-ask-user-authority.test.sh" "a removed activation link selects pure contract coverage"
+  git -C "$repo" -c user.name=test -c user.email=test@example.invalid commit -qm activation-link-removed
+
+  printf '\n' >>"$repo/skills/core/board/assets/template.html"
+  listed=$(cd "$repo" && bin/fm-test-run.sh --list --changed --base HEAD)
+  assert_contains "$listed" "tests/fm-bearings-snapshot.test.sh" "a skill asset named by its activation-link spelling selects the referencing suite"
+  git -C "$repo" add skills/core/board/assets/template.html
+  git -C "$repo" -c user.name=test -c user.email=test@example.invalid commit -qm skill-asset-change
 
   printf '\n' >>"$repo/bin/fm-procevent-quota.sh"
   printf '\n' >>"$repo/bin/fm-quota-choose.sh"

@@ -281,7 +281,7 @@ family_for_basename() {
     fm-kimi-harness.test.sh|fm-muse-harness.test.sh|fm-rovo-harness.test.sh|fm-omp-harness.test.sh|fm-herdr-lab.test.sh|fm-lint.test.sh|\
     fm-lint-workflows.test.sh|\
     fm-operational-input.test.sh|fm-pi-primary-types.test.sh|\
-    fm-harness-adapter-references.test.sh|\
+    fm-harness-adapter-references.test.sh|fm-skills-tree.test.sh|\
     fm-send-popup-settle.test.sh|fm-send-settle.test.sh|\
     fm-subagent-pretool-check.test.sh|\
     fm-supervision-instructions.test.sh|fm-task-delivery.test.sh|\
@@ -1518,16 +1518,35 @@ families_for_changed_path() {
     bin/fm-ff-lib.sh|bin/fm-gotmp*|bin/*pretool*)
       printf '%s\n' pure-contract-unit
       ;;
-    .agents/skills/quota-array-dispatch/SKILL.md)
+    skills/*/quota-array-dispatch/SKILL.md|.agents/skills/quota-array-dispatch/SKILL.md)
       printf '%s\n' pure-contract-unit
       printf '%s\n' live-harness-optin
       ;;
+    skills/*/harness-adapters/SKILL.md|skills/*/harness-adapters/references/*|\
     .agents/skills/harness-adapters/SKILL.md|.agents/skills/harness-adapters/references/*)
       printf '%s\n' pure-contract-unit
       printf '%s\n' live-harness-optin
       ;;
-    .agents/skills/*/SKILL.md)
+    skills/*/*/SKILL.md|.agents/skills/*/SKILL.md)
       printf '%s\n' pure-contract-unit
+      ;;
+    .agents/skills/*)
+      # An activation link added, removed, or retargeted: the skills-tree
+      # structural suite (fm-skills-tree) is pure-contract-unit.
+      printf '%s\n' pure-contract-unit
+      ;;
+    skills/*/*/*)
+      # Any other file inside a canonical skill directory, such as an asset or
+      # a nested reference. A test may name it by the canonical path or by the
+      # .agents/skills/<name>/... spelling that resolves through the activation
+      # link, so the reference scan looks for both. A deleted file has no
+      # consuming suite left to select, the same rule the fixture case applies.
+      if [ -e "$path" ]; then
+        families_for_test_reference "$path" ".agents/skills/${path#skills/*/}" \
+          || printf '%s\n' "__unmapped__:$path"
+      else
+        families_for_test_reference "$path" ".agents/skills/${path#skills/*/}" || true
+      fi
       ;;
     .github/workflows/ci.yml|.no-mistakes.yaml)
       printf '%s\n' pure-contract-unit

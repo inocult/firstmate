@@ -15,6 +15,12 @@ The tracked code root contains the shared instruction, skill, documentation, wor
 `config/` holds local gitignored operating choices, including explicit extension bindings under `config/extensions.d/`, and `projects/` holds the local project clones that Firstmate reads but changes only through the narrow guarded and concrete captain-approved exceptions in `AGENTS.md`.
 Untracked files and directories whose names begin with `scratchpad` are also gitignored, so temporary scratch does not make porcelain-based secondmate sync guards treat a home as dirty.
 
+The tracked skills tree is `skills/<category>/<name>/SKILL.md`, the single source for every bundled skill, laid out the way an installer-facing skills repository is so one skill can be installed on its own without the whole distribution.
+The category expresses stability: `core` holds the operating contracts `AGENTS.md` loads at its named triggers and every home relies on, `missions` holds the Plane ticket tier (`prep`, `operation`, `breach`, `overwatch`, and `plane-missions`), `experimental` holds backend- or integration-specific skills, and `deprecated` holds redirect stubs and aliases kept for in-flight briefs.
+`.agents/skills/<name>` is a committed relative symlink into that tree for each skill this home actually loads, so activation is expressed by which links exist, `.claude/skills` stays a symlink to `.agents/skills`, and every `.agents/skills/<name>/...` path keeps resolving through its link.
+Audience follows location rather than hand-maintained copies: each skill exists exactly once, so a portable skill and one that assumes this home's private paths differ by category rather than by a second drifting copy, and `metadata.internal: true` in a skill's frontmatter still marks the ones that assume a live firstmate home for installers.
+A tool that enumerates tracked files rather than following a path, such as the [documentation audience inventory](documentation-audiences.json) and `bin/fm-test-run.sh`'s changed-file map, names the canonical `skills/` path, and `tests/fm-skills-tree.test.sh` pins the link contract.
+
 `bin/fm-spawn.sh` owns the base task-metadata fields it emits, while the runtime-backend section below owns backend-specific fields and selector interpretation.
 The producing PR and Relay helpers own the fields they append, `bin/fm-classify-lib.sh` owns status-event vocabulary, and `bin/fm-crew-state.sh` owns current-state reconciliation.
 Wake, watcher, away-mode, and Relay-specific state mechanics remain with their named scripts and reference sections rather than being duplicated into one exhaustive state tree here.
@@ -482,7 +488,7 @@ It never removes a live lock, leaves any other failure shape untouched, and prin
 The same deferred network stage performs guarded tracked-file sync and propagates declared inherited local material into each validated live home under that sequencing contract.
 Local routes use direct guarded filesystem operations, while remote routes delegate sync and allowlisted transfer through their configured SSH host without probing any unconfigured fleet.
 It emits `SECONDMATE_SYNC:` only when a home was skipped for an actionable sync reason, inheritance failed, or a divergent shared captain-preference copy was quarantined.
-When a running home advances and its loaded instruction surface (`AGENTS.md`, `bin/`, or `.agents/skills/`) changed, bootstrap sends the re-read nudge itself through the stable `fm-<id>` selector and reports the exact completed send as `BOOTSTRAP_INFO:`.
+When a running home advances and its loaded instruction surface (`AGENTS.md`, `bin/`, `skills/`, or the `.agents/skills/` activation links) changed, bootstrap sends the re-read nudge itself through the stable `fm-<id>` selector and reports the exact completed send as `BOOTSTRAP_INFO:`.
 If that send fails, bootstrap keeps an idempotent retry marker and emits `NUDGE_SECONDMATES:` with the failure reason.
 The same bootstrap run emits `SECONDMATE_LIVENESS:` only when a registered secondmate is skipped or its relaunch fails; already-live and successfully relaunched secondmates are handled silently.
 For a mid-session inherited local-material edit where tracked-file sync is not needed, run `bin/fm-config-push.sh`.

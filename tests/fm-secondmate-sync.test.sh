@@ -86,8 +86,9 @@ add_sm_worktree() {
 }
 
 # bump_primary <w> <mode>: advance the PRIMARY's main branch by one local commit.
-# instr changes the instruction surface (AGENTS.md, bin, .agents/skills) plus README;
-# readme changes only README. No push - the sync follows the primary's local HEAD.
+# instr changes the instruction surface (AGENTS.md, bin, .agents/skills, and the
+# canonical skills tree) plus README; readme changes only README. No push - the
+# sync follows the primary's local HEAD.
 bump_primary() {
   local w=$1 mode=$2
   printf 'r-%s\n' "$mode" >> "$w/main/README.md"
@@ -95,6 +96,8 @@ bump_primary() {
     printf 'v-%s\n' "$mode" > "$w/main/AGENTS.md"
     printf 'echo %s\n' "$mode" > "$w/main/bin/tool.sh"
     printf 's-%s\n' "$mode" > "$w/main/.agents/skills/note.md"
+    mkdir -p "$w/main/skills/core/note"
+    printf 's-%s\n' "$mode" > "$w/main/skills/core/note/SKILL.md"
   fi
   if [ "$mode" = bin ]; then
     printf 'echo %s-%s\n' "$mode" "$RANDOM" > "$w/main/bin/tool.sh"
@@ -1035,7 +1038,7 @@ test_remote_sync_reports_the_changed_instruction_surface() {
   git -C "$w/coderoot" fetch -q --no-tags "$w/main" "$c_instr"
   remote_sync "$w" sm "$c_instr"
   [ "$REMOTE_SYNC_RC" -eq 0 ] || fail "the instruction advance did not sync: $REMOTE_SYNC_OUT"
-  assert_contains "$REMOTE_SYNC_OUT" "instr=AGENTS.md,bin,.agents/skills" \
+  assert_contains "$REMOTE_SYNC_OUT" "instr=AGENTS.md,bin,.agents/skills,skills" \
     "the sync result did not name the changed instruction paths"
 
   bump_primary "$w" bin
