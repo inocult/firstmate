@@ -1,0 +1,11 @@
+$ bin/fm-brief.sh live-bad demo-proj --mode yolo-mode
+error: --mode must be one of no-mistakes, direct-PR, local-only (got 'yolo-mode')
+exit=1
+
+$ bin/fm-brief.sh live-scout2 demo-proj --scout --mode no-mistakes
+error: --mode applies only to ship briefs; a scout delivers a report and a secondmate charter is not a delivery contract
+exit=1
+
+# cross-mode leakage grep over the three ship briefs (expect no matches)
+$ grep -n "checks green\|ready in branch" direct-PR/brief.md; grep -n "done: PR" local-only/brief.md; grep -n "`done: PR {url}`\|ready in branch\|done: {summary}\|Firstmate will then instruct" no-mistakes/brief.md
+(no matches)
