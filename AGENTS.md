@@ -517,6 +517,7 @@ Mention cost as a courtesy when unusually much work is running, but never block 
 
 For Plane-backed implementation, load `plane-missions` before pickup, dispatch, PR delivery or recovery; Plane remains the shared backlog and the local queue is only this home's execution ledger.
 Load `operation` when the captain invokes `/operation` with a loose idea too big for one session, or with an existing map to work through; it plans that effort as a map of decision tickets and resolves them one at a time.
+Control performs that skill's tracker and conversation half directly; every step of it that would write inside a project worktree, including a research ticket's captured findings and a prototype's code, goes to a spawned crewmate under hard rule 1 rather than to an in-session subagent.
 
 The configured `tasks-axi` backend is the durable queue; the tracked default is `data/backlog.md`.
 It tracks work items only, never agents; persistent secondmates never appear as backlog items.

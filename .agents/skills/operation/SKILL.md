@@ -14,7 +14,7 @@ Adapted from Matt Pocock's `skills/engineering/wayfinder/SKILL.md`, retrieved wi
 Upstream: https://github.com/mattpocock/skills/blob/main/skills/engineering/wayfinder/SKILL.md
 The upstream MIT notice is preserved in `LICENSE` beside this file.
 This adaptation renames the skill to `/operation` and names the four type labels as the configured project carries them; the workflow, the ticket types, the fog-of-war discipline and the tracker-generic language are upstream's.
-One further line differs: the map template's example entry states the name-wrapping-a-link convention in words, because this repository's documentation link check reads upstream's placeholder target as a broken local link.
+Two further lines differ: the map template's example entry states the name-wrapping-a-link convention in words, because this repository's documentation link check reads upstream's placeholder target as a broken local link; and the tracker paragraph points at this repository's own tracker documentation and setup command, because upstream's pointers name a skill and a document section that do not exist here.
 
 A loose idea has arrived, too big for one agent session, and wrapped in fog: the way from here to the **destination** isn't visible yet. An operation is about finding that way, not charging at the destination. This skill charts the way as a **shared map** on the repo's issue tracker, then works its **decision tickets** (questions whose resolution is a decision, not slices of a build to execute) one at a time until the route is clear.
 
@@ -34,7 +34,7 @@ The map is a single issue on this repo's issue tracker, labelled `wayfinder:map`
 
 The map is an **index**, not a store. It lists the decisions made and points at the tickets that hold their detail; a decision lives in exactly one place, its ticket, so the map never restates it, only gists it and links.
 
-**Where the map, its child tickets, blocking, and frontier queries physically live is tracker-specific.** The issue tracker should have been provided to you. If not, tell the user to run `/setup-matt-pocock-skills`. Consult the tracker doc's "Wayfinding operations" section for how _this_ repo expresses them. If no tracker has been provided, default to the local-markdown tracker.
+**Where the map, its child tickets, blocking, and frontier queries physically live is tracker-specific.** The issue tracker should have been provided to you: in this home it is the configured shared tracker, whose configuration, limits and commands live in `docs/plane-missions.md` and `bin/fm-plane.py --help`. If no tracker has been provided, stop and tell the captain to run `/prep`; never chart the map locally instead, because a map off the shared tracker is invisible to every other session and to Overwatch.
 
 ### The map body
 

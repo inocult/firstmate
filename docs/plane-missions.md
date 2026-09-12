@@ -14,7 +14,8 @@ The bundled `breach` skill adapts Pocock's small `implement` entrypoint with att
 | GitHub PR | Implementation, checks, review and merge evidence |
 | Shared Git claim | One active implementation across participating Control instances |
 
-The Plane assignee is independent of execution ownership and is never modified.
+The Plane assignee is independent of execution ownership and is never modified on a mission ticket.
+The one exception is `/operation`'s own map and decision tickets, whose claim mechanism is their assignee: an operation session assigns the decision ticket it is about to resolve to the dev driving that map, and touches no other ticket's assignee.
 The operative's existing GitHub credentials determine PR authorship: your Firstmate normally opens your PRs, while a colleague reviews under their own identity.
 Agent self-review does not count as independent approval.
 An authorized human or configured merge process merges under the existing project policy.
@@ -25,6 +26,7 @@ For the full planning, implementation and separate-review flow, read [Control de
 ## Control skills
 
 Use `/prep` to prepare this home and a repository for missions before the first one is dispatched.
+Use `/operation` for an effort too big for one mission: it charts the effort as a map of decision tickets on the shared tracker and resolves them one at a time, until the cleared route becomes the ready-for-agent implementation tickets that `/overwatch` and `/breach` deliver.
 Use `/breach <ticket>` for one directed implementation or `/overwatch on` for bounded automatic queue pickup.
 Use `/overwatch off` to stop new intake while preserving active work, and `/overwatch status` to inspect its scope and bounds.
 Codex uses the same skill names with `$` instead of `/`.
