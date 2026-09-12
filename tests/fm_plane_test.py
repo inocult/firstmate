@@ -408,6 +408,21 @@ class AdapterTests(unittest.TestCase):
         self.assertNotEqual(replacement["execution"], record["execution"])
 
     @unittest.skipUnless(importlib.util.find_spec("mcp"), "optional MCP SDK missing; CI SDK lane is required")
+    def test_a_conflict_over_the_real_transport_still_names_the_label_and_its_id(self):
+        path = Path(self.tmp.name) / "setup.json"
+        setup = dict(self.config, states={})
+        setup.pop("ready_label_id")
+        setup.pop("pickup_state_ids")
+        path.write_text(json.dumps(setup))
+        err = io.StringIO()
+        argv = ["fm-plane.py", "--config", str(path), "ensure-label", "--name", "ready_for_agent"]
+        with patch.object(sys, "argv", argv), contextlib.redirect_stderr(err), self.assertRaises(SystemExit):
+            main()
+        message = json.loads(err.getvalue())["error"]
+        self.assertIn("ready-for-agent", message)
+        self.assertIn("label-ready", message)
+
+    @unittest.skipUnless(importlib.util.find_spec("mcp"), "optional MCP SDK missing; CI SDK lane is required")
     def test_real_mcp_protocol_and_ready_for_agent_discovery(self):
         async def exercise():
             async with Plane(self.config["mcp"]) as plane:

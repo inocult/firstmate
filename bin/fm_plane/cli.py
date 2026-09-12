@@ -432,6 +432,15 @@ async def run(args, config):
             registry.close()
 
 
+def adapter_error(exc):
+    """The MCP session runs inside an anyio task group, which re-raises adapter errors wrapped in a group."""
+    if isinstance(exc, AdapterError):
+        return exc
+    if isinstance(exc, BaseExceptionGroup):
+        return next(filter(None, (adapter_error(inner) for inner in exc.exceptions)), None)
+    return None
+
+
 def main():
     parser = argparse.ArgumentParser(description="Plane MCP intake, shared Git claims and Pocock implementation briefs")
     parser.add_argument("--config", help="private config path; default FM_HOME/config/plane.json")
@@ -471,10 +480,9 @@ def main():
                              setup=args.command in ("doctor", "ensure-label"))
         result = asyncio.run(run(args, config))
         print(json.dumps(result, indent=2))
-    except AdapterError as exc:
-        print(json.dumps({"error": str(exc)}), file=sys.stderr)
-        sys.exit(1)
-    except Exception:
+    except Exception as exc:
+        reported = adapter_error(exc)
         # Transport errors can include keys or private ticket contents.
-        print(json.dumps({"error": "adapter operation failed; claim retained; inspect connectivity/configuration"}), file=sys.stderr)
+        print(json.dumps({"error": str(reported) if reported else
+                          "adapter operation failed; claim retained; inspect connectivity/configuration"}), file=sys.stderr)
         sys.exit(1)
