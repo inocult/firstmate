@@ -1,4 +1,4 @@
-<h1 align="center">firstmate</h1>
+<h1 align="center">Firstmate - Control edition</h1>
 <p align="center">
   <a
     href="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-blue?style=flat-square"
@@ -18,11 +18,13 @@
   /></a>
 </p>
 
-<h3 align="center">Talk to one agent. Ship with a crew.</h3>
+<h3 align="center">One point of contact. A team of operatives.</h3>
 
-<p align="center">
-  <img alt="firstmate - talk to one agent, ship with a crew" src="assets/banner.png" width="100%" />
-</p>
+This fork uses a restrained hacker / heist-operative persona and adds [Plane mission intake](docs/plane-missions.md) for teams using repo-local Pocock engineering skills.
+Plane tickets remain the shared backlog, GitHub PRs carry implementation, and remote Git claims prevent duplicate pickup among participating Firstmates.
+Use `/sitrep` for status, `/debrief` for learnings, `/offgrid` for away supervision and `/refresh` for updates; existing commands and runtime identifiers remain compatible.
+The upstream architecture below remains the runtime foundation.
+
 
 ## What it is
 
@@ -183,6 +185,8 @@ Claude and grok use the slash form shown here; codex uses the same names with `$
 
 | Skill              | What it does                                                                                                                                  |
 | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/overwatch on/off/status` | Enable, pause or inspect bounded automatic pickup of ready-for-agent Plane tickets |
+| `/breach PLAT-27` | Dispatch one claimed ticket through the Pocock-adapted implementation workflow |
 | `/afk`             | Enter away-mode supervision: the sub-supervisor self-handles routine notifications in bash, escalates captain-relevant events and bounded declared-external-wait rechecks as batched digests, and actively alerts if delivery gets stuck while you step away |
 | `/ahoy`            | Recap visible session events since the prior real captain message plus visibly unanswered captain decisions, then guide the captain through any open decisions one at a time in agent-judged impact order; fall back to Bearings when invoked as the session's first real captain message |
 | `/bearings`        | Generate a concise four-section chat digest from bounded fleet state, including registered remote-home ledgers; use `/bearings file` to also replace today's dated report in `data/`, and add `include PRs` for live GitHub enrichment |

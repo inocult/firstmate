@@ -31,7 +31,8 @@
     "docs/zellij-backend.md",
     "docs/orca-backend.md",
     "docs/cmux-backend.md",
-    "docs/remote-secondmates.md"
+    "docs/remote-secondmates.md",
+    "docs/plane-missions.md"
   ],
   "requiredOwnerPointers": [
     {
@@ -495,6 +496,46 @@
     {
       "path": "skills/stow/SKILL.md",
       "audience": "public-product"
+    },
+    {
+      "path": ".agents/skills/plane-missions/SKILL.md",
+      "audience": "agent-runtime"
+    },
+    {
+      "path": ".agents/skills/sitrep/SKILL.md",
+      "audience": "agent-runtime"
+    },
+    {
+      "path": "docs/plane-missions.md",
+      "audience": "operator-current"
+    },
+    {
+      "path": "bin/requirements-plane.txt",
+      "audience": "operator-example"
+    },
+    {
+      "path": ".agents/skills/debrief/SKILL.md",
+      "audience": "agent-runtime"
+    },
+    {
+      "path": ".agents/skills/offgrid/SKILL.md",
+      "audience": "agent-runtime"
+    },
+    {
+      "path": ".agents/skills/refresh/SKILL.md",
+      "audience": "agent-runtime"
+    },
+    {
+      "path": ".agents/skills/overwatch/SKILL.md",
+      "audience": "agent-runtime"
+    },
+    {
+      "path": ".agents/skills/breach/SKILL.md",
+      "audience": "agent-runtime"
+    },
+    {
+      "path": "docs/control-delivery-workflow.md",
+      "audience": "operator-current"
     }
   ]
 }

@@ -10,6 +10,19 @@ permissions:
   contents: read
 
 jobs:
+  plane-adapter:
+    name: Plane adapter and MCP protocol
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r bin/requirements-plane.txt
+      - run: bin/fm-test-run.sh tests/fm-plane.test.sh
+        env:
+          FM_PLANE_PYTHON: python
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
