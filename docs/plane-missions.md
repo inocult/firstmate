@@ -36,12 +36,12 @@ No new daemon is installed and no idle heartbeat behavior is changed.
 
 ## Setup
 
-`/prep` performs this setup and owns the split between the home half Control writes directly and the project half a worker delivers.
-The schema below remains the authority on what that configuration contains.
+The `prep` skill owns the setup procedure: `/prep` walks it end to end, preparing this home and commissioning the repository's own documentation through a worker on the project's delivery path.
+This section owns what that setup has to produce, and is what the skill and a by-hand operator both work from: the prerequisites, the configuration schema, and the rule each value has to satisfy.
+Configuring a home without the skill means satisfying everything below, so there is no second procedure to follow.
 
 Requires Git, Python 3.10+, the optional MCP SDK in `bin/requirements-plane.txt`, and a reachable authenticated Plane MCP server.
-Install the optional SDK into a virtual environment and set `FM_PLANE_PYTHON` to that environment's Python executable when launching Firstmate.
-The same interpreter must be used for adapter commands.
+The SDK belongs in its own virtual environment, and `FM_PLANE_PYTHON` must name that environment's Python executable in the environment Firstmate is launched with, because every adapter command runs under that same interpreter.
 Each instance needs its own explicit `FM_HOME` and executor name.
 
 Store the following configuration privately at `FM_HOME/config/plane.json`.
@@ -82,14 +82,18 @@ The MCP workspace/base environment values must match this configuration.
 For a remote streamable HTTP server, replace `mcp` with `url` and optional `headers_from`, a map from header names to environment-variable names containing complete header values.
 Interactive OAuth setup remains with your MCP client; this adapter does not implement an OAuth login flow.
 
-Run `doctor` before configuring label and state IDs.
-It lists the project's actual states and labels, suggests the exact `ready-for-agent` label ID, and suggests pickup states in the backlog or unstarted groups.
-Set `ready_label_id` and `pickup_state_ids` from those confirmed results; a missing or ambiguous label needs explicit configuration.
+`ready_label_id`, `pickup_state_ids` and the lifecycle states carry identifiers that exist only inside the Plane project, so only that project's own current values can fill them.
+`doctor` is where those values come from: it is the only command that loads this configuration in setup mode, so it runs while those identifiers are still absent, and it returns the project's actual states and labels together with a suggested `ready-for-agent` label ID and the pickup candidates in its backlog and unstarted groups.
+It suggests that label ID only when exactly one label carries the name exactly, so a missing or ambiguous one has to be configured explicitly.
+Every identifier written here must be the id of the state or label whose name it is being configured for, because `doctor` returns each name beside its id and an id copied off a neighbouring entry satisfies every structural check and then leaves the queue permanently empty.
 The label is the planning team's promise that the ticket has sufficient scope and acceptance criteria.
 Pickup requires both this label and an eligible Backlog/Todo state, plus the existing dependency and shared-claim checks.
 In Progress, In Review, Done and cancelled states must never be configured as pickup states.
 The adapter preserves labels and assignees throughout delivery; the shared claim and lifecycle state prevent duplicate pickup even while the label remains.
 Old configurations using `states.ready` must migrate to these two fields; the label is not a workflow state.
+
+`list` is what proves a completed configuration, because it loads the file under full validation and reads one page of work items without writing anything, while `doctor`'s setup mode is exactly what skips those identifier checks.
+Both reach Plane only, and neither contacts `coordination_remote`, which nothing writes to until a claim pushes its shared record there, so a read-only `git ls-remote` against that remote is what proves it reachable before the first mission.
 
 All colleagues must use the same canonical `plane_url`, workspace, project and `coordination_remote` for the same queue.
 Prefer a private coordination repository if even opaque work-item IDs and executor names are sensitive.
