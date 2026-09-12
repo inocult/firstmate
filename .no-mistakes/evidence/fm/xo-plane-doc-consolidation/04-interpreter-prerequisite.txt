@@ -1,0 +1,28 @@
+### Prerequisite: adapter commands must run on the interpreter FM_PLANE_PYTHON names
+
+$ python3 -c 'import mcp'   # ambient interpreter, SDK not installed there
+ModuleNotFoundError: No module named 'mcp'
+
+$ /usr/bin/python3 bin/fm-plane.py doctor   # wrong interpreter
+{"error": "install the optional requirements-plane.txt in the adapter Python environment"}
+exit=1
+
+$ "$FM_PLANE_PYTHON" bin/fm-plane.py doctor   # interpreter FM_PLANE_PYTHON names
+{
+  "mcp_tools": [
+    "label",
+    "state",
+    "workitem",
+    "workitem_link",
+    "workitem_relation"
+  ],
+... (full project inventory returned, exit=0)
+
+### The same variable is what fm-spawn.sh uses to reach the adapter (bin/fm-spawn.sh:2264)
+# Shared Plane ownership applies to every worker harness, including relaunch.
+if [ "$KIND" != secondmate ] && [ -f "$DATA/$ID/plane.json" ]; then
+  "${FM_PLANE_PYTHON:-python3}" "$SCRIPT_DIR/fm-plane.py" check --task "$ID" >/dev/null || {
+    echo "error: Plane execution claim is not valid for this task; reconcile before dispatch" >&2
+    exit 1
+  }
+fi

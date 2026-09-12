@@ -1,0 +1,36 @@
+### Plane project as doctor reported it
+  states:  Backlog(...0001,backlog) Todo(...0002,unstarted) In Progress(...0003,started) In Review(...0004,started) Done(...0005,completed) Cancelled(...0006,cancelled)
+  labels:  bug(...000a)  ready-for-agent(...000b)  needs-design(...000c)
+  ticket 44444444-4444-4444-8444-000000000001 carries ready-for-agent and sits in Todo
+
+### A. config filled from doctor's own suggestions
+$ fm-plane.py claim --item $TICKET --request-id req-a1
+{
+  "execution": "9f68b5c2-6ce0-40c0-b4b5-eb9373084dbd",
+  "executor": "mathieu-control",
+  "item": "44444444-4444-4444-8444-000000000001",
+  "past_requests": [],
+  "phase": "implementing",
+  "pickup_state": "11111111-1111-4111-8111-000000000002",
+  "pr": null,
+  "project": "33333333-3333-4333-8333-000000000001",
+  "repository_url": "https://github.com/acme/monorepo",
+  "request_id": "req-a1",
+  "schema": 1,
+  "task": null,
+  "updated_at": 1789228166
+}
+exit=0
+Plane state writes observed by the server: 44444444-4444-4444-8444-000000000001 -> 11111111-1111-4111-8111-000000000003
+
+### B. ready_label_id copied off the neighbouring 'bug' row (a real label id, wrong name)
+$ fm-plane.py claim --item $TICKET --request-id req-b1
+{"error": "adapter operation failed; claim retained; inspect connectivity/configuration"}
+exit=1
+Plane state writes observed by the server: none
+
+### C. pickup_state_ids copied off the neighbouring 'In Review'/'Done' rows
+$ fm-plane.py claim --item $TICKET --request-id req-c1
+{"error": "pickup states must be separate from lifecycle states"}
+exit=1
+Plane state writes observed by the server: none

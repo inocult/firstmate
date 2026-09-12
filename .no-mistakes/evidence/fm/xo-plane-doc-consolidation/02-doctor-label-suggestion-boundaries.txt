@@ -1,0 +1,22 @@
+### project labels fixture: ambiguous
+["bug", "ready-for-agent", "ready-for-agent"]
+$ fm-plane.py doctor   (suggestion fields only)
+{
+  "suggested_ready_label_id": null,
+  "suggested_pickup_state_ids": [
+    "11111111-1111-4111-8111-000000000001",
+    "11111111-1111-4111-8111-000000000002"
+  ]
+}
+
+### project labels fixture: nearmiss
+["bug", "Ready-For-Agent", "ready-for-agent ", "ready-for-agent-v2"]
+$ fm-plane.py doctor   (suggestion fields only)
+{
+  "suggested_ready_label_id": null,
+  "suggested_pickup_state_ids": [
+    "11111111-1111-4111-8111-000000000001",
+    "11111111-1111-4111-8111-000000000002"
+  ]
+}
+

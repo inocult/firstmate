@@ -1,0 +1,116 @@
+By-hand operator follows ONLY the Setup section of docs/plane-missions.md.
+The /prep skill is not in this tree, so nothing else is available to follow.
+
+--- Step 1. Prerequisites: SDK in its own virtual environment, FM_PLANE_PYTHON names it
+$ python3 -m venv ~/plane-venv && ~/plane-venv/bin/pip install -r bin/requirements-plane.txt
+$ export FM_PLANE_PYTHON=~/plane-venv/bin/python
+  SDK present on that interpreter: mcp / python 3.14.7
+
+--- Step 2. Write the configuration schema to FM_HOME/config/plane.json
+    The three identifier fields cannot be filled yet; they only exist inside the Plane project.
+{
+  "plane_url": "https://plane.example.com",
+  "workspace_slug": "acme",
+  "project_id": "33333333-3333-4333-8333-000000000001",
+  "repository_url": "https://github.com/acme/monorepo",
+  "coordination_remote": "/tmp/nm-plane-harness/coordination.git",
+  "executor": "mathieu-control",
+  "mcp": {"command": "/tmp/nm-plane-venv/bin/python", "args": ["/tmp/nm-plane-harness/fake_plane_server.py"],
+          "env_from": {"PLANE_API_KEY": "PLANE_API_KEY"}}
+}
+
+--- Step 3. doctor: the only command that loads this configuration in setup mode
+$ $FM_PLANE_PYTHON bin/fm-plane.py doctor
+exit=0
+{
+  "mcp_tools": [
+    "label",
+    "state",
+    "workitem",
+    "workitem_link",
+    "workitem_relation"
+  ],
+  "project": "33333333-3333-4333-8333-000000000001",
+  "states": [
+    {
+      "id": "11111111-1111-4111-8111-000000000001",
+      "name": "Backlog",
+      "group": "backlog"
+    },
+    {
+      "id": "11111111-1111-4111-8111-000000000002",
+      "name": "Todo",
+      "group": "unstarted"
+    },
+    {
+      "id": "11111111-1111-4111-8111-000000000003",
+      "name": "In Progress",
+      "group": "started"
+    },
+    {
+      "id": "11111111-1111-4111-8111-000000000004",
+      "name": "In Review",
+      "group": "started"
+    },
+    {
+      "id": "11111111-1111-4111-8111-000000000005",
+      "name": "Done",
+      "group": "completed"
+    },
+    {
+      "id": "11111111-1111-4111-8111-000000000006",
+      "name": "Cancelled",
+      "group": "cancelled"
+    }
+  ],
+  "labels": [
+    {
+      "id": "22222222-2222-4222-8222-00000000000a",
+      "name": "bug"
+    },
+    {
+      "id": "22222222-2222-4222-8222-00000000000b",
+      "name": "ready-for-agent"
+    },
+    {
+      "id": "22222222-2222-4222-8222-00000000000c",
+      "name": "needs-design"
+    }
+  ],
+  "suggested_ready_label_id": "22222222-2222-4222-8222-00000000000b",
+  "suggested_pickup_state_ids": [
+    "11111111-1111-4111-8111-000000000001",
+    "11111111-1111-4111-8111-000000000002"
+  ],
+  "executor": "mathieu-control",
+  "note": "MCP connected; no ticket or claim changed"
+}
+
+--- Step 4. Fill the identifiers from doctor's own output, name beside id
+  ready_label_id   <- suggested_ready_label_id       22222222-2222-4222-8222-00000000000b
+  pickup_state_ids <- suggested_pickup_state_ids     ['11111111-1111-4111-8111-000000000001', '11111111-1111-4111-8111-000000000002']
+  states           <- ids beside the matching names  {"implementing": "11111111-1111-4111-8111-000000000003", "review": "11111111-1111-4111-8111-000000000004", "done": "11111111-1111-4111-8111-000000000005"}
+
+--- Step 5. The home now works: claim an eligible ticket
+$ $FM_PLANE_PYTHON bin/fm-plane.py claim --item 44444444-4444-4444-8444-000000000001 --request-id req-walk-1
+{
+  "execution": "bcfda3e2-3314-4d3a-be90-b37c8e05ed90",
+  "executor": "mathieu-control",
+  "item": "44444444-4444-4444-8444-000000000001",
+  "past_requests": [],
+  "phase": "implementing",
+  "pickup_state": "11111111-1111-4111-8111-000000000002",
+  "pr": null,
+  "project": "33333333-3333-4333-8333-000000000001",
+  "repository_url": "https://github.com/acme/monorepo",
+  "request_id": "req-walk-1",
+  "schema": 1,
+  "task": null,
+  "updated_at": 1789228343
+}
+exit=0
+
+Plane state write the server actually received: 44444444-4444-4444-8444-000000000001 -> 11111111-1111-4111-8111-000000000003
+  (Todo ...0002  ->  In Progress ...0003)
+Shared claim persisted in the coordination remote:
+  refs/heads/fm-plane/c288a5d51f8908bc6815ef7729915786505d073f112ddd0bbef64932262aa9aa
