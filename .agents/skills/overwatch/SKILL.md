@@ -43,7 +43,7 @@ Do not steal another executor's work, infer an expired claim, or change human as
 
 Read the configured Plane project in paginated batches, retaining the cursor during the scan.
 Consider only `ready-for-agent` implementation tickets in configured pickup states; read acceptance criteria and native dependencies before ranking eligible work by priority, then oldest creation time and ticket ID.
-Pocock's to-spec also applies this label: exclude parent specs, epics, maps and wayfinder decision tickets from automatic intake, and never execute a parent alongside its child slices.
+Pocock's to-spec also applies this label: exclude parent specs, epics, operation maps and decision tickets from automatic intake, and never execute a parent alongside its child slices.
 Read parent/child relationships and the project tracker conventions; if the ticket's role is unclear, hold it for classification instead of treating the label alone as implementation authority.
 Compare package/interface scope against active work and sequence genuinely dependent changes.
 If no safe candidate is found, record `defer --outcome empty`; the timer backs off to at most one hour and stays silent to the user.
