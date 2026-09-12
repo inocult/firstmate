@@ -14,8 +14,7 @@ The bundled `breach` skill adapts Pocock's small `implement` entrypoint with att
 | GitHub PR | Implementation, checks, review and merge evidence |
 | Shared Git claim | One active implementation across participating Control instances |
 
-The Plane assignee is independent of execution ownership and is never modified on a mission ticket.
-The one exception is `/operation`'s own map and decision tickets, whose claim mechanism is their assignee: an operation session assigns the decision ticket it is about to resolve to the dev driving that map, and touches no other ticket's assignee.
+The Plane assignee is independent of execution ownership and is never modified.
 The operative's existing GitHub credentials determine PR authorship: your Firstmate normally opens your PRs, while a colleague reviews under their own identity.
 Agent self-review does not count as independent approval.
 An authorized human or configured merge process merges under the existing project policy.
