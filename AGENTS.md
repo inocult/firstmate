@@ -516,7 +516,7 @@ Mention cost as a courtesy when unusually much work is running, but never block 
 
 ## 10. Backlog contract
 
-For Plane-backed implementation, load `plane-missions` before pickup, dispatch, PR delivery or recovery; Plane remains the shared backlog and the local queue is only this home's execution ledger.
+For tracker-backed implementation, load `plane-missions` before pickup, dispatch, PR delivery or recovery; the tracker remains the shared backlog and the local queue is only this home's execution ledger.
 [`docs/tracker-binding.md`](docs/tracker-binding.md) is the single owner of which tracker holds this home's tickets, which surface performs each ticket operation, and which operations no surface performs; skills speak only in its neutral vocabulary and point there instead of asserting a capability.
 Load `operation` when the captain invokes `/operation` with a loose idea too big for one session, or with an existing map to work through; it plans that effort as a map of decision tickets and resolves them one at a time.
 

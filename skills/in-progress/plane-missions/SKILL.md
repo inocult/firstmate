@@ -8,7 +8,7 @@ metadata:
 
 # plane-missions
 
-[`docs/tracker-binding.md`](../../../docs/tracker-binding.md) is the single owner of this home's tracker binding: tickets live in Plane, reached through the Plane MCP, in the configured project, and it names which surface performs each ticket operation and which operations no surface performs.
+[`docs/tracker-binding.md`](../../../docs/tracker-binding.md) is the single owner of this home's tracker binding, of which surface performs each ticket operation, and of which operations no surface performs.
 Read `docs/plane-missions.md` for configuration and limits and `bin/fm-plane.py --help` for commands.
 The tracker is the shared ticket backlog; preserve its human assignees and ticket content.
 Use the discovered readiness label and eligible pickup states from the setup guide.

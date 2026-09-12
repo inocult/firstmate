@@ -21,7 +21,7 @@ Do not install a competing coordinator skill named `implement` or call upstream 
 
 Load `plane-missions` and follow its claim, binding, worker dispatch and delivery procedures.
 [`docs/tracker-binding.md`](../../../docs/tracker-binding.md) owns which surface performs each ticket operation named here and which operations no surface performs.
-Resolve a human-readable ticket identifier to the ticket's UUID and verify the configured project and implementation repository before claiming.
+Resolve a display identifier such as `PLAT-27` to the ticket's UUID through the surface the binding document names for that operation, and verify the configured project and implementation repository before claiming.
 Read the ticket and its acceptance criteria; the claim itself verifies the readiness label, pickup state and blocking edges as the binding document states.
 If already claimed by this executor, reconcile and resume its existing task/PR rather than start another; another executor's claim is not available work.
 Record request ID before claim and reuse it after interruption.

@@ -19,6 +19,7 @@ A skill names the operation, and this document names the surface.
 The adapter is `bin/fm-plane.py`, invoked with the interpreter `FM_PLANE_PYTHON` names.
 It reaches the tracker through its own MCP client, which the tracker configuration points either at a stdio server the adapter starts for each command or at a remote streamable HTTP server.
 That client lives inside the adapter's process: the session cannot call its tools, and no skill may describe the adapter's server as a surface the session reaches.
+Every adapter command except `check` opens that connection before dispatching, so a command that changes nothing in the tracker still fails when the tracker is unreachable; only `check` runs without it.
 `doctor` proves only that this client connects and which tools that server advertises; it proves nothing about any operation outside the table below, so a passing `doctor` never licenses an operation this document does not list.
 
 The session connector is a Plane MCP server the harness itself attaches to the session, when one is configured.
@@ -49,9 +50,9 @@ The five canonical triage labels, of which the readiness label is one, are owned
 | Discover the project's states and labels | adapter `doctor` | reads every state and label with a setup-stage configuration and suggests the readiness label id and the pickup candidates; writes nothing |
 | Provision a project label | adapter `ensure-label` | creates the named label in the configured project, or adopts the one already carrying that exact name; refuses a name that exists twice or differs only by case, separators or punctuation; refuses when the connected server advertises no label-create tool; never applies a label to a ticket |
 | List tickets | adapter `list` | returns one unfiltered page of the configured project's work items with pagination metadata; readiness and pickup-state selection happens by reading the page and is verified again at claim |
-| Read one ticket | inside adapter `claim`, `sync`, `bind`, `complete` and `release` | retrieves the ticket by UUID as part of those commands; there is no standalone read |
+| Read one ticket | inside adapter `claim`, `sync`, `bind`, `complete` and `release`, and inside `pr`, `review` and `resume` through `sync` | retrieves the ticket by UUID as part of those commands; there is no standalone read |
 | Verify eligibility and claim | adapter `claim` | requires the readiness label, a pickup state, a title and description, no archived or draft flag, no linked PR, and every blocking edge inside the configured project finished; then writes the claim record and moves the ticket to implementing |
-| Inspect a claim | adapter `status` | reads the claim record without touching the tracker |
+| Inspect a claim | adapter `status` | reads the claim record and changes nothing in the tracker, but still requires the adapter's tracker connection to open |
 | Repair the tracker projection | adapter `sync` | re-applies the claimed phase's lifecycle state and PR link after an interrupted update |
 | Bind a local task | adapter `bind` | scaffolds the brief and writes the private execution receipt `data/<id>/plane.json` |
 | Validate ownership at dispatch | adapter `check` | run by `bin/fm-spawn.sh` whenever that receipt exists; reads the claim record only and never the tracker |
@@ -59,8 +60,9 @@ The five canonical triage labels, of which the readiness label is one, are owned
 | Move to review, return to implementing | adapter `review` and adapter `resume` | sets the lifecycle state while preserving the claim |
 | Complete | adapter `complete` | confirms the linked PR merged through the GitHub API and then sets done; never merges |
 | Release an unstarted claim | adapter `release` | restores the pickup state recorded at claim; refused once a PR is registered |
-| Transfer to another executor | adapter `transfer` | rewrites the claim record only and touches no ticket |
+| Transfer to another executor | adapter `transfer` | rewrites the claim record and changes nothing in the tracker, but still requires the adapter's tracker connection to open |
 | Automatic pickup policy and timer | `bin/fm-overwatch.py` | local policy and watcher registration only; reads and writes nothing in the tracker |
+| Resolve a display identifier such as `PLAT-27` to a ticket UUID | session connector | its work-item tool declares a retrieve-by-identifier action for exactly this; use it only after confirming, as the Surfaces section requires, that the connector resolves to the same workspace and the same project as the tracker configuration, and hand the returned UUID to the adapter |
 
 The adapter reaches the tracker with these MCP calls and no others: `state/list`, `label/list`, `label/create`, `workitem/list`, `workitem/retrieve`, `workitem/update` restricted to the state field, `workitem_link/list`, `workitem_link/create` and `workitem_relation/list`, falling back to the legacy tool names the server advertises when the resource tools are absent.
 
@@ -70,7 +72,6 @@ A skill must never assume one of these from the adapter, from a passing `doctor`
 
 - Create a ticket, or change its title, description, assignees, priority, labels or any other content.
 - Apply a label to a ticket or remove one, including the readiness label; `ensure-label` writes the project vocabulary and touches no ticket.
-- Resolve a display identifier such as `PLAT-27` to a ticket UUID.
 - Filter a listing by label, state, parent or any other field; `list` returns one unfiltered page.
 - List a parent's children, set or clear a parent, or compute the frontier, the open and unblocked children of a parent.
 - Create, change or remove a blocking edge; `claim` reads them and refuses on an unfinished one.
