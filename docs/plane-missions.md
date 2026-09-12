@@ -42,7 +42,8 @@ Configuring a home without the skill means satisfying everything below, so there
 
 Requires Git, Python 3.10+, the optional MCP SDK in `bin/requirements-plane.txt`, and a reachable authenticated Plane MCP server.
 The SDK belongs in its own virtual environment, and `FM_PLANE_PYTHON` must name that environment's Python executable in the environment Firstmate is launched with.
-Adapter commands must be invoked with that same interpreter, because `bin/fm-plane.py` run directly takes whatever `python3` is on PATH and then reports the missing SDK only as an opaque failure that hides the cause.
+Adapter commands must be invoked with that same interpreter.
+`bin/fm-plane.py` run directly takes whatever `python3` is on PATH instead, and without the SDK there it stops at the adapter's own `install the optional requirements-plane.txt in the adapter Python environment` error, whose hazard is answering it by installing the SDK into that interpreter and diverging from the environment `FM_PLANE_PYTHON` names.
 Each instance needs its own explicit `FM_HOME` and executor name.
 
 Store the following configuration privately at `FM_HOME/config/plane.json`.
