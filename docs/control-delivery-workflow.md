@@ -203,7 +203,7 @@ The patch adds capabilities; it does not activate automatic work in your live Pl
 
 ## Upstream references
 
-- [Wayfinder](https://github.com/mattpocock/skills/blob/main/skills/engineering/wayfinder/SKILL.md): decision maps and planning handoff.
+- [Wayfinder](https://github.com/mattpocock/skills/blob/main/skills/engineering/wayfinder/SKILL.md): the MIT-licensed decision-map workflow bundled as `/operation`.
 - [To Spec](https://github.com/mattpocock/skills/blob/main/skills/engineering/to-spec/SKILL.md): synthesis, testing seams and readiness labeling.
 - [To Tickets](https://github.com/mattpocock/skills/blob/main/skills/engineering/to-tickets/SKILL.md): vertical slices, blockers and readiness labeling.
 - [Implement](https://github.com/mattpocock/skills/blob/main/skills/engineering/implement/SKILL.md): the small MIT-licensed workflow adapted by Breach.
