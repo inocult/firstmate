@@ -1,8 +1,10 @@
 """CLI contract for Plane-backed missions.
 
 Config is private at FM_HOME/config/plane.json. A confirmed shared claim is
-required before bind/check can authorize a task. Plane mutations only update
+required before bind/check can authorize a task. Ticket mutations only update
 state and PR links, never assignees, descriptions, labels or ticket contents.
+The separate ensure-label command adds a label to the project vocabulary and
+touches no ticket, so provisioning cannot relabel work someone else owns.
 """
 
 import argparse
@@ -73,6 +75,68 @@ def description(item):
     value = item.get("description_html", "") or ""
     value = re.sub(r"</(?:p|h[1-6]|li|div|pre)>|<br\s*/?>", "\n", value, flags=re.I)
     return html.unescape(re.sub(r"<[^>]*>", "", value)).strip()
+
+
+def label_name(name):
+    if not isinstance(name, str) or not name or name != name.strip():
+        raise AdapterError("label name must be non-empty without surrounding whitespace")
+    if len(name) > 100 or re.search(r"[\x00-\x1f\x7f]", name):
+        raise AdapterError("label name must be at most 100 characters without control characters")
+    return name
+
+
+def label_color(color):
+    if color and not re.fullmatch(r"#[0-9A-Fa-f]{6}", color):
+        raise AdapterError("label color must be a hex code such as #EF4444")
+    return color
+
+
+async def project_labels(plane, project):
+    """Every label in the project, following the server's own pagination."""
+    labels = []
+    cursor = None
+    while True:
+        page = await plane.call("label", "list", project_id=project,
+                                per_page=100, **({"cursor": cursor} if cursor else {}))
+        labels.extend(rows(page))
+        if not isinstance(page, dict) or not page.get("next_page_results"):
+            return labels
+        next_cursor = page.get("next_cursor")
+        if not next_cursor or next_cursor == cursor:
+            raise AdapterError("label pagination did not advance")
+        cursor = next_cursor
+
+
+def label_named(labels, name):
+    matches = [label for label in labels if isinstance(label, dict) and label.get("name") == name]
+    if len(matches) > 1:
+        raise AdapterError("that label name already exists more than once; reconcile it before provisioning")
+    if matches and not matches[0].get("id"):
+        raise AdapterError("the existing label has no ID; inspect the project before provisioning")
+    return matches[0] if matches else None
+
+
+async def ensure_label(plane, project, name, color="", note=""):
+    """Add one label to the project vocabulary, or adopt the existing one unchanged."""
+    name, color = label_name(name), label_color(color)
+    existing = await project_labels(plane, project)
+    adopted = label_named(existing, name)
+    if adopted:
+        return {"project": project, "name": name, "id": adopted["id"], "created": False}
+    if any(isinstance(label, dict) and isinstance(label.get("name"), str)
+           and label["name"].casefold() == name.casefold() for label in existing):
+        raise AdapterError("a label differing only in case already exists; reconcile it before provisioning")
+    arguments = {"project_id": project, "name": name}
+    if color:
+        arguments["color"] = color
+    if note:
+        arguments["description"] = note
+    await plane.call("label", "create", **arguments)
+    # Confirm from the project's own listing; a create response is not proof it persisted.
+    created = label_named(await project_labels(plane, project), name)
+    if not created:
+        raise AdapterError("label creation was not confirmed; inspect the project before retrying")
+    return {"project": project, "name": name, "id": created["id"], "created": True}
 
 
 class Missions:
@@ -299,24 +363,15 @@ async def run(args, config):
     async with Plane(config["mcp"]) as plane:
         if args.command == "doctor":
             states = rows(await plane.call("state", "list", project_id=config["project_id"]))
-            labels = []
-            cursor = None
-            while True:
-                page = await plane.call("label", "list", project_id=config["project_id"],
-                                        per_page=100, **({"cursor": cursor} if cursor else {}))
-                labels.extend(rows(page))
-                if not isinstance(page, dict) or not page.get("next_page_results"):
-                    break
-                next_cursor = page.get("next_cursor")
-                if not next_cursor or next_cursor == cursor:
-                    raise AdapterError("label pagination did not advance")
-                cursor = next_cursor
+            labels = await project_labels(plane, config["project_id"])
             candidates = [label for label in labels if label.get("name") == "ready-for-agent"]
             return {"mcp_tools": sorted(plane.tools), "project": config["project_id"], "states": states,
                     "labels": labels,
                     "suggested_ready_label_id": candidates[0]["id"] if len(candidates) == 1 else None,
                     "suggested_pickup_state_ids": [s["id"] for s in states if s.get("group") in ("backlog", "unstarted")],
                     "executor": config["executor"], "note": "MCP connected; no ticket or claim changed"}
+        if args.command == "ensure-label":
+            return await ensure_label(plane, config["project_id"], args.name, args.color, args.description)
         if args.command == "list":
             # Preserve pagination; listing is candidate discovery, not claim authority.
             return await plane.call("workitem", "list", project_id=config["project_id"],
@@ -386,6 +441,10 @@ def main():
     parser.add_argument("--config", help="private config path; default FM_HOME/config/plane.json")
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("doctor", help="connect to MCP and inspect available tools without writing")
+    label = sub.add_parser("ensure-label", help="add one label to the project vocabulary; an existing one is adopted")
+    label.add_argument("--name", required=True, help="exact label name; repeat runs adopt it instead of duplicating it")
+    label.add_argument("--color", default="", help="hex code such as #EF4444, applied only when the label is created")
+    label.add_argument("--description", default="", help="applied only when the label is created")
     listing = sub.add_parser("list", help="read one page of work items; preserve pagination")
     listing.add_argument("--cursor", default="")
     check = sub.add_parser("check", help="validate shared ownership for a bound task, without MCP")
@@ -413,7 +472,9 @@ def main():
             cmd.add_argument("--to-executor", required=True)
     args = parser.parse_args()
     try:
-        config = load_config(args.config or home() / "config/plane.json", setup=args.command == "doctor")
+        # Provisioning runs before the lifecycle mapping exists, so it reads a setup-stage config.
+        config = load_config(args.config or home() / "config/plane.json",
+                             setup=args.command in ("doctor", "ensure-label"))
         result = asyncio.run(run(args, config))
         print(json.dumps(result, indent=2))
     except AdapterError as exc:

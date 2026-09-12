@@ -1,7 +1,9 @@
 """Behavior tests through adapter services, Git transport and real MCP framing."""
 import asyncio
+import contextlib
 import copy
 import importlib.util
+import io
 import json
 import os
 from pathlib import Path
@@ -18,7 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "bin"))
 from fm_plane.registry import AdapterError, Registry
 from fm_plane.mcp_client import Plane, rows
-from fm_plane.cli import Missions, bind_task, check_task, key_for, load_config, run
+from fm_plane.cli import Missions, bind_task, check_task, ensure_label, key_for, load_config, main, run
 
 
 class FakePlane:
@@ -26,9 +28,11 @@ class FakePlane:
         self.ticket = {"id": "item-1", "state": "ready", "name": "Export",
                        "description_stripped": "Acceptance: exports all rows", "assignees": ["human-a"], "labels": ["label-ready", "other"]}
         self.links = []
+        self.labels = []
         self.relations = {"dependencies": {"blocked_by": []}, "custom": {}}
         self.calls = []
         self.fail_update = False
+        self.drop_create = False
 
     async def __aenter__(self):
         return self
@@ -40,6 +44,14 @@ class FakePlane:
         self.calls.append((resource, action, args))
         if resource == "workitem_relation":
             return copy.deepcopy(self.relations)
+        if resource == "label":
+            if action == "create":
+                if self.drop_create:
+                    return {}
+                self.labels.append(dict({key: value for key, value in args.items() if key != "project_id"},
+                                        id="label-%d" % (len(self.labels) + 1)))
+                return copy.deepcopy(self.labels[-1])
+            return {"results": copy.deepcopy(self.labels), "next_page_results": False}
         if resource == "workitem_link":
             if action == "create":
                 self.links.append({"url": args["url"]})
@@ -76,6 +88,62 @@ class AdapterTests(unittest.TestCase):
 
     def claim(self):
         return asyncio.run(self.service.claim("item-1", "request-a"))
+
+    def ensure(self, **overrides):
+        fields = dict({"command": "ensure-label", "name": "needs-triage", "color": "", "description": ""}, **overrides)
+        with patch("fm_plane.cli.Plane", return_value=self.plane):
+            return asyncio.run(run(Namespace(**fields), self.config))
+
+    def label_names(self):
+        return [label["name"] for label in self.plane.labels]
+
+    def test_label_is_provisioned_once_and_adopted_on_every_later_run(self):
+        self.plane.labels = [{"id": "label-ready", "name": "ready-for-agent"}]
+        created = self.ensure(color="#EF4444", description="Needs triage")
+        self.assertTrue(created["created"])
+        self.assertEqual(self.label_names(), ["ready-for-agent", "needs-triage"])
+        again = self.ensure()
+        self.assertEqual((again["created"], again["id"]), (False, created["id"]))
+        adopted = self.ensure(name="ready-for-agent")
+        self.assertEqual((adopted["created"], adopted["id"]), (False, "label-ready"))
+        self.assertEqual(self.label_names(), ["ready-for-agent", "needs-triage"])
+        creates = [args for resource, action, args in self.plane.calls if (resource, action) == ("label", "create")]
+        self.assertEqual(creates, [{"project_id": "project-1", "name": "needs-triage",
+                                    "color": "#EF4444", "description": "Needs triage"}])
+
+    def test_provisioning_refuses_near_duplicates_and_invalid_input_without_writing(self):
+        self.plane.labels = [{"id": "label-1", "name": "Needs-Triage"}]
+        for overrides in ({}, {"name": "wontfix", "color": "red"}, {"name": " needs-info "}, {"name": ""}):
+            with self.assertRaises(AdapterError):
+                self.ensure(**overrides)
+        self.plane.labels = [{"id": "label-1", "name": "needs-triage"}, {"id": "label-2", "name": "needs-triage"}]
+        with self.assertRaises(AdapterError):
+            self.ensure()
+        self.assertNotIn("create", [action for resource, action, _ in self.plane.calls if resource == "label"])
+
+    def test_unconfirmed_label_creation_is_reported_rather_than_assumed(self):
+        self.plane.drop_create = True
+        with self.assertRaises(AdapterError):
+            self.ensure()
+        self.assertEqual(self.label_names(), [])
+
+    def test_provisioning_precedes_the_lifecycle_mapping_that_ticket_commands_require(self):
+        path = Path(self.tmp.name) / "unmapped.json"
+        unmapped = dict(self.config, states={})
+        unmapped.pop("ready_label_id")
+        unmapped.pop("pickup_state_ids")
+        path.write_text(json.dumps(unmapped))
+        out, err = io.StringIO(), io.StringIO()
+        argv = ["fm-plane.py", "--config", str(path), "ensure-label", "--name", "needs-triage"]
+        with patch("fm_plane.cli.Plane", return_value=self.plane), patch.object(sys, "argv", argv), \
+                contextlib.redirect_stdout(out):
+            main()
+        self.assertEqual(json.loads(out.getvalue())["id"], "label-1")
+        self.assertEqual(self.label_names(), ["needs-triage"])
+        with patch.object(sys, "argv", argv[:3] + ["list"]), contextlib.redirect_stderr(err), \
+                self.assertRaises(SystemExit):
+            main()
+        self.assertIn("error", json.loads(err.getvalue()))
 
     def test_label_required_and_active_or_done_tickets_excluded(self):
         for labels, state in [([], "ready"), (["label-ready"], "active"),
@@ -326,6 +394,10 @@ class AdapterTests(unittest.TestCase):
                 self.assertEqual(labels[0]["name"], "ready-for-agent")
                 page = await plane.call("workitem", "list", project_id="project-1")
                 self.assertEqual(page["next_cursor"], "page-2")
+                provisioned = await ensure_label(plane, "project-1", "needs-triage", "#EF4444")
+                self.assertTrue(provisioned["created"])
+                adopted = await ensure_label(plane, "project-1", "needs-triage")
+                self.assertEqual((adopted["created"], adopted["id"]), (False, provisioned["id"]))
                 service = Missions(self.config, plane, self.registry)
                 claimed = await service.claim("item-1", "mcp-request")
                 self.assertEqual(claimed["phase"], "implementing")
