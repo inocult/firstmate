@@ -1,0 +1,129 @@
+### npx skills --version
+1.5.26
+
+### install: npx skills add <repo> --skill stow -a claude-code -y (empty project)
+
+│
+●   claude-code_2-1-267_agent  Agent detected — installing non-interactively
+[?25l│
+◇  Source: /home/inocult/.no-mistakes/worktrees/930731c14da1/01M2BXDEQFASY1K4XPDHFE0P4T
+[?25h[?25l│
+◇  Local path validated
+[?25h[?25l│
+◇  Found 29 skills
+[?25h│
+●  Selected 1 skill: stow
+
+│
+◇  Installation Summary ──╮
+│                         │
+│  ./.agents/skills/stow  │
+│    copy → Claude Code   │
+│                         │
+├─────────────────────────╯
+[?25l│
+◇  Installation complete
+[?25h
+│
+◇  Installed 1 skill ─────────╮
+│                             │
+│  ✓ stow (copied)            │
+│    → ./.claude/skills/stow  │
+│                             │
+├─────────────────────────────╯
+
+│
+└  Done!  Review skills before use; they run with full agent permissions.
+
+
+### installed files
+./.claude/skills/stow/SKILL.md
+./skills-lock.json
+
+### installed SKILL.md: /tmp/fm-skills-probe.lUbhGP/install/.claude/skills/stow/SKILL.md
+lines: 151
+frontmatter:
+name: stow
+description: Sweep the current conversation for durable knowledge - user preferences, project facts, operational gotchas, standing decisions, and unfinished next steps - and file each through explicit instructions, existing local conventions, or the private `.stow-notes.md` fallback, curating tiered, decaying destination files as it writes. Use when the user invokes /stow, asks to save or write down what was learned this session, or before a context reset or long break.
+user-invocable: true
+---
+internal marker present: 0
+identical to skills/fieldcraft/stow/SKILL.md: yes
+identical to skills/orders/stow/SKILL.md: no
+
+### discovery: npx skills add <repo> -a claude-code -y (no --skill)
+
+│
+●   claude-code_2-1-267_agent  Agent detected — installing non-interactively
+[?25l│
+◇  Source: /home/inocult/.no-mistakes/worktrees/930731c14da1/01M2BXDEQFASY1K4XPDHFE0P4T
+[?25h[?25l│
+◇  Local path validated
+[?25h[?25l│
+◇  Found 1 skill
+[?25h│
+●  Skill: stow
+│
+│  Sweep the current conversation for durable knowledge - user preferences, project facts, operational gotchas, standing decisions, and unfinished next steps - and file each through explicit instructions, existing local conventions, or the private `.stow-notes.md` fallback, curating tiered, decaying destination files as it writes. Use when the user invokes /stow, asks to save or write down what was learned this session, or before a context reset or long break.
+
+│
+◇  Installation Summary ──╮
+│                         │
+│  ./.agents/skills/stow  │
+│    copy → Claude Code   │
+│                         │
+├─────────────────────────╯
+[?25l│
+◇  Installation complete
+[?25h
+│
+◇  Installed 1 skill ─────────╮
+│                             │
+│  ✓ stow (copied)            │
+│    → ./.claude/skills/stow  │
+│                             │
+├─────────────────────────────╯
+
+│
+└  Done!  Review skills before use; they run with full agent permissions.
+
+
+### discovery-installed files
+./.claude/skills/stow/SKILL.md
+
+### adversarial: --skill ahoy (internal-only skill, no portable variant)
+
+│
+●   claude-code_2-1-267_agent  Agent detected — installing non-interactively
+[?25l│
+◇  Source: /home/inocult/.no-mistakes/worktrees/930731c14da1/01M2BXDEQFASY1K4XPDHFE0P4T
+[?25h[?25l│
+◇  Local path validated
+[?25h[?25l│
+◇  Found 29 skills
+[?25h│
+●  Selected 1 skill: ahoy
+
+│
+◇  Installation Summary ──╮
+│                         │
+│  ./.agents/skills/ahoy  │
+│    copy → Claude Code   │
+│                         │
+├─────────────────────────╯
+[?25l│
+◇  Installation complete
+[?25h
+│
+◇  Installed 1 skill ─────────╮
+│                             │
+│  ✓ ahoy (copied)            │
+│    → ./.claude/skills/ahoy  │
+│                             │
+├─────────────────────────────╯
+
+│
+└  Done!  Review skills before use; they run with full agent permissions.
+
+
+./.claude/skills/ahoy/SKILL.md

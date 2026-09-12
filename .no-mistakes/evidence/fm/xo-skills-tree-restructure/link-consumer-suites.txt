@@ -1,0 +1,18 @@
+### bash tests/fm-bearings-board.test.sh (board builder reads the shipped template through .agents/skills/bearings)
+ok - build fails when reconcile cannot prove a live listener
+ok - every decision card carries exactly one reconcile choice
+ok - build refuses a payload that occupies the reserved reconcile value
+ok - build reserves reconcile across non-decision cards
+exit=0
+
+### bash tests/fm-bearings-board-render.test.sh
+ok - a warning-only board reports nothing queued and still shows the warning
+ok - omitted warnings remain separate from omitted queued work
+ok - an omitted kind renders exactly as queued work always did
+exit=0
+
+### bash tests/fm-brief.test.sh (brief points crew at .agents/skills/captain-hold-lifecycle)
+ok - fm-brief.sh: investigation and visual-review completions load the shared decision policy
+ok - fm-brief: scout and secondmate code paths still scaffold well-formed briefs
+ok - fm-brief.sh: scout Lavish hosting follows the bootstrap lavish-axi floor
+exit=0

@@ -1,0 +1,10 @@
+### bash tests/fm-test-run.test.sh
+ok - changed-file selection stays conservative (never silent full suite)
+ok - changed selection covers dependents, fails closed for live unmapped source, and accepts retired unconsumed source
+ok - changed defaults to bounded automatic scheduling with serial override
+ok - empty changed selection emits deterministic text and JSON summaries
+ok - aggregate exit reflects any script failure
+ok - gate-skip accounting is honest and non-failing
+ok - fail-on-gate-skip converts herdr-not-found into a hard failure
+ok - family, all, changed, and script selections ignore parallel hints
+exit=1

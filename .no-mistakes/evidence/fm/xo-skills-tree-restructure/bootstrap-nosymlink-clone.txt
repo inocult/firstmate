@@ -1,0 +1,27 @@
+### adversarial: clone the branch tip with core.symlinks=false (Git for Windows default) and run bootstrap's activation-link detector against it
+Note: switching to '9b762b7f99636ab408e7dabbf637224a3d2da02c'.
+
+You are in 'detached HEAD' state. You can look around, make experimental
+changes and commit them, and you can discard any commits you make in this
+state without impacting any branches by switching back to a branch.
+
+If you want to create a new branch to retain commits you create, you may
+do so (now or later) by using -c with the switch command. Example:
+
+  git switch -c <new-branch-name>
+
+Or undo this operation with:
+
+  git switch -
+
+Turn off this advice by setting config variable advice.detachedHead to false
+
+entries under .agents/skills that are regular files: 29, symlinks: 0
+content of .agents/skills/stow as checked out: ../../skills/orders/stow
+
+--- detect_skills_activation_links output:
+MISSING_MANUAL: skills activation links (.agents/skills/afk, .agents/skills/ahoy, .agents/skills/ask-user-authority, .agents/skills/bearings, .agents/skills/bootstrap-diagnostics, .agents/skills/breach, .agents/skills/captain-hold-lifecycle, .agents/skills/debrief, .agents/skills/decision-hold-lifecycle, .agents/skills/diagnostic-reasoning, .agents/skills/firstmate-codexapp, .agents/skills/firstmate-coding-guidelines, .agents/skills/firstmate-orca, .agents/skills/fmx-respond, .agents/skills/harness-adapters, .agents/skills/offgrid, .agents/skills/operation, .agents/skills/overwatch, .agents/skills/plane-missions, .agents/skills/prep, .agents/skills/process-event-sources, .agents/skills/project-management, .agents/skills/quota-array-dispatch, .agents/skills/refresh, .agents/skills/secondmate-provisioning, .agents/skills/sitrep, .agents/skills/stow, .agents/skills/stuck-crewmate-recovery, .agents/skills/updatefirstmate are regular files, not symlinks; run git config core.symlinks true, then re-checkout .agents/skills so the links resolve)
+exit=0
+
+--- control: same detector on this symlink-capable checkout prints nothing:
+exit=0 (no output above means no diagnostic)

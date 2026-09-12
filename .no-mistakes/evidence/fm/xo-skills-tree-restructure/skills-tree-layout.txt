@@ -1,0 +1,86 @@
+### canonical tree: skills/<category>/<name>/SKILL.md
+skills/deprecated/decision-hold-lifecycle/SKILL.md
+skills/fieldcraft/stow/SKILL.md
+skills/in-progress/breach/SKILL.md
+skills/in-progress/firstmate-codexapp/SKILL.md
+skills/in-progress/firstmate-orca/SKILL.md
+skills/in-progress/fmx-respond/SKILL.md
+skills/in-progress/operation/SKILL.md
+skills/in-progress/overwatch/SKILL.md
+skills/in-progress/plane-missions/SKILL.md
+skills/in-progress/prep/SKILL.md
+skills/orders/afk/SKILL.md
+skills/orders/ahoy/SKILL.md
+skills/orders/bearings/SKILL.md
+skills/orders/stow/SKILL.md
+skills/orders/updatefirstmate/SKILL.md
+skills/playbooks/ask-user-authority/SKILL.md
+skills/playbooks/bootstrap-diagnostics/SKILL.md
+skills/playbooks/captain-hold-lifecycle/SKILL.md
+skills/playbooks/debrief/SKILL.md
+skills/playbooks/diagnostic-reasoning/SKILL.md
+skills/playbooks/firstmate-coding-guidelines/SKILL.md
+skills/playbooks/harness-adapters/SKILL.md
+skills/playbooks/offgrid/SKILL.md
+skills/playbooks/process-event-sources/SKILL.md
+skills/playbooks/project-management/SKILL.md
+skills/playbooks/quota-array-dispatch/SKILL.md
+skills/playbooks/refresh/SKILL.md
+skills/playbooks/secondmate-provisioning/SKILL.md
+skills/playbooks/sitrep/SKILL.md
+skills/playbooks/stuck-crewmate-recovery/SKILL.md
+
+### skills counted: 30 canonical, 29 activation links, 0 non-link entries under .agents/skills
+
+### activation links (.agents/skills/<name> -> ../../skills/<category>/<name>)
+afk -> ../../skills/orders/afk
+ahoy -> ../../skills/orders/ahoy
+ask-user-authority -> ../../skills/playbooks/ask-user-authority
+bearings -> ../../skills/orders/bearings
+bootstrap-diagnostics -> ../../skills/playbooks/bootstrap-diagnostics
+breach -> ../../skills/in-progress/breach
+captain-hold-lifecycle -> ../../skills/playbooks/captain-hold-lifecycle
+debrief -> ../../skills/playbooks/debrief
+decision-hold-lifecycle -> ../../skills/deprecated/decision-hold-lifecycle
+diagnostic-reasoning -> ../../skills/playbooks/diagnostic-reasoning
+firstmate-codexapp -> ../../skills/in-progress/firstmate-codexapp
+firstmate-coding-guidelines -> ../../skills/playbooks/firstmate-coding-guidelines
+firstmate-orca -> ../../skills/in-progress/firstmate-orca
+fmx-respond -> ../../skills/in-progress/fmx-respond
+harness-adapters -> ../../skills/playbooks/harness-adapters
+offgrid -> ../../skills/playbooks/offgrid
+operation -> ../../skills/in-progress/operation
+overwatch -> ../../skills/in-progress/overwatch
+plane-missions -> ../../skills/in-progress/plane-missions
+prep -> ../../skills/in-progress/prep
+process-event-sources -> ../../skills/playbooks/process-event-sources
+project-management -> ../../skills/playbooks/project-management
+quota-array-dispatch -> ../../skills/playbooks/quota-array-dispatch
+refresh -> ../../skills/playbooks/refresh
+secondmate-provisioning -> ../../skills/playbooks/secondmate-provisioning
+sitrep -> ../../skills/playbooks/sitrep
+stow -> ../../skills/orders/stow
+stuck-crewmate-recovery -> ../../skills/playbooks/stuck-crewmate-recovery
+updatefirstmate -> ../../skills/orders/updatefirstmate
+
+### committed mode of every link
+     29 120000
+
+### .claude/skills -> ../.agents/skills; SKILL.md reachable through the alias:
+29 reachable
+
+### skill not activated in this home (no link): 
+skills/fieldcraft/stow/
+
+### runtime consumers resolve through the links
+fm-bearings-board.sh template -> /home/inocult/.no-mistakes/worktrees/930731c14da1/01M2BXDEQFASY1K4XPDHFE0P4T/skills/orders/bearings/assets/board-template.html (exists)
+fm-branch-prompt.sh playbook -> /home/inocult/.no-mistakes/worktrees/930731c14da1/01M2BXDEQFASY1K4XPDHFE0P4T/skills/playbooks/stuck-crewmate-recovery/SKILL.md (74 lines)
+fm-brief.sh completion gate -> /home/inocult/.no-mistakes/worktrees/930731c14da1/01M2BXDEQFASY1K4XPDHFE0P4T/skills/playbooks/captain-hold-lifecycle/SKILL.md (exists)
+
+### two stow variants: diff stat
+differing lines: 414
+7:<!-- maintainers: this is the public, installer-facing skill. Keep it standalone, with no private project paths, tool assumptions, or environment branching. The firstmate-internal counterpart lives at skills/orders/stow/SKILL.md - deliberately a separate file with no shared code. Keep them independent. -->
+44:      Then keep it out of git: add a `.stow-notes.md` line to a `.gitignore` file in the current directory - an ordinary file at that path, not git's internal exclude mechanism, which can resolve outside the working directory in a linked worktree.
+metadata:
+  internal: true
+---

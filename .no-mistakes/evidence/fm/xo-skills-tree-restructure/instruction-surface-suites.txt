@@ -1,0 +1,13 @@
+### bash tests/fm-update.test.sh
+ok - T1 main + secondmate fast-forward (single-parent), reread + restart signalled
+ok - T3d a skills/-only advance rereads and restarts the secondmate
+ok - T3d an already-stopped secondmate is left to startup recovery
+exit=0
+
+### bash tests/fm-secondmate-sync.test.sh
+ok - T8c failed bootstrap nudge is surfaced and recorded for retry
+exit=0
+
+### bash tests/fm-bootstrap.test.sh
+not ok - backend=herdr must fail closed on its own missing session CLI (missing: 'MISSING_MANUAL: herdr (instructions: https://herdr.dev)')
+exit=1

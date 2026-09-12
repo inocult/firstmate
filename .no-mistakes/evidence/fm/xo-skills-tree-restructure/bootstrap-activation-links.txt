@@ -1,0 +1,3 @@
+### tests/fm-bootstrap.test.sh :: test_skills_activation_links_checked_out_as_files_are_reported (run in isolation; the full file aborts earlier on a pre-existing herdr case caused by /usr/bin/herdr being installed on this host, which fails identically at base commit f5952ec)
+ok - bootstrap: activation links checked out as regular files are reported, real symlinks are silent
+exit=0
