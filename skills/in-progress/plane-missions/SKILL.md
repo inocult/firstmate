@@ -25,7 +25,7 @@ The generated brief connects the ticket to repo-local engineering disciplines wi
 Discover installed skills and invocation policies rather than guessing paths or automatically invoking user-only workflows.
 Control selects tickets and manages delivery; operatives implement the accepted scope and use temporary review helpers within it.
 Keep the pipeline's branch custody: in no-mistakes mode, do not preempt its PR creation with a separate draft PR.
-In direct-PR mode, register the draft PR after the first meaningful diff and reuse it.
+In direct-PR mode, register the draft PR after the first meaningful diff and reuse it, registering its URL once and before review because the binding document records that re-registering moves the ticket backwards.
 
 On PR delivery, record the PR on the ticket, move the ticket to the review lifecycle state when ready, and retain the claim while waiting.
 Keep ordinary Firstmate PR monitoring active and synchronize the tracker when relevant events arrive.

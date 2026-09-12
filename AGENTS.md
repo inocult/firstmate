@@ -253,7 +253,7 @@ Cloning or registering a project is add intake and uses the same trigger.
 That skill owns registry syntax, delivery-mode selection, outward-facing consent, clone and initialization procedure, safe rollback, and removal preflight.
 Project creation never authorizes an unmentioned remote, and project removal never bypasses that preflight or unlanded-work checks; hard rule 1's concrete captain-approved project operation exception remains available when its exact conditions are met.
 
-Load `prep` when the captain invokes `/prep`, or before the first mission against a repository this home has not prepared for Plane.
+Load `prep` when the captain invokes `/prep`, or before the first mission against a repository this home has not prepared for the tracker.
 It owns the split between the home half Control performs directly and the project half a worker delivers.
 
 Load `secondmate-provisioning` before creating, seeding, validating, launching, handing backlog to, recovering, pushing inherited local material into, or retiring a secondmate home, and before editing `data/secondmates.md`.
@@ -566,9 +566,9 @@ The skill owns the guarded fleet update and restart procedure; it never touches 
 
 These skills are not captain-invocable; load them only at their precise triggers.
 
-- `overwatch` - load for automatic Plane pickup requests or an `overwatch:` check wake; its policy owns bounded intake and watcher continuity.
-- `breach` - load for an explicit Plane implementation request or a selected ticket routed by Overwatch.
-- `plane-missions` - load before working with Plane tickets, a task containing `data/<id>/plane.json`, or a request to implement a Pocock-created Plane ticket.
+- `overwatch` - load for automatic ticket pickup requests or an `overwatch:` check wake; its policy owns bounded intake and watcher continuity.
+- `breach` - load for an explicit ticket implementation request or a selected ticket routed by Overwatch.
+- `plane-missions` - load before working with tracker tickets, a task containing `data/<id>/plane.json`, or a request to implement a Pocock-created ticket.
 
 - `bootstrap-diagnostics` - load whenever the session-start digest's bootstrap or network-checks section prints an actionable diagnostic line (`MISSING:`, `MISSING_MANUAL:`, `PRESENTATION_UNAVAILABLE:`, `BACKEND_INVALID:`, `NEEDS_GH_AUTH`, `TANGLE:`, `STARTUP_MEMORY_BUDGET:`, `CREW_DISPATCH: invalid`, `FLEET_SYNC:`, `NETWORK_CHECKS:`, `HOME_SUMMARY:`, `BACKLOG_RECONCILE:`, `SECONDMATE_SYNC:`, `SECONDMATE_LIVENESS:`, `SECONDMATE_HANDOFF:`, `NUDGE_SECONDMATES:`, or `FMX:`), or when `BOOTSTRAP_INFO:` says an interrupted backlog cleanup may have left an endpoint or local copy; silence and other `BOOTSTRAP_INFO:` facts need no load.
 - `diagnostic-reasoning` - load before scoping a reported bug and before acting on a diagnostic report.

@@ -56,12 +56,11 @@ The five canonical triage labels, of which the readiness label is one, are owned
 | Repair the tracker projection | adapter `sync` | re-applies the claimed phase's lifecycle state and PR link after an interrupted update |
 | Bind a local task | adapter `bind` | scaffolds the brief and writes the private execution receipt `data/<id>/plane.json` |
 | Validate ownership at dispatch | adapter `check` | run by `bin/fm-spawn.sh` whenever that receipt exists; reads the claim record only and never the tracker |
-| Record the PR on the ticket | adapter `pr` | adds one work-item link and changes no other ticket field |
+| Record the PR on the ticket | adapter `pr` | adds one work-item link, but shares its dispatch with `review` and `resume`, so it also rewrites the claim phase to implementing and writes the implementing lifecycle state to the ticket; re-registering a PR URL on an execution already in review moves the ticket backwards, so the call is not idempotent and must run before `review`, and `sync` is the surface that repairs a missing link without changing phase |
 | Move to review, return to implementing | adapter `review` and adapter `resume` | sets the lifecycle state while preserving the claim |
 | Complete | adapter `complete` | confirms the linked PR merged through the GitHub API and then sets done; never merges |
 | Release an unstarted claim | adapter `release` | restores the pickup state recorded at claim; refused once a PR is registered |
 | Transfer to another executor | adapter `transfer` | rewrites the claim record and changes nothing in the tracker, but still requires the adapter's tracker connection to open |
-| Automatic pickup policy and timer | `bin/fm-overwatch.py` | local policy and watcher registration only; reads and writes nothing in the tracker |
 | Resolve a display identifier such as `PLAT-27` to a ticket UUID | session connector | its work-item tool declares a retrieve-by-identifier action for exactly this; use it only after confirming, as the Surfaces section requires, that the connector resolves to the same workspace and the same project as the tracker configuration, and hand the returned UUID to the adapter |
 
 The adapter reaches the tracker with these MCP calls and no others: `state/list`, `label/list`, `label/create`, `workitem/list`, `workitem/retrieve`, `workitem/update` restricted to the state field, `workitem_link/list`, `workitem_link/create` and `workitem_relation/list`, falling back to the legacy tool names the server advertises when the resource tools are absent.
