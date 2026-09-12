@@ -36,9 +36,9 @@ No new daemon is installed and no idle heartbeat behavior is changed.
 
 ## Setup
 
-The `prep` skill owns the setup procedure: `/prep` walks it end to end, preparing this home and commissioning the repository's own documentation through a worker on the project's delivery path.
+The [prep skill](../.agents/skills/prep/SKILL.md) owns the setup procedure: `/prep` walks it end to end, preparing this home and commissioning the repository's own documentation through a worker on the project's delivery path.
 This section owns what that setup has to produce, and is what the skill and a by-hand operator both work from: the prerequisites, the configuration schema, and the rule each value has to satisfy.
-Configuring a home without the skill means satisfying everything below, so there is no second procedure to follow.
+This section owns the configuration file itself, so an operator configuring `plane.json` by hand satisfies what is below rather than following a second procedure.
 
 Requires Git, Python 3.10+, the optional MCP SDK in `bin/requirements-plane.txt`, and a reachable authenticated Plane MCP server.
 The SDK belongs in its own virtual environment, and `FM_PLANE_PYTHON` must name that environment's Python executable in the environment Firstmate is launched with.
@@ -83,7 +83,6 @@ The MCP workspace/base environment values must match this configuration.
 For a remote streamable HTTP server, replace `mcp` with `url` and optional `headers_from`, a map from header names to environment-variable names containing complete header values.
 Interactive OAuth setup remains with your MCP client; this adapter does not implement an OAuth login flow.
 
-`ready_label_id`, `pickup_state_ids` and the lifecycle states carry identifiers that exist only inside the Plane project, so only that project's own current values can fill them.
 `doctor` is where those values come from: it is the only command that loads this configuration in setup mode, so it runs while those identifiers are still absent, and it returns the project's actual states and labels together with a suggested `ready-for-agent` label ID and the pickup candidates in its backlog and unstarted groups.
 It suggests that label ID only when exactly one label carries the name exactly, so a missing or ambiguous one has to be configured explicitly.
 Every identifier written here must be the id of the state or label whose name it is being configured for, because `doctor` returns each name beside its id and an id copied off a neighbouring entry is still a real id.
