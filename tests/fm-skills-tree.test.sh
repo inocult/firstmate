@@ -9,7 +9,7 @@ set -u
 # shellcheck source=tests/lib.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
-CATEGORIES="core missions experimental deprecated"
+CATEGORIES="core missions experimental deprecated public"
 
 category_known() {
   case " $CATEGORIES " in
@@ -39,22 +39,33 @@ test_activation_links_are_committed_relative_links_into_the_tree() {
 }
 
 test_every_canonical_skill_lives_in_exactly_one_known_category() {
-  local skill category name seen="" count=0
+  local skill category name seen="" seen_public="" paired=0 count=0
   for skill in "$ROOT"/skills/*/*/SKILL.md; do
     [ -f "$skill" ] || fail "no canonical skills found under skills/<category>/<name>/"
     category=$(basename "$(dirname "$(dirname "$skill")")")
     name=$(basename "$(dirname "$skill")")
     category_known "$category" || fail "skills/$category/$name is in an unknown category"
-    case " $seen " in
-      *" $name "*) fail "skill $name exists in more than one category" ;;
-    esac
-    seen="$seen $name"
+    if [ "$category" = public ]; then
+      sed -n '2,/^---$/p' "$skill" | grep -Eq '^[[:space:]]*internal:[[:space:]]*true[[:space:]]*$' \
+        && fail "skills/public/$name is marked metadata.internal, so installers would skip it"
+      seen_public="$seen_public $name"
+    else
+      case " $seen " in
+        *" $name "*) fail "skill $name exists in more than one internal category" ;;
+      esac
+      seen="$seen $name"
+    fi
     count=$((count + 1))
+  done
+  for name in $seen_public; do
+    case " $seen " in
+      *" $name "*) paired=$((paired + 1)) ;;
+    esac
   done
   for skill in "$ROOT"/skills/*/SKILL.md; do
     [ ! -e "$skill" ] || fail "uncategorized skill at skills/$(basename "$(dirname "$skill")")"
   done
-  pass "every canonical skill lives in exactly one known category ($count skills)"
+  pass "every canonical skill lives in at most one internal category plus public ($count skills, $paired audience pairs)"
 }
 
 test_claude_alias_reaches_every_active_skill() {

@@ -6,6 +6,8 @@ metadata:
   internal: true
 ---
 
+<!-- maintainers: this is the firstmate-internal skill. The public, installer-facing counterpart lives at skills/public/stow/SKILL.md - deliberately a separate file with no shared code or environment branching. Keep them independent. -->
+
 # stow
 
 Sweep this session for durable knowledge and open-work record state that exist only in conversation, then leave the next session with a compact current operating map rather than an accumulating journal.

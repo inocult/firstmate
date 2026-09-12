@@ -494,6 +494,10 @@
       "audience": "operator-current"
     },
     {
+      "path": "skills/public/stow/SKILL.md",
+      "audience": "public-product"
+    },
+    {
       "path": "skills/missions/plane-missions/SKILL.md",
       "audience": "agent-runtime"
     },

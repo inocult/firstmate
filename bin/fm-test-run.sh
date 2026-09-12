@@ -1518,16 +1518,15 @@ families_for_changed_path() {
     bin/fm-ff-lib.sh|bin/fm-gotmp*|bin/*pretool*)
       printf '%s\n' pure-contract-unit
       ;;
-    skills/*/quota-array-dispatch/SKILL.md|.agents/skills/quota-array-dispatch/SKILL.md)
+    skills/*/quota-array-dispatch/SKILL.md)
       printf '%s\n' pure-contract-unit
       printf '%s\n' live-harness-optin
       ;;
-    skills/*/harness-adapters/SKILL.md|skills/*/harness-adapters/references/*|\
-    .agents/skills/harness-adapters/SKILL.md|.agents/skills/harness-adapters/references/*)
+    skills/*/harness-adapters/SKILL.md|skills/*/harness-adapters/references/*)
       printf '%s\n' pure-contract-unit
       printf '%s\n' live-harness-optin
       ;;
-    skills/*/*/SKILL.md|.agents/skills/*/SKILL.md)
+    skills/*/*/SKILL.md)
       printf '%s\n' pure-contract-unit
       ;;
     .agents/skills/*)
