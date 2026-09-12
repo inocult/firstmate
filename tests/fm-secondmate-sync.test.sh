@@ -96,8 +96,8 @@ bump_primary() {
     printf 'v-%s\n' "$mode" > "$w/main/AGENTS.md"
     printf 'echo %s\n' "$mode" > "$w/main/bin/tool.sh"
     printf 's-%s\n' "$mode" > "$w/main/.agents/skills/note.md"
-    mkdir -p "$w/main/skills/core/note"
-    printf 's-%s\n' "$mode" > "$w/main/skills/core/note/SKILL.md"
+    mkdir -p "$w/main/skills/station/note"
+    printf 's-%s\n' "$mode" > "$w/main/skills/station/note/SKILL.md"
   fi
   if [ "$mode" = bin ]; then
     printf 'echo %s-%s\n' "$mode" "$RANDOM" > "$w/main/bin/tool.sh"

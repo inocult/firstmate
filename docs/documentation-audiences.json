@@ -36,7 +36,7 @@
   ],
   "requiredOwnerPointers": [
     {
-      "source": "skills/core/firstmate-coding-guidelines/SKILL.md",
+      "source": "skills/station/firstmate-coding-guidelines/SKILL.md",
       "target": "docs/documentation-audiences.md"
     },
     {
@@ -110,27 +110,27 @@
   ],
   "surfaces": [
     {
-      "path": "skills/core/afk/SKILL.md",
+      "path": "skills/station/afk/SKILL.md",
       "audience": "agent-runtime"
     },
     {
-      "path": "skills/core/ahoy/SKILL.md",
+      "path": "skills/station/ahoy/SKILL.md",
       "audience": "agent-runtime"
     },
     {
-      "path": "skills/core/ask-user-authority/SKILL.md",
+      "path": "skills/station/ask-user-authority/SKILL.md",
       "audience": "agent-runtime"
     },
     {
-      "path": "skills/core/bearings/SKILL.md",
+      "path": "skills/station/bearings/SKILL.md",
       "audience": "agent-runtime"
     },
     {
-      "path": "skills/core/bootstrap-diagnostics/SKILL.md",
+      "path": "skills/station/bootstrap-diagnostics/SKILL.md",
       "audience": "agent-runtime"
     },
     {
-      "path": "skills/core/captain-hold-lifecycle/SKILL.md",
+      "path": "skills/station/captain-hold-lifecycle/SKILL.md",
       "audience": "agent-runtime"
     },
     {
@@ -138,7 +138,7 @@
       "audience": "agent-runtime"
     },
     {
-      "path": "skills/core/diagnostic-reasoning/SKILL.md",
+      "path": "skills/station/diagnostic-reasoning/SKILL.md",
       "audience": "agent-runtime"
     },
     {
@@ -146,7 +146,7 @@
       "audience": "agent-runtime"
     },
     {
-      "path": "skills/core/firstmate-coding-guidelines/SKILL.md",
+      "path": "skills/station/firstmate-coding-guidelines/SKILL.md",
       "audience": "agent-runtime"
     },
     {
@@ -158,95 +158,95 @@
       "audience": "agent-runtime"
     },
     {
-      "path": "skills/core/harness-adapters/SKILL.md",
+      "path": "skills/station/harness-adapters/SKILL.md",
       "audience": "agent-runtime"
     },
     {
-      "path": "skills/core/harness-adapters/references/common/control-and-recovery.md",
+      "path": "skills/station/harness-adapters/references/common/control-and-recovery.md",
       "audience": "agent-runtime"
     },
     {
-      "path": "skills/core/harness-adapters/references/common/dispatch.md",
+      "path": "skills/station/harness-adapters/references/common/dispatch.md",
       "audience": "agent-runtime"
     },
     {
-      "path": "skills/core/harness-adapters/references/common/model-and-effort.md",
+      "path": "skills/station/harness-adapters/references/common/model-and-effort.md",
       "audience": "agent-runtime"
     },
     {
-      "path": "skills/core/harness-adapters/references/common/primary-hooks.md",
+      "path": "skills/station/harness-adapters/references/common/primary-hooks.md",
       "audience": "agent-runtime"
     },
     {
-      "path": "skills/core/harness-adapters/references/harness/claude.md",
+      "path": "skills/station/harness-adapters/references/harness/claude.md",
       "audience": "agent-runtime"
     },
     {
-      "path": "skills/core/harness-adapters/references/harness/codex.md",
+      "path": "skills/station/harness-adapters/references/harness/codex.md",
       "audience": "agent-runtime"
     },
     {
-      "path": "skills/core/harness-adapters/references/harness/cursor.md",
+      "path": "skills/station/harness-adapters/references/harness/cursor.md",
       "audience": "agent-runtime"
     },
     {
-      "path": "skills/core/harness-adapters/references/harness/gemini.md",
+      "path": "skills/station/harness-adapters/references/harness/gemini.md",
       "audience": "agent-runtime"
     },
     {
-      "path": "skills/core/harness-adapters/references/harness/grok.md",
+      "path": "skills/station/harness-adapters/references/harness/grok.md",
       "audience": "agent-runtime"
     },
     {
-      "path": "skills/core/harness-adapters/references/harness/kimi.md",
+      "path": "skills/station/harness-adapters/references/harness/kimi.md",
       "audience": "agent-runtime"
     },
     {
-      "path": "skills/core/harness-adapters/references/harness/muse.md",
+      "path": "skills/station/harness-adapters/references/harness/muse.md",
       "audience": "agent-runtime"
     },
     {
-      "path": "skills/core/harness-adapters/references/harness/omp.md",
+      "path": "skills/station/harness-adapters/references/harness/omp.md",
       "audience": "agent-runtime"
     },
     {
-      "path": "skills/core/harness-adapters/references/harness/opencode.md",
+      "path": "skills/station/harness-adapters/references/harness/opencode.md",
       "audience": "agent-runtime"
     },
     {
-      "path": "skills/core/harness-adapters/references/harness/pi.md",
+      "path": "skills/station/harness-adapters/references/harness/pi.md",
       "audience": "agent-runtime"
     },
     {
-      "path": "skills/core/harness-adapters/references/harness/rovo.md",
+      "path": "skills/station/harness-adapters/references/harness/rovo.md",
       "audience": "agent-runtime"
     },
     {
-      "path": "skills/core/process-event-sources/SKILL.md",
+      "path": "skills/station/process-event-sources/SKILL.md",
       "audience": "agent-runtime"
     },
     {
-      "path": "skills/core/project-management/SKILL.md",
+      "path": "skills/station/project-management/SKILL.md",
       "audience": "agent-runtime"
     },
     {
-      "path": "skills/core/quota-array-dispatch/SKILL.md",
+      "path": "skills/station/quota-array-dispatch/SKILL.md",
       "audience": "agent-runtime"
     },
     {
-      "path": "skills/core/secondmate-provisioning/SKILL.md",
+      "path": "skills/station/secondmate-provisioning/SKILL.md",
       "audience": "agent-runtime"
     },
     {
-      "path": "skills/core/stow/SKILL.md",
+      "path": "skills/station/stow/SKILL.md",
       "audience": "agent-runtime"
     },
     {
-      "path": "skills/core/stuck-crewmate-recovery/SKILL.md",
+      "path": "skills/station/stuck-crewmate-recovery/SKILL.md",
       "audience": "agent-runtime"
     },
     {
-      "path": "skills/core/updatefirstmate/SKILL.md",
+      "path": "skills/station/updatefirstmate/SKILL.md",
       "audience": "agent-runtime"
     },
     {
@@ -494,7 +494,7 @@
       "audience": "operator-current"
     },
     {
-      "path": "skills/public/stow-notes/SKILL.md",
+      "path": "skills/public/stow/SKILL.md",
       "audience": "public-product"
     },
     {
@@ -502,7 +502,7 @@
       "audience": "agent-runtime"
     },
     {
-      "path": "skills/core/sitrep/SKILL.md",
+      "path": "skills/station/sitrep/SKILL.md",
       "audience": "agent-runtime"
     },
     {
@@ -514,15 +514,15 @@
       "audience": "operator-example"
     },
     {
-      "path": "skills/core/debrief/SKILL.md",
+      "path": "skills/station/debrief/SKILL.md",
       "audience": "agent-runtime"
     },
     {
-      "path": "skills/core/offgrid/SKILL.md",
+      "path": "skills/station/offgrid/SKILL.md",
       "audience": "agent-runtime"
     },
     {
-      "path": "skills/core/refresh/SKILL.md",
+      "path": "skills/station/refresh/SKILL.md",
       "audience": "agent-runtime"
     },
     {

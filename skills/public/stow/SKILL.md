@@ -1,12 +1,12 @@
 ---
-name: stow-notes
-description: Sweep the current conversation for durable knowledge - user preferences, project facts, operational gotchas, standing decisions, and unfinished next steps - and file each through explicit instructions, existing local conventions, or the private `.stow-notes.md` fallback, curating tiered, decaying destination files as it writes. Use when the user invokes /stow-notes, asks to save or write down what was learned this session, or before a context reset or long break.
+name: stow
+description: Sweep the current conversation for durable knowledge - user preferences, project facts, operational gotchas, standing decisions, and unfinished next steps - and file each through explicit instructions, existing local conventions, or the private `.stow-notes.md` fallback, curating tiered, decaying destination files as it writes. Use when the user invokes /stow, asks to save or write down what was learned this session, or before a context reset or long break.
 user-invocable: true
 ---
 
-<!-- maintainers: this is the public, installer-facing skill. Keep it standalone, with no private project paths, tool assumptions, or environment branching. The firstmate-internal counterpart lives at skills/core/stow/SKILL.md - deliberately a separate file with no shared code. Keep them independent. This skill carries its own name because installers resolve --skill by frontmatter name across the whole tree, so a same-named internal skill would win the install. -->
+<!-- maintainers: this is the public, installer-facing skill. Keep it standalone, with no private project paths, tool assumptions, or environment branching. The firstmate-internal counterpart lives at skills/station/stow/SKILL.md - deliberately a separate file with no shared code. Keep them independent. -->
 
-# stow-notes
+# stow
 
 Sweep this conversation for durable knowledge that only exists in chat right now, and file it through the user's explicit instructions, the project's existing local conventions, or the private `.stow-notes.md` fallback in the current directory.
 The goal is to leave the next session a compact, current operating map, not an accumulating journal: every durable finding lands on disk, and every file this skill touches comes out more accurate, not merely longer.
