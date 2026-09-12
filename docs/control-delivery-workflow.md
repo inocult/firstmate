@@ -1,6 +1,7 @@
 # From planning to delivery: Pocock + Control
 
-The planning skills stay in place: `/wayfinder` → `/to-spec` → `/to-tickets`.
+The planning skills stay in place: `/operation` → `/to-spec` → `/to-tickets`.
+`/operation` is this repository's rename of Pocock's wayfinder, bundled with attribution; its map resolves decisions until the route is clear, and the resulting implementation tickets are what Overwatch and Breach deliver.
 Control takes over delivery through `/overwatch` and `/breach`, then coordinates a separate `/code-review`, corrections, merge and Plane completion.
 The upstream command names are singular: `/to-spec` and `/to-tickets`.
 These are useful stages, not mandatory ceremony for every small ticket.
@@ -9,7 +10,7 @@ These are useful stages, not mandatory ceremony for every small ticket.
 
 ```mermaid
 flowchart TD
-    A["Wayfinder: resolve decisions"] --> B["To-spec: define the outcome"]
+    A["Operation: resolve decisions"] --> B["To-spec: define the outcome"]
     B --> C["To-tickets: publish vertical slices"]
     C --> D["Plane: ready-for-agent tickets"]
     D --> E{"Pickup trigger"}
@@ -33,7 +34,7 @@ An empty queue is a valid outcome.
 
 | Stage | Owner | What changes |
 | --- | --- | --- |
-| `/wayfinder` | Planning session with the human | Keep its decision-map workflow and project tracker conventions. |
+| `/operation` | Control with the captain | Pocock's wayfinder, renamed and bundled; keep its decision-map workflow and tracker conventions. |
 | `/to-spec` | Planning session | Keep synthesis, agreed testing seams and publication to the configured tracker. |
 | `/to-tickets` | Planning session | Keep approved vertical slices, native blockers and the `ready-for-agent` label. |
 | `/overwatch` | Control | New optional automatic intake policy; selects eligible implementation tickets within an agreed scope. |
@@ -56,7 +57,7 @@ Blocked work is reconciled explicitly and remains claimed until a deliberate rel
 
 Both upstream `/to-spec` and `/to-tickets` apply the readiness label.
 Therefore automatic pickup must distinguish a parent specification from its implementation slices.
-The normal automatic queue contains implementation tickets from the approved breakdown, not the parent spec, Wayfinder map, research question or decision ticket.
+The normal automatic queue contains implementation tickets from the approved breakdown, not the parent spec, operation map, research question or decision ticket.
 A label alone is insufficient authorization to implement an entire parent feature.
 
 For each candidate, Control checks its role, acceptance criteria, parent/child relationships, native blocking dependencies and package/interface overlap.
@@ -64,7 +65,7 @@ The adapter enforces the configured readiness label, allowed pickup states, supp
 Parent/spec classification and cross-ticket overlap assessment remain agent responsibilities in this version; they are not machine-enforced by the adapter.
 When classification is unclear, Control holds that ticket for clarification instead of assuming it is a build task.
 
-Do not automatically close the parent specification or Wayfinder map when one implementation ticket finishes.
+Do not automatically close the parent specification or operation map when one implementation ticket finishes.
 Their completion follows the planning workflow and aggregate acceptance criteria.
 
 ## Two ways to start implementation
@@ -202,7 +203,7 @@ The patch adds capabilities; it does not activate automatic work in your live Pl
 
 ## Upstream references
 
-- [Wayfinder](https://github.com/mattpocock/skills/blob/main/skills/engineering/wayfinder/SKILL.md): decision maps and planning handoff.
+- [Wayfinder](https://github.com/mattpocock/skills/blob/main/skills/engineering/wayfinder/SKILL.md): the MIT-licensed decision-map workflow bundled as `/operation`.
 - [To Spec](https://github.com/mattpocock/skills/blob/main/skills/engineering/to-spec/SKILL.md): synthesis, testing seams and readiness labeling.
 - [To Tickets](https://github.com/mattpocock/skills/blob/main/skills/engineering/to-tickets/SKILL.md): vertical slices, blockers and readiness labeling.
 - [Implement](https://github.com/mattpocock/skills/blob/main/skills/engineering/implement/SKILL.md): the small MIT-licensed workflow adapted by Breach.

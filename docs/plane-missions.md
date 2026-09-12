@@ -25,6 +25,7 @@ For the full planning, implementation and separate-review flow, read [Control de
 ## Control skills
 
 Use `/prep` to prepare this home and a repository for missions before the first one is dispatched.
+Use `/operation` for an effort too big for one mission: it charts the effort as a map of decision tickets on the shared tracker and resolves them one at a time, until the cleared route becomes the ready-for-agent implementation tickets that `/overwatch` and `/breach` deliver.
 Use `/breach <ticket>` for one directed implementation or `/overwatch on` for bounded automatic queue pickup.
 Use `/overwatch off` to stop new intake while preserving active work, and `/overwatch status` to inspect its scope and bounds.
 Codex uses the same skill names with `$` instead of `/`.

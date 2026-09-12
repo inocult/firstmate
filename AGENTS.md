@@ -516,6 +516,7 @@ Mention cost as a courtesy when unusually much work is running, but never block 
 ## 10. Backlog contract
 
 For Plane-backed implementation, load `plane-missions` before pickup, dispatch, PR delivery or recovery; Plane remains the shared backlog and the local queue is only this home's execution ledger.
+Load `operation` when the captain invokes `/operation` with a loose idea too big for one session, or with an existing map to work through; it plans that effort as a map of decision tickets and resolves them one at a time.
 
 The configured `tasks-axi` backend is the durable queue; the tracked default is `data/backlog.md`.
 It tracks work items only, never agents; persistent secondmates never appear as backlog items.

@@ -185,6 +185,7 @@ Claude and grok use the slash form shown here; codex uses the same names with `$
 
 | Skill              | What it does                                                                                                                                  |
 | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/operation`       | Plan work too big for one session as a shared map of decision tickets on your issue tracker, then resolve them one at a time until the way to the destination is clear |
 | `/prep`            | Prepare this home and a repository for Plane missions: Control writes the home's private Plane configuration and, only on your explicit confirmation of the exact list, creates any canonical triage label your shared Plane project is missing; a dispatched worker lands the project's domain-doc and tracker layout |
 | `/overwatch on/off/status` | Enable, pause or inspect bounded automatic pickup of ready-for-agent Plane tickets |
 | `/breach PLAT-27` | Dispatch one claimed ticket through the Pocock-adapted implementation workflow |
