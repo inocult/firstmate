@@ -107,6 +107,59 @@ class AdapterTests(unittest.TestCase):
             self.claim()
         self.assertEqual(self.registry.read()[1]["phase"], "reserved")
 
+    def overwatch(self, *args, expected=0):
+        local = Path(self.tmp.name) / "overwatch-home"
+        (local / "config").mkdir(parents=True, exist_ok=True)
+        config = local / "config/plane.json"
+        if not config.exists():
+            config.write_text(json.dumps(self.config))
+        env = dict(os.environ, FM_HOME=str(local), FM_STATE_OVERRIDE=str(local / "state"))
+        env.pop("FM_ROOT_OVERRIDE", None)
+        result = subprocess.run([sys.executable, str(ROOT / "bin/fm-overwatch.py"), *args],
+                                env=env, capture_output=True, text=True)
+        self.assertEqual(result.returncode, expected, result.stderr)
+        return result.stdout, local, env
+
+    def test_overwatch_registers_durable_wake_and_off_preserves_work(self):
+        output, local, env = self.overwatch("on")
+        self.assertTrue(json.loads(output)["enabled"])
+        check = subprocess.run(["bash", "-c", '. "$1"; . "$2"; fm_custom_check_registered "$3" overwatch',
+                                "test", str(ROOT / "bin/fm-pr-lib.sh"), str(ROOT / "bin/fm-check-lib.sh"),
+                                str(local / "state")], env=env)
+        self.assertEqual(check.returncode, 0)
+        self.assertIn("pickup check due", self.overwatch("check")[0])
+        self.assertIn("pickup check due", self.overwatch("check")[0])
+        preserved = local / "state/mission.json"
+        preserved.write_text("active work")
+        self.overwatch("off")
+        self.assertEqual(self.overwatch("check")[0], "")
+        self.assertFalse((local / "state/overwatch.check.sh").exists())
+        self.assertEqual(preserved.read_text(), "active work")
+
+    def test_overwatch_backoff_budget_and_changed_scope(self):
+        self.overwatch("on", "--max-pickups", "1")
+        output, local, _ = self.overwatch("defer", "--outcome", "empty")
+        self.assertEqual(json.loads(output)["empty_streak"], 1)
+        self.assertEqual(self.overwatch("check")[0], "")
+        self.overwatch("defer", "--outcome", "picked")
+        self.assertIn("budget reached", self.overwatch("check")[0])
+        self.overwatch("off")
+        self.overwatch("on")
+        config = local / "config/plane.json"
+        changed = json.loads(config.read_text())
+        changed["project_id"] = "another-project"
+        config.write_text(json.dumps(changed))
+        self.assertIn("configuration changed", self.overwatch("check")[0])
+
+    def test_overwatch_disabled_by_default_and_error_pauses_pickup(self):
+        self.assertFalse(json.loads(self.overwatch("status")[0])["enabled"])
+        self.assertEqual(self.overwatch("check")[0], "")
+        self.overwatch("on", "--interval", "0", expected=1)
+        self.overwatch("on")
+        self.overwatch("on", expected=1)
+        self.overwatch("defer", "--outcome", "error")
+        self.assertEqual(self.overwatch("check")[0], "")
+
     def test_two_remote_claim_creates_have_one_winner(self):
         barrier = threading.Barrier(2)
 

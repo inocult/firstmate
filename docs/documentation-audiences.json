@@ -524,6 +524,18 @@
     {
       "path": ".agents/skills/refresh/SKILL.md",
       "audience": "agent-runtime"
+    },
+    {
+      "path": ".agents/skills/overwatch/SKILL.md",
+      "audience": "agent-runtime"
+    },
+    {
+      "path": ".agents/skills/breach/SKILL.md",
+      "audience": "agent-runtime"
+    },
+    {
+      "path": "docs/control-delivery-workflow.md",
+      "audience": "operator-current"
     }
   ]
 }

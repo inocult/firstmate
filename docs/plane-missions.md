@@ -2,7 +2,7 @@
 
 Plane is the shared backlog; each person's Control instance executes selected tickets through the existing Firstmate lifecycle.
 This adapter replaces the orchestration role of Pocock's `implement` workflow for Plane tickets while retaining repo-local engineering disciplines.
-It does not copy, rewrite or install Pocock's skills.
+The bundled `breach` skill adapts Pocock's small `implement` entrypoint with attribution; repo-local engineering disciplines remain project-owned.
 
 ## Operating model
 
@@ -19,6 +19,19 @@ The operative's existing GitHub credentials determine PR authorship: your Firstm
 Agent self-review does not count as independent approval.
 An authorized human or configured merge process merges under the existing project policy.
 Control then verifies acceptance and the merged PR before moving the ticket to Done.
+
+For the full planning, implementation and separate-review flow, read [Control delivery workflow](control-delivery-workflow.md).
+
+## Control skills
+
+Use `/breach <ticket>` for one directed implementation or `/overwatch on` for bounded automatic queue pickup.
+Use `/overwatch off` to stop new intake while preserving active work, and `/overwatch status` to inspect its scope and bounds.
+Codex uses the same skill names with `$` instead of `/`.
+The [Overwatch skill](../.agents/skills/overwatch/SKILL.md) owns the pickup policy, recovery and watcher integration.
+The [Breach skill](../.agents/skills/breach/SKILL.md) owns the attributed adaptation of Pocock's implementation entrypoint.
+`bin/fm-overwatch.py --help` owns timer and policy command syntax.
+The timer only wakes Control; selection, reasoning and dispatch require a live supported Firstmate agent session.
+No new daemon is installed and no idle heartbeat behavior is changed.
 
 ## Setup
 
