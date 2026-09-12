@@ -1,0 +1,59 @@
+
+=== step 1 - adapter environment from bin/requirements-plane.txt ===
+mcp SDK importable in /tmp/prepvenv/bin/python
+FM_PLANE_PYTHON would be exported to that interpreter at launch
+
+=== step 3 - doctor on the connection half alone (setup mode tolerates absent identifiers) ===
+labels: ['ready-for-agent', 'bug']
+states: ['Backlog', 'Todo', 'In Progress', 'In Review', 'Done']
+note: MCP connected; no ticket or claim changed
+doctor exit=0
+
+=== step 4 - compare the five canonical roles against that doctor run ===
+conflicts: none
+missing roles: ['needs-triage', 'needs-info', 'ready-for-human', 'wontfix']
+
+=== step 4 - a project that spells two roles its own way ===
+project labels: ['bug', 'Ready for agent', "Won't fix", 'needs-triage']
+conflicts (variant -> canonical): [('Ready for agent', 'ready-for-agent'), ("Won't fix", 'wontfix')]
+clean-comparing roles that still get created: none - create nothing at all, report every conflict to the captain
+
+=== step 4 - is the adapter a label write surface? ===
+fm-plane.py: error: argument command: invalid choice: 'label' (choose from 'doctor', 'list', 'check', 'claim', 'status', 'sync', 'bind', 'pr', 'review', 'resume', 'complete', 'release', 'transfer')
+-> no label-write path, so this repository routes to the by-hand halt
+
+=== step 4 re-entry after the captain creates them by hand - re-runs doctor first ===
+-- comparing the stale step-3 output instead (what re-entry must not do) --
+missing: ['needs-triage', 'needs-info', 'ready-for-human', 'wontfix'] -> halts again with the identical report
+-- re-entry re-runs doctor (read-only, no write surface) --
+labels now: ['needs-triage', 'needs-info', 'ready-for-agent', 'ready-for-human', 'wontfix', 'bug']
+missing: none -> prepping continues
+suggested_ready_label_id: lbl-rfa | suggested pickup: ['st-backlog', 'st-todo']
+
+=== step 5 - verify the completed configuration by name, not by presence ===
+
+/tmp/prep-drive/home-complete/config/plane.json
+  all five canonical names present exactly: True
+  ready_label_id lbl-rfa appears in labels (presence check): True
+  ready_label_id names: ready-for-agent | name-matched check: True
+  lifecycle: {'implementing': 'In Progress', 'review': 'In Review', 'done': 'Done'} | pickup: ['Backlog', 'Todo']
+
+/tmp/prep-drive/home-mistyped/config/plane.json
+  all five canonical names present exactly: True
+  ready_label_id lbl-ni appears in labels (presence check): True
+  ready_label_id names: needs-info | name-matched check: False
+  lifecycle: {'implementing': 'In Progress', 'review': 'In Review', 'done': 'Done'} | pickup: ['Backlog', 'Todo']
+
+=== step 5 - list under full validation (the completed home, then an incomplete one) ===
+work items read: ['Add export'] | next_page_results: False
+{"error": "configure implementing, review and done Plane state IDs"}
+-> list refuses the connection-half config that doctor accepted
+
+=== step 5 - the mis-transcribed home, driven to its consequence ===
+pickup refused: ticket lacks the ready-for-agent label
+-> the permanently-empty queue the name-matched check prevents
+
+=== step 5 - coordination remote, read-only, with the skill's own guards ===
+ls-remote on the configured remote exit=0 (no matching refs is normal before the first mission)
+fatal: repository 'https://github.com/inocult/prep-drive-no-such-repo.git/' not found
+unauthenticated HTTPS remote: failed in 0s instead of prompting for a username

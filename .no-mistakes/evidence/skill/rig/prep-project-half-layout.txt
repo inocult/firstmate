@@ -1,0 +1,43 @@
+=== Project half, produced in throwaway clones (worker dispatch itself is blocked for a gate agent) ===
+
+-- single-context layout (/tmp/prep-drive/project-single) --
+  AGENTS.md
+  CLAUDE.md
+  CONTEXT.md
+  docs/adr/0001-tracker.md
+  docs/agents/issue-tracker.md
+  docs/agents/triage-labels.md
+  AGENTS.md pointer rows added by the worker:
+    14:- Issue tracker: [docs/agents/issue-tracker.md](docs/agents/issue-tracker.md)
+    15:- Triage labels: [docs/agents/triage-labels.md](docs/agents/triage-labels.md)
+
+-- multi-context layout (/tmp/prep-drive/project-multi) --
+  AGENTS.md
+  CLAUDE.md
+  CONTEXT-MAP.md
+  contexts/api/CONTEXT.md
+  contexts/web/CONTEXT.md
+  docs/agents/issue-tracker.md
+  docs/agents/triage-labels.md
+  AGENTS.md pointer rows added by the worker:
+    14:- Issue tracker: [docs/agents/issue-tracker.md](docs/agents/issue-tracker.md)
+    15:- Triage labels: [docs/agents/triage-labels.md](docs/agents/triage-labels.md)
+
+-- bin/fm-ensure-agents-md.sh is idempotent on a second pass --
+unchanged: AGENTS.md with CLAUDE.md @AGENTS.md pointer in /tmp/prep-drive/project-single
+  CLAUDE.md content:
+    <!-- Points Claude at AGENTS.md via import; edit AGENTS.md, not this file. -->
+    @AGENTS.md
+
+=== Privacy: no committed project file may carry the home's private Plane configuration ===
+  project-single: 6 files scanned against 9 private values -> leaks: none
+  project-multi: 7 files scanned against 9 private values -> leaks: none
+
+  canonical roles recorded in each docs/agents/triage-labels.md:
+    project-single ['needs-triage', 'needs-info', 'ready-for-agent', 'ready-for-human', 'wontfix']
+    project-multi ['needs-triage', 'needs-info', 'ready-for-agent', 'ready-for-human', 'wontfix']
+
+=== Commissioning a worker from here: refused by the product itself ===
+$ FM_HOME=$D/spawnhome bin/fm-spawn.sh prep-layout-a1=projects/firstmate-prep-drive
+error: no-mistakes gate agent must not drive the fleet (NO_MISTAKES_GATE set)
+(exit 3: a no-mistakes gate agent must not drive the fleet, so the dispatched half cannot be driven in this phase)
