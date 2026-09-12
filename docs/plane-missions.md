@@ -83,7 +83,7 @@ The MCP workspace/base environment values must match this configuration.
 For a remote streamable HTTP server, replace `mcp` with `url` and optional `headers_from`, a map from header names to environment-variable names containing complete header values.
 Interactive OAuth setup remains with your MCP client; this adapter does not implement an OAuth login flow.
 
-`doctor` is where those values come from: it is the only command that loads this configuration in setup mode, so it runs while those identifiers are still absent, and it returns the project's actual states and labels together with a suggested `ready-for-agent` label ID and the pickup candidates in its backlog and unstarted groups.
+`doctor` is where `ready_label_id`, `pickup_state_ids` and the lifecycle state ids come from: it is the only command that loads this configuration in setup mode, so it runs while those identifiers are still absent, and it returns the project's actual states and labels together with a suggested `ready-for-agent` label ID and the pickup candidates in its backlog and unstarted groups.
 It suggests that label ID only when exactly one label carries the name exactly, so a missing or ambiguous one has to be configured explicitly.
 Every identifier written here must be the id of the state or label whose name it is being configured for, because `doctor` returns each name beside its id and an id copied off a neighbouring entry is still a real id.
 The label is the planning team's promise that the ticket has sufficient scope and acceptance criteria.
