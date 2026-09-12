@@ -754,6 +754,13 @@ test_skills_activation_links_checked_out_as_files_are_reported() {
   printf '%s\n' manual > "$case_dir/home/config/backlog-backend"
   : >"$case_dir/home/skills/core/ahoy/SKILL.md"
   ln -s ../../skills/core/ahoy "$case_dir/home/.agents/skills/ahoy"
+  git -C "$case_dir/home" init -q
+  git -C "$case_dir/home" add .agents skills
+  git -C "$case_dir/home" -c user.name=test -c user.email=test@example.invalid commit -qm links
+  [ "$(git -C "$case_dir/home" ls-files -s -- .agents/skills | grep -c '^120000 ')" -ge 1 ] \
+    || fail "fixture: the control checkout must track at least one activation link as a symlink"
+  [ -L "$case_dir/home/.agents/skills/ahoy" ] \
+    || fail "fixture: the control checkout must hold a real symlink for the tracked activation link"
   fakebin=$(make_fake_toolchain "$case_dir")
   out=$(PATH="$fakebin:$BASE_PATH" FM_HOME="$case_dir/home" FM_ROOT_OVERRIDE="$case_dir/home" \
     "$ROOT/bin/fm-bootstrap.sh")
