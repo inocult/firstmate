@@ -32,19 +32,22 @@ Read them rather than restating their contents here.
 Control performs these steps directly and reports the verified result.
 
 1. Confirm Python 3.10+ and create the adapter's virtual environment from `bin/requirements-plane.txt`.
-   Record that environment's interpreter as `FM_PLANE_PYTHON`.
+   `docs/plane-missions.md` owns where that interpreter belongs: `FM_PLANE_PYTHON` is read from the environment firstmate is launched with, so exporting it only in this session's shell loses it at the next launch and every later adapter command fails on the missing SDK.
 2. Collect the connection facts from the captain: Plane URL, workspace slug, project UUID, implementation repository URL, coordination remote, MCP transport, and this instance's executor name.
    Credentials are named in the configuration and sourced from the captain's existing secrets system, never stored in it.
 3. Write the connection half of `FM_HOME/config/plane.json` from those facts, then run `doctor`.
    `doctor` reads that file and fails without it, but it is the one command loaded in setup mode, so it tolerates the label, pickup and lifecycle identifiers still being absent.
-4. Compare the five canonical roles against the labels `doctor` returned and create every one the project is missing, using the wording above, so the project ends up carrying all five.
-   The adapter lists labels but never writes them, so create them through the same Plane MCP server it connects to, then re-run `doctor` to pick up the new identifiers.
+4. Provision the vocabulary, then complete the configuration.
+   Control writes these labels through its own harness-level Plane connector; the adapter lists labels and never writes them, and must not gain a label-write path for this.
+   That connector is configured outside `FM_HOME/config/plane.json`, so it can be pointed somewhere else entirely. Before any write, confirm it resolves to the same workspace and the same project as that file. This is a precondition, not a caution: if the two differ, or cannot be compared, provision nothing and put it to the captain.
+   Compare each canonical role against the labels `doctor` returned, ignoring case and separators, so `Ready for agent` and `ready_for_agent` both match `ready-for-agent`.
+   Adopt an exact match as the role. Put a match that differs only in spelling to the captain as a rename-or-keep decision and create nothing meanwhile, because adding the canonical name beside an existing variant splits the queue across two readiness labels and nothing ever reports it. Create only a role with no match at all, using the wording above, then re-run `doctor` to pick up the new identifiers.
    Then confirm the identifiers with the captain and complete `FM_HOME/config/plane.json` with the eligible pickup states, the implementing, review and done lifecycle states, and `ready_label_id` taken from the `ready-for-agent` role.
    `ready_label_id` is the only label identifier the home stores, because it is the only one the adapter reads; the other four roles are provisioned by name and need no stored ID.
 5. Verify, then report exactly how far that verification reaches.
-   First check every identifier written in step 4 against the `states` and `labels` arrays `doctor` returned; no command validates that an ID names a real Plane object, so a well-formed but wrong label ID passes every check here and only surfaces later as tickets that never look ready.
+   First check every identifier written in step 4 against the `states` and `labels` arrays `doctor` returned; that catches an identifier naming nothing in the project, but not one naming a real object other than the intended one - `ready_label_id` set to the `needs-info` label passes this check and `list` alike, and surfaces only as tickets that never look ready.
    Then run `list`, not `doctor`: setup mode is exactly what skips the identifier checks step 4 satisfied, and `list` loads the completed configuration under full validation and reads one page of work items without writing.
-   Both of those reach Plane only. Neither touches `coordination_remote`, which no adapter command opens until the first `claim` builds its registry, so check it read-only with `git ls-remote <coordination_remote> 'refs/heads/fm-plane/*'`; no matching refs is the normal answer on a remote no mission has used yet.
+   Both of those reach Plane only. Neither touches `coordination_remote`, which no adapter command opens until the first `claim` builds its registry, so check it read-only with `GIT_TERMINAL_PROMPT=0 timeout 45 git ls-remote <coordination_remote> 'refs/heads/fm-plane/*'`, the same way the registry bounds its own Git calls; without both guards an HTTPS remote with no credential helper prompts for a username and hangs the session instead of failing. No matching refs is the normal answer on a remote no mission has used yet.
    Report the home half as verified only to that extent: Plane reachable with the configured identifiers real, and the coordination remote reachable and readable. The push `claim` performs and the credentials the transport resolves at mission time remain unproven until the first mission.
    A failure in any part is a blocker rather than a warning, because missions cannot be claimed without a working connection.
 
@@ -67,5 +70,5 @@ Never write firstmate's own `AGENTS.md` from this skill, because `firstmate-codi
 
 ## Completion
 
-Report what was verified and how far that reaches, which canonical roles this rig had to create, the confirmed pickup states, and the layout the worker landed.
+Report what was verified and how far that reaches, which canonical roles this rig created and any it left with the captain as a spelling decision, the confirmed pickup states, and the layout the worker landed.
 Arming automatic pickup is a separate captain decision that `/overwatch on` owns.
