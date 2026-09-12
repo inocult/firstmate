@@ -41,7 +41,8 @@ This section owns what that setup has to produce, and is what the skill and a by
 Configuring a home without the skill means satisfying everything below, so there is no second procedure to follow.
 
 Requires Git, Python 3.10+, the optional MCP SDK in `bin/requirements-plane.txt`, and a reachable authenticated Plane MCP server.
-The SDK belongs in its own virtual environment, and `FM_PLANE_PYTHON` must name that environment's Python executable in the environment Firstmate is launched with, because every adapter command runs under that same interpreter.
+The SDK belongs in its own virtual environment, and `FM_PLANE_PYTHON` must name that environment's Python executable in the environment Firstmate is launched with.
+Adapter commands must be invoked with that same interpreter, because `bin/fm-plane.py` run directly takes whatever `python3` is on PATH and then reports the missing SDK only as an opaque failure that hides the cause.
 Each instance needs its own explicit `FM_HOME` and executor name.
 
 Store the following configuration privately at `FM_HOME/config/plane.json`.
@@ -86,9 +87,10 @@ Interactive OAuth setup remains with your MCP client; this adapter does not impl
 `doctor` is where those values come from: it is the only command that loads this configuration in setup mode, so it runs while those identifiers are still absent, and it returns the project's actual states and labels together with a suggested `ready-for-agent` label ID and the pickup candidates in its backlog and unstarted groups.
 It suggests that label ID only when exactly one label carries the name exactly, so a missing or ambiguous one has to be configured explicitly.
 Every identifier written here must be the id of the state or label whose name it is being configured for, because `doctor` returns each name beside its id and an id copied off a neighbouring entry is still a real id.
-A wrong but real `ready_label_id`, or a wrong but real entry in `pickup_state_ids`, leaves the queue permanently empty.
-A wrong but real lifecycle state id fails more quietly than that: a blocker sitting in whatever state is configured as `done` reads as a finished prerequisite, so a still-blocked ticket is claimed, and `complete` writes that same id to Plane and then confirms its own write, so the adapter reports the ticket complete while Plane shows it in another state.
-The one such mistake that is caught is a lifecycle state id copied into `pickup_state_ids`, because those two sets must not overlap.
+A wrong but real `ready_label_id` leaves the queue permanently empty only when the copied label is unused; a label that is in circulation instead makes every ticket carrying it claimable, bypassing the readiness promise entirely.
+A wrong but real entry in `pickup_state_ids` behaves the same way, and a cancelled or triage state id copied there passes validation and then makes cancelled tickets eligible for pickup.
+A wrong but real lifecycle state id goes wrong at the other end: a blocker sitting in whatever state is configured as `done` reads as a finished prerequisite, so a still-blocked ticket is claimed, and `complete` writes that same id to Plane and then confirms its own write, so the adapter reports the ticket complete while Plane shows it in another state.
+Validation catches only the overlap cases, a lifecycle state id copied into `pickup_state_ids` and a lifecycle id pasted into another lifecycle field, because those sets must stay separate and those three must stay distinct.
 The label is the planning team's promise that the ticket has sufficient scope and acceptance criteria.
 Pickup requires both this label and an eligible Backlog/Todo state, plus the existing dependency and shared-claim checks.
 In Progress, In Review, Done and cancelled states must never be configured as pickup states.
