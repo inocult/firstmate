@@ -1,0 +1,164 @@
+Plane adapter driven as an operator following docs/plane-missions.md "Setup"
+branch fm/xo-plane-doc-consolidation  target cb1ced8
+MCP server: local stdio fixture (never contacts Plane); SDK in its own venv per the doc.
+
+Fixture project vocabulary
+  states  Backlog(backlog) Todo(unstarted) In Progress(started) In Review(started) Done(completed) Cancelled(cancelled)
+  labels  bug, ready-for-agent, needs-triage
+
+================================================================================
+[A] "doctor ... runs while those identifiers are still absent"
+    plane.json holds the connection half only: no ready_label_id, no
+    pickup_state_ids, states {}.
+================================================================================
+$ "$FM_PLANE_PYTHON" bin/fm-plane.py doctor
+{
+  "mcp_tools": [
+    "label",
+    "state",
+    "workitem"
+  ],
+  "project": "proj-uuid-1",
+  "states": [
+    {
+      "id": "st-backlog",
+      "name": "Backlog",
+      "group": "backlog"
+    },
+    {
+      "id": "st-todo",
+      "name": "Todo",
+      "group": "unstarted"
+    },
+    {
+      "id": "st-inprogress",
+      "name": "In Progress",
+      "group": "started"
+    },
+    {
+      "id": "st-inreview",
+      "name": "In Review",
+      "group": "started"
+    },
+    {
+      "id": "st-done",
+      "name": "Done",
+      "group": "completed"
+    },
+    {
+      "id": "st-cancelled",
+      "name": "Cancelled",
+      "group": "cancelled"
+    }
+  ],
+  "labels": [
+    {
+      "id": "lb-bug",
+      "name": "bug"
+    },
+    {
+      "id": "lb-ready",
+      "name": "ready-for-agent"
+    },
+    {
+      "id": "lb-needs-triage",
+      "name": "needs-triage"
+    }
+  ],
+  "suggested_ready_label_id": "lb-ready",
+  "suggested_pickup_state_ids": [
+    "st-backlog",
+    "st-todo"
+  ],
+  "executor": "mathieu-control",
+  "note": "MCP connected; no ticket or claim changed"
+}
+
+================================================================================
+[B] "it is the ONLY command that loads this configuration in setup mode"
+    Same partial plane.json, every other subcommand the CLI exposes.
+================================================================================
+$ fm-plane.py list
+  exit=1  {"error": "configure implementing, review and done Plane state IDs"}
+$ fm-plane.py check --task t1
+  exit=1  {"error": "configure implementing, review and done Plane state IDs"}
+$ fm-plane.py status --item item-1
+  exit=1  {"error": "configure implementing, review and done Plane state IDs"}
+$ fm-plane.py claim --item item-1 --request-id r1
+  exit=1  {"error": "configure implementing, review and done Plane state IDs"}
+$ fm-plane.py sync --item item-1 --execution e1
+  exit=1  {"error": "configure implementing, review and done Plane state IDs"}
+$ fm-plane.py bind --item item-1 --execution e1 --task t1 --mode no-mistakes
+  exit=1  {"error": "configure implementing, review and done Plane state IDs"}
+$ fm-plane.py pr --item item-1 --execution e1 --url https://github.com/acme/monorepo/pull/1
+  exit=1  {"error": "configure implementing, review and done Plane state IDs"}
+$ fm-plane.py review --item item-1 --execution e1
+  exit=1  {"error": "configure implementing, review and done Plane state IDs"}
+$ fm-plane.py resume --item item-1 --execution e1
+  exit=1  {"error": "configure implementing, review and done Plane state IDs"}
+$ fm-plane.py complete --item item-1 --execution e1 --acceptance-verified
+  exit=1  {"error": "configure implementing, review and done Plane state IDs"}
+$ fm-plane.py release --item item-1 --execution e1 --reason r --work-preserved
+  exit=1  {"error": "configure implementing, review and done Plane state IDs"}
+$ fm-plane.py transfer --item item-1 --execution e1 --reason r --previous-stopped --to-executor other
+  exit=1  {"error": "configure implementing, review and done Plane state IDs"}
+
+================================================================================
+[C] "suggests that label ID only when exactly one label carries the name exactly"
+================================================================================
+project label population: one-exact
+  project labels      : ['bug', 'ready-for-agent', 'needs-triage']
+  suggested label id  : "lb-ready"
+
+project label population: two-exact
+  project labels      : ['ready-for-agent', 'ready-for-agent']
+  suggested label id  : null
+
+project label population: near-miss-only
+  project labels      : ['Ready-For-Agent', 'ready-for-agent ', 'ready_for_agent']
+  suggested label id  : null
+
+project label population: none
+  project labels      : ['bug']
+  suggested label id  : null
+
+================================================================================
+[D] "pickup candidates in its backlog and unstarted groups"
+================================================================================
+  doctor returns each name beside its id:
+    st-backlog       Backlog      group=backlog
+    st-todo          Todo         group=unstarted
+    st-inprogress    In Progress  group=started
+    st-inreview      In Review    group=started
+    st-done          Done         group=completed
+    st-cancelled     Cancelled    group=cancelled
+  suggested_pickup_state_ids: ['st-backlog', 'st-todo']
+    -> [('Backlog', 'backlog'), ('Todo', 'unstarted')]
+    excluded from the suggestion: [('In Progress', 'started'), ('In Review', 'started'), ('Done', 'completed'), ('Cancelled', 'cancelled')]
+
+================================================================================
+[E] "an id copied off a neighbouring entry is still a real id"
+    Same command, two configs: doctor-sourced ids vs real ids of the wrong names
+    (ready_label_id=lb-needs-triage, states.done=st-cancelled).
+================================================================================
+$ fm-plane.py list   # ready_label_id=lb-ready  states.done=st-done
+  {
+    "results": [],
+    "next_page_results": false
+  }
+$ fm-plane.py list   # ready_label_id=lb-needs-triage  states.done=st-cancelled
+  {
+    "results": [],
+    "next_page_results": false
+  }
+  -> accepted with no configuration error: the name-matching rule is the operator's, which is why the doc states it.
+
+================================================================================
+[F] "Adapter commands must be invoked with that same interpreter"
+    Identical plane.json and identical command, two interpreters.
+================================================================================
+$ /tmp/planetest/venv/bin/python bin/fm-plane.py doctor   # the FM_PLANE_PYTHON venv
+    "note": "MCP connected; no ticket or claim changed"
+  }
+$ python3 bin/fm-plane.py doctor                          # FM_PLANE_PYTHON unset -> the ${FM_PLANE_PYTHON:-python3} fallback in bin/fm-spawn.sh:2264
+  {"error": "install the optional requirements-plane.txt in the adapter Python environment"}
