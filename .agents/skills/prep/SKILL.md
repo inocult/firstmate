@@ -1,6 +1,6 @@
 ---
 name: prep
-description: Prepare this home and a repository for Plane missions. Use when the captain invokes /prep, or before the first mission against a repository this home has not run before. Installs the adapter's dependencies, discovers the live label and state identifiers, writes the private Plane configuration, and commissions the project's own domain-doc and tracker layout.
+description: Prepare this home and a repository for Plane missions. Use when the captain invokes /prep, or before the first mission against a repository this home has not run before. Installs the adapter's dependencies, discovers the live label and state identifiers, creates any missing canonical triage label in the configured Plane project once the captain confirms that specific list, writes the private Plane configuration, and commissions the project's own domain-doc and tracker layout.
 metadata:
   internal: true
 ---
@@ -52,8 +52,12 @@ Control performs these steps directly and reports the verified result.
    That is a precondition, not a caution.
    The adapter is not that surface: it lists labels and never writes them, and must not gain a label-write path for this.
    Where a harness offers one, Control's harness-level Plane connector is the current such surface, but this repository does not provision it, so do not assume it exists; it is configured entirely outside `FM_HOME/config/plane.json` and can be pointed somewhere else.
-   With a confirmed write surface, create the missing roles using the wording above, then re-run `doctor` to pick up the new identifiers.
-   Without one - none available, one that resolves elsewhere, or one that cannot be compared - create nothing, and neither guess nor silently skip: halt the home half and report just the roles that are missing, with the meanings fixed above, for the captain to create in Plane by hand.
+   A confirmed write surface authorizes nothing on its own.
+   Put the exact list of labels to be created to the captain first, naming each one and saying they will appear in the configured Plane project that their teammates share.
+   This is a write to a live tracker, so silence is not confirmation, and neither is the captain's general agreement to run prep.
+   Create only the labels they confirm, then re-run `doctor` to pick up the new identifiers.
+   If the captain declines or does not answer, create nothing and take the same course as having no write surface at all; a prep that writes to Plane only on an explicit yes, and otherwise creates nothing, is the intended outcome rather than a failure.
+   Without a confirmed write surface - none available, one that resolves elsewhere, or one that cannot be compared - create nothing, and neither guess nor silently skip: halt the home half and report just the roles that are missing, with the meanings fixed above, for the captain to create in Plane by hand.
    Re-entry re-runs `doctor` and compares again, which needs no write surface; the roles the captain just created are then present and prepping continues, so a home on any harness can reach a prepped state this way.
    Then confirm the identifiers with the captain and complete `FM_HOME/config/plane.json` with the eligible pickup states, the implementing, review and done lifecycle states, and `ready_label_id` taken from the `ready-for-agent` role.
    `ready_label_id` is the only label identifier the home stores, because it is the only one the adapter reads; the other four roles are provisioned by name and need no stored ID.
