@@ -14,7 +14,7 @@ Adapted from Matt Pocock's `skills/engineering/wayfinder/SKILL.md`, retrieved wi
 Upstream: https://github.com/mattpocock/skills/blob/main/skills/engineering/wayfinder/SKILL.md
 The upstream MIT notice is preserved in `LICENSE` beside this file.
 This adaptation renames the skill to `/operation` and names the four type labels as the configured project carries them; the workflow, the ticket types, the fog-of-war discipline and the tracker-generic language are upstream's.
-Removed from upstream: the assignee-based claim, because the shared project's assignee is never modified; charting's research dispatch, because charting must not start work it cannot finish; the links from a ticket to the assets created while resolving it and a Task answer's credential location, because a home-local path means nothing to the colleagues who share that project; and the allowance for parallel sessions on one map, because the claim that made it safe is gone.
+Removed from upstream: the assignee-based claim, because the shared project's assignee is never modified; charting's research dispatch and the per-session cap's research carve-out that existed for it, because charting must not start work it cannot finish; the links from a ticket to the assets created while resolving it and a Task answer's credential location, because a home-local path means nothing to the colleagues who share that project; and the allowance for parallel sessions on one map, because the claim that made it safe is gone.
 Changed from upstream: the map template's example entry states the name-wrapping-a-link convention in words, because this repository's documentation link check reads upstream's placeholder target as a broken local link; the tracker paragraph names this repository's setup command, requires the tracker bound to the effort's repository and carries `prep`'s confirmed-write-surface precondition, because upstream's pointers name a skill and a document section that do not exist here, this home's tracker configuration binds one project to one repository, and a write to the live shared tracker is what that precondition governs; and a research or prototype ticket routes through a crewmate Control spawns and supervises rather than an in-session subagent, because `AGENTS.md` hard rule 1 forbids Control writing to a project itself.
 
 A loose idea has arrived, too big for one agent session, and wrapped in fog: the way from here to the **destination** isn't visible yet. An operation is about finding that way, not charging at the destination. This skill charts the way as a **shared map** on the repo's issue tracker, then works its **decision tickets** (questions whose resolution is a decision, not slices of a build to execute) one at a time until the route is clear.
@@ -113,7 +113,7 @@ Ruling something out of scope is a scoping act, not a step on the route. When a 
 
 ## Invocation
 
-Two modes. Either way, **never resolve more than one ticket per session**, with the exception of research tickets.
+Two modes. Either way, **never resolve more than one ticket per session**.
 
 ### Chart the map
 
