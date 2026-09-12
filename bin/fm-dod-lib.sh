@@ -10,6 +10,18 @@
 # mode is refused rather than silently rendered as the pipeline contract.
 # The block opens with the fixed machine-readable "Delivery contract: mode=<mode>"
 # line that bin/fm-spawn.sh checks a ship brief against.
+# This file is also the one owner of what `done:` means per mode. fm_dod_done_line
+# prints the single done line a mode accepts (`done: PR {url} checks green` for
+# no-mistakes, `done: PR {url}` for direct-PR, `done: ready in branch fm/<id>` for
+# local-only) and fm_dod_done_binding prints the paragraph that binds `done:` to
+# that line and its evidence and declares any other done line not a done, treated
+# as a worker that stopped short. fm_dod_block renders that binding into the
+# Definition of done and bin/fm-brief.sh renders the same function into the ship
+# status protocol, so the worker reads one binding at the report site and at the
+# gate, and neither copy can drift. A no-mistakes worker starts the pipeline
+# itself after its implementation commit and reports the commit as a nonterminal
+# `working:` line; the brief never offers a done line at the commit, which is the
+# false done the binding exists to close.
 # This file is the one owner of the no-mistakes `--intent` contract: only the
 # brief's `## Captain's intent` subsection plus later captain words, never
 # `## Firstmate spec` and never the worker's own tradeoffs.
@@ -190,15 +202,60 @@ fm_ask_user_escalation_block() {  # <data-dir> <task-id>
 EOF
 }
 
-fm_dod_block() {  # <mode> <task-id>
+# The one `done:` line a delivery mode accepts. `{url}` is the worker's fill site
+# for the PR's full https:// URL, the same placeholder the brief prose uses.
+fm_dod_done_line() {  # <mode> <task-id>
   local mode=$1 id=$2
+  case "$mode" in
+    no-mistakes) printf 'done: PR {url} checks green\n' ;;
+    direct-PR) printf 'done: PR {url}\n' ;;
+    local-only) printf 'done: ready in branch fm/%s\n' "$id" ;;
+    *)
+      echo "error: fm_dod_done_line: unknown delivery mode '$mode'" >&2
+      return 1 ;;
+  esac
+}
+
+# The paragraph binding `done:` to the mode's accepted line and its evidence.
+# Rendered by fm_dod_block into the Definition of done and by bin/fm-brief.sh
+# into the ship status protocol, so a done line without that evidence is
+# declared not a done at both the report site and the gate.
+fm_dod_done_binding() {  # <mode> <task-id>
+  local mode=$1 id=$2 line evidence not_done
+  line=$(fm_dod_done_line "$mode" "$id") || return 1
+  case "$mode" in
+    no-mistakes)
+      evidence='a PR whose checks are green, named by its full https:// URL'
+      not_done='A local commit with passing local checks, a started pipeline run, or an open PR still waiting on CI'
+      ;;
+    direct-PR)
+      evidence='an open PR, named by its full https:// URL'
+      not_done='A local commit or a pushed branch with no PR'
+      ;;
+    local-only)
+      evidence="your work committed on branch \`fm/$id\` as a clean fast-forward onto the default branch"
+      not_done='Uncommitted work or a branch that no longer fast-forwards'
+      ;;
+  esac
+  cat <<EOF
+Done is bound to this task's delivery mode: the only \`done:\` line that counts is \`$line\`, and its evidence is $evidence.
+$not_done is not done; a \`done:\` line without that evidence is not a done, and firstmate treats it as a worker that stopped short of delivery, not as finished work.
+EOF
+}
+
+fm_dod_block() {  # <mode> <task-id>
+  local mode=$1 id=$2 binding
+  binding=$(fm_dod_done_binding "$mode" "$id") || {
+    echo "error: fm_dod_block: unknown delivery mode '$mode'" >&2
+    return 1
+  }
   case "$mode" in
     direct-PR)
       cat <<EOF
 # Definition of done
 Delivery contract: mode=direct-PR
 This task ships **direct-PR**: you raise the PR yourself, without the no-mistakes pipeline.
-The task is complete only when committed on your branch.
+$binding
 When it is implemented and committed, push your branch and open a PR with \`gh-axi\`, then append \`done: PR {url}\` to the status file and stop.
 Do NOT run /no-mistakes. The configured merge authority decides whether to merge the PR; firstmate relays the outcome.
 EOF
@@ -208,6 +265,7 @@ EOF
 # Definition of done
 Delivery contract: mode=local-only
 This task ships **local-only**: no remote, no PR, no pipeline.
+$binding
 The task is complete only when committed on your branch \`fm/$id\`. Do NOT push, do NOT open a PR, do NOT merge.
 Keep your branch a clean fast-forward onto the current default branch - if \`main\` has advanced, rebase onto it so the eventual merge stays a fast-forward.
 When it is implemented and committed, append \`done: ready in branch fm/$id\` to the status file and stop.
@@ -218,9 +276,11 @@ EOF
       cat <<EOF
 # Definition of done
 Delivery contract: mode=no-mistakes
-The task is complete only when committed on your branch.
-When you believe it is complete, append \`done: {summary}\` to the status file and stop.
-Firstmate will then instruct you to run /no-mistakes to validate and ship a PR.
+This task ships **no-mistakes**: you validate and ship the PR through the no-mistakes pipeline yourself.
+$binding
+Commit the implementation on your branch, append the nonterminal \`working: implementation committed, starting no-mistakes\` line, and start /no-mistakes in that same turn to validate and ship the PR.
+Do not stop at the commit and do not wait for firstmate to tell you to start the pipeline: the commit is a milestone, never a gate, and there is no done line for it.
+If an instruction to run /no-mistakes reaches you while your run is already active, reattach to that run; never start a second one.
 
 You drive no-mistakes by responding to its gates, not by implementing fixes.
 Follow the guidance no-mistakes itself provides for the mechanics: it loads when you invoke /no-mistakes, and \`no-mistakes axi run --help\` plus the \`help\` lines in each \`axi\` response are authoritative and version-matched to the installed binary.
