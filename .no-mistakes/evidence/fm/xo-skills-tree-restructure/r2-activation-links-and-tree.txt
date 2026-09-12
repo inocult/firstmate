@@ -1,0 +1,73 @@
+## activation links: .agents/skills/<name> -> skills/<category>/<name> (target commit 759e2e5)
+afk                              -> ../../skills/core/afk                    mode=120000 SKILL.md-resolves=yes
+ahoy                             -> ../../skills/core/ahoy                   mode=120000 SKILL.md-resolves=yes
+ask-user-authority               -> ../../skills/core/ask-user-authority     mode=120000 SKILL.md-resolves=yes
+bearings                         -> ../../skills/core/bearings               mode=120000 SKILL.md-resolves=yes
+bootstrap-diagnostics            -> ../../skills/core/bootstrap-diagnostics  mode=120000 SKILL.md-resolves=yes
+breach                           -> ../../skills/missions/breach             mode=120000 SKILL.md-resolves=yes
+captain-hold-lifecycle           -> ../../skills/core/captain-hold-lifecycle mode=120000 SKILL.md-resolves=yes
+debrief                          -> ../../skills/core/debrief                mode=120000 SKILL.md-resolves=yes
+decision-hold-lifecycle          -> ../../skills/deprecated/decision-hold-lifecycle mode=120000 SKILL.md-resolves=yes
+diagnostic-reasoning             -> ../../skills/core/diagnostic-reasoning   mode=120000 SKILL.md-resolves=yes
+firstmate-codexapp               -> ../../skills/experimental/firstmate-codexapp mode=120000 SKILL.md-resolves=yes
+firstmate-coding-guidelines      -> ../../skills/core/firstmate-coding-guidelines mode=120000 SKILL.md-resolves=yes
+firstmate-orca                   -> ../../skills/experimental/firstmate-orca mode=120000 SKILL.md-resolves=yes
+fmx-respond                      -> ../../skills/experimental/fmx-respond    mode=120000 SKILL.md-resolves=yes
+harness-adapters                 -> ../../skills/core/harness-adapters       mode=120000 SKILL.md-resolves=yes
+offgrid                          -> ../../skills/core/offgrid                mode=120000 SKILL.md-resolves=yes
+operation                        -> ../../skills/missions/operation          mode=120000 SKILL.md-resolves=yes
+overwatch                        -> ../../skills/missions/overwatch          mode=120000 SKILL.md-resolves=yes
+plane-missions                   -> ../../skills/missions/plane-missions     mode=120000 SKILL.md-resolves=yes
+prep                             -> ../../skills/missions/prep               mode=120000 SKILL.md-resolves=yes
+process-event-sources            -> ../../skills/core/process-event-sources  mode=120000 SKILL.md-resolves=yes
+project-management               -> ../../skills/core/project-management     mode=120000 SKILL.md-resolves=yes
+quota-array-dispatch             -> ../../skills/core/quota-array-dispatch   mode=120000 SKILL.md-resolves=yes
+refresh                          -> ../../skills/core/refresh                mode=120000 SKILL.md-resolves=yes
+secondmate-provisioning          -> ../../skills/core/secondmate-provisioning mode=120000 SKILL.md-resolves=yes
+sitrep                           -> ../../skills/core/sitrep                 mode=120000 SKILL.md-resolves=yes
+stow                             -> ../../skills/core/stow                   mode=120000 SKILL.md-resolves=yes
+stuck-crewmate-recovery          -> ../../skills/core/stuck-crewmate-recovery mode=120000 SKILL.md-resolves=yes
+updatefirstmate                  -> ../../skills/core/updatefirstmate        mode=120000 SKILL.md-resolves=yes
+links=29 unresolved=0
+
+## canonical skills by category, and which are active (linked)
+core          afk                            internal=1 active
+core          ahoy                           internal=1 active
+core          ask-user-authority             internal=1 active
+core          bearings                       internal=1 active
+core          bootstrap-diagnostics          internal=1 active
+core          captain-hold-lifecycle         internal=1 active
+core          debrief                        internal=1 active
+core          diagnostic-reasoning           internal=1 active
+core          firstmate-coding-guidelines    internal=1 active
+core          harness-adapters               internal=1 active
+core          offgrid                        internal=1 active
+core          process-event-sources          internal=1 active
+core          project-management             internal=1 active
+core          quota-array-dispatch           internal=1 active
+core          refresh                        internal=1 active
+core          secondmate-provisioning        internal=1 active
+core          sitrep                         internal=1 active
+core          stow                           internal=1 active
+core          stuck-crewmate-recovery        internal=1 active
+core          updatefirstmate                internal=1 active
+deprecated    decision-hold-lifecycle        internal=1 active
+experimental  firstmate-codexapp             internal=1 active
+experimental  firstmate-orca                 internal=1 active
+experimental  fmx-respond                    internal=1 active
+missions      breach                         internal=1 active
+missions      operation                      internal=1 active
+missions      overwatch                      internal=1 active
+missions      plane-missions                 internal=1 active
+missions      prep                           internal=1 active
+public        stow-notes                     internal=0 INACTIVE
+
+## uncategorized skills directly under skills/ (should be none)
+none
+
+## .claude/skills alias
+lrwxrwxrwx 1 inocult inocult 17 Sep 12 17:00 .claude/skills -> ../.agents/skills
+.claude/skills/ahoy/SKILL.md
+
+## duplicate frontmatter names across the tree (should be none)
+(end)

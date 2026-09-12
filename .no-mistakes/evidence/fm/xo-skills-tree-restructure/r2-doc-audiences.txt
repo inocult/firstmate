@@ -1,0 +1,59 @@
+## docs/documentation-audiences.json entries that name skills paths, and whether each exists
+skills-path strings: 45
+ok      skills/core/afk/SKILL.md
+ok      skills/core/ahoy/SKILL.md
+ok      skills/core/ask-user-authority/SKILL.md
+ok      skills/core/bearings/SKILL.md
+ok      skills/core/bootstrap-diagnostics/SKILL.md
+ok      skills/core/captain-hold-lifecycle/SKILL.md
+ok      skills/core/debrief/SKILL.md
+ok      skills/core/diagnostic-reasoning/SKILL.md
+ok      skills/core/firstmate-coding-guidelines/SKILL.md
+ok      skills/core/harness-adapters/SKILL.md
+ok      skills/core/harness-adapters/references/common/control-and-recovery.md
+ok      skills/core/harness-adapters/references/common/dispatch.md
+ok      skills/core/harness-adapters/references/common/model-and-effort.md
+ok      skills/core/harness-adapters/references/common/primary-hooks.md
+ok      skills/core/harness-adapters/references/harness/claude.md
+ok      skills/core/harness-adapters/references/harness/codex.md
+ok      skills/core/harness-adapters/references/harness/cursor.md
+ok      skills/core/harness-adapters/references/harness/gemini.md
+ok      skills/core/harness-adapters/references/harness/grok.md
+ok      skills/core/harness-adapters/references/harness/kimi.md
+ok      skills/core/harness-adapters/references/harness/muse.md
+ok      skills/core/harness-adapters/references/harness/omp.md
+ok      skills/core/harness-adapters/references/harness/opencode.md
+ok      skills/core/harness-adapters/references/harness/pi.md
+ok      skills/core/harness-adapters/references/harness/rovo.md
+ok      skills/core/offgrid/SKILL.md
+ok      skills/core/process-event-sources/SKILL.md
+ok      skills/core/project-management/SKILL.md
+ok      skills/core/quota-array-dispatch/SKILL.md
+ok      skills/core/refresh/SKILL.md
+ok      skills/core/secondmate-provisioning/SKILL.md
+ok      skills/core/sitrep/SKILL.md
+ok      skills/core/stow/SKILL.md
+ok      skills/core/stuck-crewmate-recovery/SKILL.md
+ok      skills/core/updatefirstmate/SKILL.md
+ok      skills/deprecated/decision-hold-lifecycle/SKILL.md
+ok      skills/experimental/firstmate-codexapp/SKILL.md
+ok      skills/experimental/firstmate-orca/SKILL.md
+ok      skills/experimental/fmx-respond/SKILL.md
+ok      skills/missions/breach/SKILL.md
+ok      skills/missions/operation/SKILL.md
+ok      skills/missions/overwatch/SKILL.md
+ok      skills/missions/plane-missions/SKILL.md
+ok      skills/missions/prep/SKILL.md
+ok      skills/public/stow-notes/SKILL.md
+
+## the real consumer: LC_ALL=C.UTF-8 bin/fm-test-run.sh tests/fm-documentation-audiences.test.sh
+FM_TEST_BEGIN 2026-09-12T21:56:48Z tests/fm-documentation-audiences.test.sh family=pure-contract-unit expected_gate_skip=none
+ok - documentation inventory classifies every maintained prose surface exactly once
+ok - classification, setup routing, and maintained-prose scope fail safely
+ok - required documentation owner pointers cannot silently disappear
+ok - local links resolve while dates, versions, commands, and incident prose remain semantically reviewed
+FM_TEST_END 2026-09-12T21:56:49Z tests/fm-documentation-audiences.test.sh exit=0 duration_ms=697 gate_skip=false
+FM_TEST_SUMMARY total=1 failed=0 skipped_gate=0 duration_ms=741
+FM_TEST_SUMMARY_FAMILY family=pure-contract-unit count=1 duration_ms=697 failed=0
+FM_TEST_SLOWEST rank=1 script=tests/fm-documentation-audiences.test.sh duration_ms=697
+exit=0

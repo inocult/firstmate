@@ -1,0 +1,23 @@
+## clone of the real branch (759e2e5) with core.symlinks=false (Git for Windows default), then session-start bootstrap
+total 116
+-rw-r--r-- 1 inocult inocult 21 Sep 12 17:55 afk
+-rw-r--r-- 1 inocult inocult 22 Sep 12 17:55 ahoy
+-rw-r--r-- 1 inocult inocult 36 Sep 12 17:55 ask-user-authority
+ahoy content: ../../skills/core/ahoy
+SKILL.md via link exists? no
+--- bin/fm-bootstrap.sh output (filtered to skills lines):
+exit=0
+1:MISSING_MANUAL: skills activation links (.agents/skills/afk, .agents/skills/ahoy, .agents/skills/ask-user-authority, .agents/skills/bearings, .agents/skills/bootstrap-diagnostics, .agents/skills/breach, .agents/skills/captain-hold-lifecycle, .agents/skills/debrief, .agents/skills/decision-hold-lifecycle, .agents/skills/diagnostic-reasoning, .agents/skills/firstmate-codexapp, .agents/skills/firstmate-coding-guidelines, .agents/skills/firstmate-orca, .agents/skills/fmx-respond, .agents/skills/harness-adapters, .agents/skills/offgrid, .agents/skills/operation, .agents/skills/overwatch, .agents/skills/plane-missions, .agents/skills/prep, .agents/skills/process-event-sources, .agents/skills/project-management, .agents/skills/quota-array-dispatch, .agents/skills/refresh, .agents/skills/secondmate-provisioning, .agents/skills/sitrep, .agents/skills/stow, .agents/skills/stuck-crewmate-recovery, .agents/skills/updatefirstmate are regular files, not symlinks; run git config core.symlinks true, then re-checkout .agents/skills so the links resolve)
+activation-link lines: 1
+named entries in the line: 29 of 29 tracked links
+link file still untouched after bootstrap? yes
+dirty tracked paths in clone after bootstrap: 0
+
+## same clone with default core.symlinks (control)
+lrwxrwxrwx 1 inocult inocult 22 Sep 12 17:55 /tmp/tmp.l6QI5dp9Kp/nix/.agents/skills/ahoy -> ../../skills/core/ahoy
+SKILL.md via link exists? yes
+index 120000 entries: 29
+exit=0
+(no activation-link line printed)
+other bootstrap lines in control (host tool state, for context):
+

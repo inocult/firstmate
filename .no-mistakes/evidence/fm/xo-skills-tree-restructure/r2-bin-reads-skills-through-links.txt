@@ -1,0 +1,24 @@
+## bin/fm-branch-prompt.sh embeds the recovery skill read through .agents/skills/stuck-crewmate-recovery (target 759e2e5)
+exit=0
+prompt lines: 153
+78:# Recovery playbook (verbatim copy of the tracked skill)
+79-
+80----
+81-name: stuck-crewmate-recovery
+skill body present verbatim: 1
+canonical skill line 2: name: stuck-crewmate-recovery
+
+## bin/fm-bearings-board.sh usage (template resolved through the bearings activation link)
+fm-bearings-board.sh - build and arm the /bearings lavish fleet board.
+
+The board is the captain-facing interactive surface of /bearings lavish: the
+shipped template (.agents/skills/bearings/assets/board-template.html) plus one
+injected fm-bearings-board.v1 JSON payload. This script owns the mechanics so
+the invoking agent's per-run work stays "compose the JSON, run build" - the
+agent never authors board UI at invocation time.
+
+Usage:
+  fm-bearings-board.sh build <data.json>
+  fm-bearings-board.sh path
+
+template path resolves to: skills/core/bearings/assets/board-template.html (36672 bytes)

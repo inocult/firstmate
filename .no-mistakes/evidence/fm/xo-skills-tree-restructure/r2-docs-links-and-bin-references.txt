@@ -1,0 +1,21 @@
+## every relative markdown link into skills/ or .agents/skills/ in tracked markdown resolves (target 759e2e5)
+links checked=32 broken=0
+
+## docs/documentation-audiences.json: every path it names exists
+paths named: 0 missing: 0
+skills paths: []
+
+## references to skill files from bin/ scripts resolve through the activation links
+ok      .agents/skills/bearings/assets/board-template.html -> skills/core/bearings/assets/board-template.html
+ok      .agents/skills/captain-hold-lifecycle/SKILL.md -> skills/core/captain-hold-lifecycle/SKILL.md
+MISSING .agents/skills/captain-hold-lifecycle/SKILL.md.
+MISSING .agents/skills/quota-array-dispatch/SKILL.md.
+ok      .agents/skills/stuck-crewmate-recovery/SKILL.md -> skills/core/stuck-crewmate-recovery/SKILL.md
+
+## docs/configuration.md skills-tree paragraph names the Windows core.symlinks requirement and the bootstrap line
+skills/core/bootstrap-diagnostics/SKILL.md:29:- `MISSING_MANUAL: skills activation links (.agents/skills/<name>[, ...] are regular files, not symlinks; ...)` - tell the captain the checkout needs `git config core.symlink
+docs/configuration.md:21:A native-Windows home must set `git config core.symlinks true` before checkout, because Git for Windows defaults it off and then materializes the `.agents/skills/<name>` activation links as plain
+
+## README install instruction names the public skill by its installable name
+213:The portable `stow-notes` in `public` and the internal `stow` in `core` are therefore two audience variants under distinct names, and the activation links still choose which skills this home loads
+214:Skills that assume a live firstmate home carry `metadata.internal: true` in their frontmatter, which hides them from installer discovery (tools like the [skills.sh](https://skills.sh) `npx skills 

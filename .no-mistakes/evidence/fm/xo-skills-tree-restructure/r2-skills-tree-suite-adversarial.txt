@@ -1,0 +1,42 @@
+## control: the skills-tree suite on an intact clone of 759e2e5
+ok - every activation link is a committed relative symlink to a same-named skill in a known category (29 links)
+ok - every canonical skill lives in exactly one known category under a tree-unique name (30 skills)
+ok - the Claude skills alias reaches every active skill through the activation links
+exit=0
+
+## adversarial 1: same skill name in two categories (copy core/stow to public/stow, the pre-fix collision)
+ok - every activation link is a committed relative symlink to a same-named skill in a known category (29 links)
+not ok - skill stow exists in more than one category, so --skill stow would install whichever variant an installer walks first
+exit=1
+
+## adversarial 2: dangling activation link (.agents/skills/ghost -> ../../skills/core/ghost, committed)
+not ok - .agents/skills/ghost resolves to no SKILL.md
+exit=1
+
+## adversarial 3: activation link committed as a plain file with the target text (Windows-style materialization)
+not ok - .agents/skills/ahoy is not an activation link into skills/
+exit=1
+
+## adversarial 4: link retargeted to a differently named skill (.agents/skills/prep -> ../../skills/core/ahoy)
+not ok - .agents/skills/prep links to a differently named skill: ../../skills/core/ahoy
+exit=1
+
+## adversarial 5: public skill marked metadata.internal: true (installers would skip it)
+6:  internal: true
+ok - every activation link is a committed relative symlink to a same-named skill in a known category (29 links)
+not ok - skills/public/stow-notes is marked metadata.internal, so installers would skip it
+exit=1
+
+## adversarial 6: uncategorized skill directly under skills/ (the old layout)
+ok - every activation link is a committed relative symlink to a same-named skill in a known category (29 links)
+not ok - uncategorized skill at skills/loose
+exit=1
+
+## adversarial 7: frontmatter name disagrees with directory (skills/public/stow-notes declares name: stow)
+ok - every activation link is a committed relative symlink to a same-named skill in a known category (29 links)
+not ok - skills/public/stow-notes declares name 'stow', but installers resolve --skill by that name, so it must match the directory
+exit=1
+
+## adversarial 8: unknown category (skills/beta/afk)
+not ok - .agents/skills/afk links into an unknown category: ../../skills/beta/afk
+exit=1

@@ -1,0 +1,3 @@
+## tests/fm-bootstrap.test.sh with only test_skills_activation_links_checked_out_as_files_are_reported invoked (the full suite stops at the pre-existing host-specific herdr failure at line 276 before reaching this case)
+ok - bootstrap: activation links checked out as regular files are reported, real symlinks are silent
+exit=0

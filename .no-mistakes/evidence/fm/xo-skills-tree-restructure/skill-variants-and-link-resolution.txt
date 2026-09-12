@@ -1,0 +1,25 @@
+## stow: two audience variants selected by location, activation link picks the internal one
+link: .agents/skills/stow -> ../../skills/core/stow
+same file as skills/core/stow/SKILL.md? yes
+skills/core/stow/SKILL.md: internal=1 lines=309
+skills/public/stow/SKILL.md: internal=0 lines=151
+
+## installer discovery marks: metadata.internal per category
+core: 20 skills, 20 marked internal
+missions: 5 skills, 5 marked internal
+experimental: 3 skills, 3 marked internal
+deprecated: 1 skills, 1 marked internal
+public: 1 skills, 0 marked internal
+
+## bin scripts still reach skill files through the activation links
+.agents/skills/bearings/assets/board-template.html -> skills/core/bearings/assets/board-template.html
+.agents/skills/stuck-crewmate-recovery/SKILL.md -> skills/core/stuck-crewmate-recovery/SKILL.md
+.agents/skills/captain-hold-lifecycle/SKILL.md -> skills/core/captain-hold-lifecycle/SKILL.md
+.agents/skills/quota-array-dispatch/SKILL.md -> skills/core/quota-array-dispatch/SKILL.md
+fm-branch-prompt.sh cats the skill through the link:
+---
+name: stuck-crewmate-recovery
+description: >-
+
+## every relative markdown link into skills/ or .agents/skills/ in tracked docs resolves
+links checked=32 broken=0

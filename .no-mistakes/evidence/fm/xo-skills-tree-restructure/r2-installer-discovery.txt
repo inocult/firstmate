@@ -1,0 +1,81 @@
+## skills.sh installer discovery against this tree at 759e2e5: npx skills add <repo> (list mode)
+●   claude-code_2-1-267_agent  Agent detected — installing non-interactively
+◇  Source: /home/inocult/.no-mistakes/worktrees/930731c14da1/01M2BPQ8MQFCSD71E3H49697DT
+◇  Local path validated
+◇  Found 1 skill
+●  Skill: stow-notes
+│  Sweep the current conversation for durable knowledge - user preferences, project facts, operational gotchas, standing decisions, and unfinished next steps - and file each through explicit instructions, existing local conventions, or the private `.stow-notes.md` fallback, curating tiered, decaying destination files as it writes. Use when the user invokes /stow-notes, asks to save or write down what was learned this session, or before a context reset or long break.
+◇  79 agents
+●  Installing to: Claude Code, Codex, Cursor, GitHub Copilot, Grok Build, Hermes Agent, OpenCode, Pi
+◇  Installation Summary ───────────────────────────────────────────────╮
+│                                                                      │
+│  ./.agents/skills/stow-notes                                         │
+│    universal: Codex, Cursor, GitHub Copilot, OpenCode, Amp +15 more  │
+│    symlink → Claude Code, Grok Build, Hermes Agent, Pi               │
+│                                                                      │
+├──────────────────────────────────────────────────────────────────────╯
+◇  Installation complete
+◇  Installed 1 skill ─────────────────────────────────────────────────────╮
+│                                                                         │
+│  ✓ ./.agents/skills/stow-notes                                          │
+│    universal: Codex, Cursor, GitHub Copilot, OpenCode, Amp +15 more     │
+│    symlinked: Claude Code                                               │
+│    skipped: Grok Build, Hermes Agent, Pi (project directory not found)  │
+│                                                                         │
+├─────────────────────────────────────────────────────────────────────────╯
+└  Done!  Review skills before use; they run with full agent permissions.
+exit=0
+
+## install only the public skill into an empty project: npx skills add <repo> --skill stow-notes -a claude-code -y
+●   claude-code_2-1-267_agent  Agent detected — installing non-interactively
+◇  Source: /home/inocult/.no-mistakes/worktrees/930731c14da1/01M2BPQ8MQFCSD71E3H49697DT
+◇  Local path validated
+◇  Found 30 skills
+●  Selected 1 skill: stow-notes
+◇  Installation Summary ────────╮
+│                               │
+│  ./.agents/skills/stow-notes  │
+│    copy → Claude Code         │
+│                               │
+├───────────────────────────────╯
+◇  Installation complete
+◇  Installed 1 skill ───────────────╮
+│                                   │
+│  ✓ stow-notes (copied)            │
+│    → ./.claude/skills/stow-notes  │
+│                                   │
+├───────────────────────────────────╯
+└  Done!  Review skills before use; they run with full agent permissions.
+exit=0
+installed tree:
+./.claude/skills/stow-notes/SKILL.md
+./skills-lock.json
+installed SKILL.md lines: 151, identical to skills/public/stow-notes/SKILL.md: yes
+internal marker in installed file: 0
+installed name: stow-notes
+private-path references (bin/fm-, FM_HOME, .agents/skills) in installed file: 0
+
+## adversarial: --skill stow (the internal name) - what does an outsider get?
+●   claude-code_2-1-267_agent  Agent detected — installing non-interactively
+◇  Source: /home/inocult/.no-mistakes/worktrees/930731c14da1/01M2BPQ8MQFCSD71E3H49697DT
+◇  Local path validated
+◇  Found 30 skills
+●  Selected 1 skill: stow
+◇  Installation Summary ──╮
+│                         │
+│  ./.agents/skills/stow  │
+│    copy → Claude Code   │
+│                         │
+├─────────────────────────╯
+◇  Installation complete
+◇  Installed 1 skill ─────────╮
+│                             │
+│  ✓ stow (copied)            │
+│    → ./.claude/skills/stow  │
+│                             │
+├─────────────────────────────╯
+└  Done!  Review skills before use; they run with full agent permissions.
+exit=0
+./.claude/skills/stow/SKILL.md
+./skills-lock.json
+installed SKILL.md lines: 309, identical to skills/core/stow/SKILL.md: yes, internal marker: 1

@@ -1,0 +1,226 @@
+## changed-test selection for this branch: bin/fm-test-run.sh --list --changed --base 563ee04 (real worktree, target 759e2e5)
+exit=0
+selected suites: 80
+unmapped/die lines: 0
+  tests/fm-bearings-board.test.sh
+  tests/fm-skills-tree.test.sh
+  tests/fm-test-run.test.sh
+  tests/fm-bootstrap.test.sh
+  tests/fm-update.test.sh
+  tests/fm-bearings-board-render.test.sh
+  tests/fm-bearings-board-lavish-live-e2e.test.sh
+  tests/fm-secondmate-sync.test.sh
+
+## adversarial (throwaway clone, base HEAD): edit an unreferenced skill file skills/missions/breach/LICENSE
+ M skills/missions/breach/LICENSE
+tests/fm-arm-pretool-check.test.sh
+tests/fm-ask-user-authority.test.sh
+tests/fm-bearings-board.test.sh
+tests/fm-brief.test.sh
+tests/fm-calm-pi-extension.test.sh
+tests/fm-captain-hold-lifecycle.test.sh
+tests/fm-cd-pretool-check.test.sh
+tests/fm-classify-decision-key.test.sh
+tests/fm-composer-ghost.test.sh
+tests/fm-composer-lib.test.sh
+tests/fm-crew-state.test.sh
+tests/fm-documentation-audiences.test.sh
+tests/fm-ensure-agents-md.test.sh
+tests/fm-grok-harness.test.sh
+tests/fm-harness-adapter-references.test.sh
+tests/fm-herdr-lab.test.sh
+tests/fm-kimi-harness.test.sh
+tests/fm-lint-workflows.test.sh
+tests/fm-lint.test.sh
+tests/fm-muse-harness.test.sh
+tests/fm-omp-harness.test.sh
+tests/fm-operational-input.test.sh
+tests/fm-pi-primary-types.test.sh
+tests/fm-rovo-harness.test.sh
+tests/fm-send-popup-settle.test.sh
+tests/fm-send-settle.test.sh
+tests/fm-skills-tree.test.sh
+tests/fm-subagent-pretool-check.test.sh
+tests/fm-supervision-instructions.test.sh
+tests/fm-task-delivery.test.sh
+tests/fm-test-isolation-proof.test.sh
+tests/fm-test-run.test.sh
+tests/fm-tmux-submit-busy.test.sh
+tests/fm-trace-context-lib.test.sh
+tests/fm-transition-lib.test.sh
+tests/fm-vendor-auth-probe.test.sh
+exit=0
+
+## adversarial: delete that unreferenced skill file
+ D skills/missions/breach/LICENSE
+fm-test-run: no tests selected for changes vs HEAD (map is conservative; use --all for the complete suite)
+exit=0
+
+## adversarial: edit a nested asset a suite names through the link (skills/core/bearings/assets/board-template.html)
+ M skills/core/bearings/assets/board-template.html
+tests/fm-bearings-board-render.test.sh
+tests/fm-bearings-snapshot.test.sh
+tests/fm-fleet-snapshot-view.test.sh
+tests/fm-home-summary-refresh.test.sh
+tests/fm-arm-pretool-check.test.sh
+tests/fm-ask-user-authority.test.sh
+tests/fm-bearings-board.test.sh
+tests/fm-brief.test.sh
+tests/fm-calm-pi-extension.test.sh
+tests/fm-captain-hold-lifecycle.test.sh
+tests/fm-cd-pretool-check.test.sh
+tests/fm-classify-decision-key.test.sh
+tests/fm-composer-ghost.test.sh
+tests/fm-composer-lib.test.sh
+tests/fm-crew-state.test.sh
+tests/fm-documentation-audiences.test.sh
+tests/fm-ensure-agents-md.test.sh
+tests/fm-grok-harness.test.sh
+tests/fm-harness-adapter-references.test.sh
+tests/fm-herdr-lab.test.sh
+tests/fm-kimi-harness.test.sh
+tests/fm-lint-workflows.test.sh
+tests/fm-lint.test.sh
+tests/fm-muse-harness.test.sh
+tests/fm-omp-harness.test.sh
+tests/fm-operational-input.test.sh
+tests/fm-pi-primary-types.test.sh
+tests/fm-rovo-harness.test.sh
+tests/fm-send-popup-settle.test.sh
+tests/fm-send-settle.test.sh
+tests/fm-skills-tree.test.sh
+tests/fm-subagent-pretool-check.test.sh
+tests/fm-supervision-instructions.test.sh
+tests/fm-task-delivery.test.sh
+tests/fm-test-isolation-proof.test.sh
+tests/fm-test-run.test.sh
+tests/fm-tmux-submit-busy.test.sh
+tests/fm-trace-context-lib.test.sh
+tests/fm-transition-lib.test.sh
+tests/fm-vendor-auth-probe.test.sh
+exit=0
+
+## adversarial: retarget an activation link (.agents/skills/prep -> ../../skills/core/prep)
+ M .agents/skills/prep
+tests/fm-arm-pretool-check.test.sh
+tests/fm-ask-user-authority.test.sh
+tests/fm-bearings-board.test.sh
+tests/fm-brief.test.sh
+tests/fm-calm-pi-extension.test.sh
+tests/fm-captain-hold-lifecycle.test.sh
+tests/fm-cd-pretool-check.test.sh
+tests/fm-classify-decision-key.test.sh
+tests/fm-composer-ghost.test.sh
+tests/fm-composer-lib.test.sh
+tests/fm-crew-state.test.sh
+tests/fm-documentation-audiences.test.sh
+tests/fm-ensure-agents-md.test.sh
+tests/fm-grok-harness.test.sh
+tests/fm-harness-adapter-references.test.sh
+tests/fm-herdr-lab.test.sh
+tests/fm-kimi-harness.test.sh
+tests/fm-lint-workflows.test.sh
+tests/fm-lint.test.sh
+tests/fm-muse-harness.test.sh
+tests/fm-omp-harness.test.sh
+tests/fm-operational-input.test.sh
+tests/fm-pi-primary-types.test.sh
+tests/fm-rovo-harness.test.sh
+tests/fm-send-popup-settle.test.sh
+tests/fm-send-settle.test.sh
+tests/fm-skills-tree.test.sh
+tests/fm-subagent-pretool-check.test.sh
+tests/fm-supervision-instructions.test.sh
+tests/fm-task-delivery.test.sh
+tests/fm-test-isolation-proof.test.sh
+tests/fm-test-run.test.sh
+tests/fm-tmux-submit-busy.test.sh
+tests/fm-trace-context-lib.test.sh
+tests/fm-transition-lib.test.sh
+tests/fm-vendor-auth-probe.test.sh
+exit=0
+
+## adversarial: a non-skill file under skills/ (skills/core/README.md) still has no mapping and must fail loudly
+A  skills/core/README.md
+fm-test-run: no changed-test mapping for source path: skills/core/README.md
+exit=2
+
+## adversarial: edit an inactive public skill (skills/public/stow-notes/SKILL.md)
+ M skills/public/stow-notes/SKILL.md
+tests/fm-arm-pretool-check.test.sh
+tests/fm-ask-user-authority.test.sh
+tests/fm-bearings-board.test.sh
+tests/fm-brief.test.sh
+tests/fm-calm-pi-extension.test.sh
+tests/fm-captain-hold-lifecycle.test.sh
+tests/fm-cd-pretool-check.test.sh
+tests/fm-classify-decision-key.test.sh
+tests/fm-composer-ghost.test.sh
+tests/fm-composer-lib.test.sh
+tests/fm-crew-state.test.sh
+tests/fm-documentation-audiences.test.sh
+tests/fm-ensure-agents-md.test.sh
+tests/fm-grok-harness.test.sh
+tests/fm-harness-adapter-references.test.sh
+tests/fm-herdr-lab.test.sh
+tests/fm-kimi-harness.test.sh
+tests/fm-lint-workflows.test.sh
+tests/fm-lint.test.sh
+tests/fm-muse-harness.test.sh
+tests/fm-omp-harness.test.sh
+tests/fm-operational-input.test.sh
+tests/fm-pi-primary-types.test.sh
+tests/fm-rovo-harness.test.sh
+tests/fm-send-popup-settle.test.sh
+tests/fm-send-settle.test.sh
+tests/fm-skills-tree.test.sh
+tests/fm-subagent-pretool-check.test.sh
+tests/fm-supervision-instructions.test.sh
+tests/fm-task-delivery.test.sh
+tests/fm-test-isolation-proof.test.sh
+tests/fm-test-run.test.sh
+tests/fm-tmux-submit-busy.test.sh
+tests/fm-trace-context-lib.test.sh
+tests/fm-transition-lib.test.sh
+tests/fm-vendor-auth-probe.test.sh
+exit=0
+
+## adversarial: edit the codex agent manifest (skills/experimental/firstmate-codexapp/agents/openai.yaml), the file round-2 review said died
+ M skills/experimental/firstmate-codexapp/agents/openai.yaml
+tests/fm-arm-pretool-check.test.sh
+tests/fm-ask-user-authority.test.sh
+tests/fm-bearings-board.test.sh
+tests/fm-brief.test.sh
+tests/fm-calm-pi-extension.test.sh
+tests/fm-captain-hold-lifecycle.test.sh
+tests/fm-cd-pretool-check.test.sh
+tests/fm-classify-decision-key.test.sh
+tests/fm-composer-ghost.test.sh
+tests/fm-composer-lib.test.sh
+tests/fm-crew-state.test.sh
+tests/fm-documentation-audiences.test.sh
+tests/fm-ensure-agents-md.test.sh
+tests/fm-grok-harness.test.sh
+tests/fm-harness-adapter-references.test.sh
+tests/fm-herdr-lab.test.sh
+tests/fm-kimi-harness.test.sh
+tests/fm-lint-workflows.test.sh
+tests/fm-lint.test.sh
+tests/fm-muse-harness.test.sh
+tests/fm-omp-harness.test.sh
+tests/fm-operational-input.test.sh
+tests/fm-pi-primary-types.test.sh
+tests/fm-rovo-harness.test.sh
+tests/fm-send-popup-settle.test.sh
+tests/fm-send-settle.test.sh
+tests/fm-skills-tree.test.sh
+tests/fm-subagent-pretool-check.test.sh
+tests/fm-supervision-instructions.test.sh
+tests/fm-task-delivery.test.sh
+tests/fm-test-isolation-proof.test.sh
+tests/fm-test-run.test.sh
+tests/fm-tmux-submit-busy.test.sh
+tests/fm-trace-context-lib.test.sh
+tests/fm-transition-lib.test.sh
+tests/fm-vendor-auth-probe.test.sh
+exit=0

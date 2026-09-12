@@ -1,0 +1,15 @@
+## clone of the real branch with core.symlinks=false (Git for Windows default)
+total 116
+-rw-r--r-- 1 inocult inocult 21 Sep 12 17:44 afk
+-rw-r--r-- 1 inocult inocult 22 Sep 12 17:44 ahoy
+-rw-r--r-- 1 inocult inocult 36 Sep 12 17:44 ask-user-authority
+ahoy content: ../../skills/core/ahoy
+SKILL.md via link exists? no
+--- bin/fm-bootstrap.sh output (filtered to skills lines):
+1:MISSING_MANUAL: skills activation links (.agents/skills/afk, .agents/skills/ahoy, .agents/skills/ask-user-authority, .agents/skills/bearings, .agents/skills/bootstrap-diagnostics, .agents/skills/breach, .agents/skills/captain-hold-lifecycle, .agents/skills/debrief, .agents/skills/decision-hold-lifecycle, .agents/skills/diagnostic-reasoning, .agents/skills/firstmate-codexapp, .agents/skills/firstmate-coding-guidelines, .agents/skills/firstmate-orca, .agents/skills/fmx-respond, .agents/skills/harness-adapters, .agents/skills/offgrid, .agents/skills/operation, .agents/skills/overwatch, .agents/skills/plane-missions, .agents/skills/prep, .agents/skills/process-event-sources, .agents/skills/project-management, .agents/skills/quota-array-dispatch, .agents/skills/refresh, .agents/skills/secondmate-provisioning, .agents/skills/sitrep, .agents/skills/stow, .agents/skills/stuck-crewmate-recovery, .agents/skills/updatefirstmate are regular files, not symlinks; run git config core.symlinks true, then re-checkout .agents/skills so the links resolve)
+link file still untouched? yes
+
+## same clone with default core.symlinks (control)
+lrwxrwxrwx 1 inocult inocult 22 Sep 12 17:44 /tmp/tmp.w9YfFhCdwQ/nix/.agents/skills/ahoy -> ../../skills/core/ahoy
+SKILL.md via link exists? yes
+(no activation-link line printed)

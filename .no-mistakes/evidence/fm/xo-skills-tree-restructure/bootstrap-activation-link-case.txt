@@ -1,0 +1,2 @@
+ok - bootstrap: activation links checked out as regular files are reported, real symlinks are silent
+exit=0

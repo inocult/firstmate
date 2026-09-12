@@ -1,0 +1,106 @@
+## skills.sh installer discovery against this tree (npx skills)
+
+│
+●   claude-code_2-1-267_agent  Agent detected — installing non-interactively
+[?25l│
+◇  Source: /home/inocult/.no-mistakes/worktrees/930731c14da1/01M2BPQ8MQFCSD71E3H49697DT
+[?25h[?25l│
+◇  Local path validated
+[?25h[?25l│
+◇  Found 1 skill
+[?25h
+│
+◇  Available Skills
+│
+│    stow
+│
+│      Sweep the current conversation for durable knowledge - user preferences, project facts, operational gotchas, standing decisions, and unfinished next steps - and file each through explicit instructions, existing local conventions, or the private `.stow-notes.md` fallback, curating tiered, decaying destination files as it writes. Use when the user invokes /stow, asks to save or write down what was learned this session, or before a context reset or long break.
+
+│
+└  Use --skill <name> to install specific skills
+
+exit=0
+
+## install only the public stow skill into an empty project (npx skills add --skill stow -a claude-code -y)
+
+│
+●   claude-code_2-1-267_agent  Agent detected — installing non-interactively
+[?25l│
+◇  Source: /home/inocult/.no-mistakes/worktrees/930731c14da1/01M2BPQ8MQFCSD71E3H49697DT
+[?25h[?25l│
+◇  Local path validated
+[?25h[?25l│
+◇  Found 29 skills
+[?25h│
+●  Selected 1 skill: stow
+
+│
+◇  Installation Summary ──╮
+│                         │
+│  ./.agents/skills/stow  │
+│    copy → Claude Code   │
+│                         │
+├─────────────────────────╯
+[?25l│
+◇  Installation complete
+[?25h
+│
+◇  Installed 1 skill ─────────╮
+│                             │
+│  ✓ stow (copied)            │
+│    → ./.claude/skills/stow  │
+│                             │
+├─────────────────────────────╯
+
+installed tree:
+<project>
+<project>/.claude
+<project>/.claude/skills
+<project>/.claude/skills/stow
+<project>/.claude/skills/stow/SKILL.md
+<project>/skills-lock.json
+installed SKILL.md lines: 309, identical to skills/public/stow/SKILL.md: no
+
+## which stow did --skill stow install at the target commit? (skills-lock.json)
+{
+  "version": 1,
+  "skills": {
+    "stow": {
+      "source": "../../../home/inocult/.no-mistakes/worktrees/930731c14da1/01M2BPQ8MQFCSD71E3H49697DT",
+      "sourceType": "local",
+      "computedHash": "d617351c1a1c876523400b8ab30ede0d095e18986667e0f22b3dad080a310721"
+    }
+  }
+}
+
+6:  internal: true
+
+## same install from a clone of the BASE commit 563ee04 (before this change)
+stow
+◇  Found 29 skills
+●  Selected 1 skill: stow
+│  ✓ stow (copied)            │
+installed lines: 151
+7:<!-- maintainers: this is the public, installer-facing skill. Keep it standalone, with no private project paths, tool assumptions, or environment branching. The firstmate-internal counterpart lives at .agents/skills/stow/SKILL.md - deliberately a separate file with no shared code. Keep them independent. -->
+{
+  "version": 1,
+  "skills": {
+    "stow": {
+      "source": "../base",
+      "sourceType": "local",
+      "computedHash": "f24bf1176da13a85f7b3c249518c7f051fb826a2d596fa33d3afcc5c348483a8"
+    }
+  }
+}
+
+## base: list mode
+◇  Found 1 skill
+│    stow
+
+## probe: which same-named stow wins for --skill stow at the target commit
+- variant A: activation link .agents/skills/stow removed, both canonical copies kept
+  installed lines: 309 (309=internal core, 151=public)
+- variant B: link removed and skills/core/stow removed, only skills/public/stow left
+  installed lines: 151
+- variant C: link restored to core, skills/core/stow restored, skills/public renamed to skills/aaa-public
+  installed lines: 151
