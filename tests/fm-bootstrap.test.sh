@@ -725,12 +725,12 @@ test_skills_activation_links_checked_out_as_files_are_reported() {
   # link target, so no bundled skill loads. Bootstrap reports it and never
   # repairs it.
   case_dir="$TMP_ROOT/skills-links-as-files"
-  mkdir -p "$case_dir/home/config" "$case_dir/home/.agents/skills" "$case_dir/home/skills/station/ahoy" "$case_dir/home/skills/station/stow"
+  mkdir -p "$case_dir/home/config" "$case_dir/home/.agents/skills" "$case_dir/home/skills/operations/ahoy" "$case_dir/home/skills/operations/stow"
   printf '%s\n' manual > "$case_dir/home/config/backlog-backend"
-  : >"$case_dir/home/skills/station/ahoy/SKILL.md"
-  : >"$case_dir/home/skills/station/stow/SKILL.md"
-  ln -s ../../skills/station/ahoy "$case_dir/home/.agents/skills/ahoy"
-  ln -s ../../skills/station/stow "$case_dir/home/.agents/skills/stow"
+  : >"$case_dir/home/skills/operations/ahoy/SKILL.md"
+  : >"$case_dir/home/skills/operations/stow/SKILL.md"
+  ln -s ../../skills/operations/ahoy "$case_dir/home/.agents/skills/ahoy"
+  ln -s ../../skills/operations/stow "$case_dir/home/.agents/skills/stow"
   printf '%s\n' 'skill' > "$case_dir/home/.agents/skills/note.md"
   git -C "$case_dir/home" init -q
   git -C "$case_dir/home" add .agents skills
@@ -750,10 +750,10 @@ test_skills_activation_links_checked_out_as_files_are_reported() {
     || fail "bootstrap must not repair the checked-out link files itself"
 
   case_dir="$TMP_ROOT/skills-links-as-symlinks"
-  mkdir -p "$case_dir/home/config" "$case_dir/home/.agents/skills" "$case_dir/home/skills/station/ahoy"
+  mkdir -p "$case_dir/home/config" "$case_dir/home/.agents/skills" "$case_dir/home/skills/operations/ahoy"
   printf '%s\n' manual > "$case_dir/home/config/backlog-backend"
-  : >"$case_dir/home/skills/station/ahoy/SKILL.md"
-  ln -s ../../skills/station/ahoy "$case_dir/home/.agents/skills/ahoy"
+  : >"$case_dir/home/skills/operations/ahoy/SKILL.md"
+  ln -s ../../skills/operations/ahoy "$case_dir/home/.agents/skills/ahoy"
   git -C "$case_dir/home" init -q
   git -C "$case_dir/home" add .agents skills
   git -C "$case_dir/home" -c user.name=test -c user.email=test@example.invalid commit -qm links

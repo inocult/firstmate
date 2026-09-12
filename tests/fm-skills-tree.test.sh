@@ -9,13 +9,22 @@ set -u
 # shellcheck source=tests/lib.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
-CATEGORIES="public station missions experimental deprecated"
+CATEGORIES="deprecated in-progress engineering operations misc"
 
 category_known() {
   case " $CATEGORIES " in
     *" $1 "*) return 0 ;;
   esac
   return 1
+}
+
+frontmatter_name() {
+  sed -n '2,/^---$/p' "$1" | sed -n 's/^name:[[:space:]]*//p' | head -n 1
+}
+
+# Audience is the metadata.internal marker, not the category a skill lives in.
+is_internal() {
+  sed -n '2,/^---$/p' "$1" | grep -Eq '^[[:space:]]*internal:[[:space:]]*true[[:space:]]*$'
 }
 
 test_activation_links_are_committed_relative_links_into_the_tree() {
@@ -38,62 +47,60 @@ test_activation_links_are_committed_relative_links_into_the_tree() {
   pass "every activation link is a committed relative symlink to a same-named skill in a known category ($count links)"
 }
 
-test_every_canonical_skill_lives_in_exactly_one_known_category() {
-  local skill category name seen="" count=0
+test_every_canonical_skill_lives_in_a_known_category_as_at_most_two_audience_variants() {
+  # A directory name may repeat across categories only as audience variants:
+  # one portable (no metadata.internal marker) and one internal.
+  local skill category name audience seen="" count=0
   for skill in "$ROOT"/skills/*/*/SKILL.md; do
     [ -f "$skill" ] || fail "no canonical skills found under skills/<category>/<name>/"
     category=$(basename "$(dirname "$(dirname "$skill")")")
     name=$(basename "$(dirname "$skill")")
     category_known "$category" || fail "skills/$category/$name is in an unknown category"
-    if [ "$category" = public ]; then
-      sed -n '2,/^---$/p' "$skill" | grep -Eq '^[[:space:]]*internal:[[:space:]]*true[[:space:]]*$' \
-        && fail "skills/public/$name is marked metadata.internal, so installers would skip it"
-    else
-      case " $seen " in
-        *" $name "*) fail "skill $name exists in more than one internal category" ;;
-      esac
-      seen="$seen $name"
-    fi
+    if is_internal "$skill"; then audience=internal; else audience=portable; fi
+    case " $seen " in
+      *" $name=$audience "*) fail "skill $name has two $audience variants; a name may repeat across categories only as one portable and one internal audience variant" ;;
+    esac
+    seen="$seen $name=$audience"
     count=$((count + 1))
   done
   for skill in "$ROOT"/skills/*/SKILL.md; do
     [ ! -e "$skill" ] || fail "uncategorized skill at skills/$(basename "$(dirname "$skill")")"
   done
-  pass "every canonical skill lives in at most one internal category plus public ($count skills)"
+  pass "every canonical skill lives in a known category, repeating a name only as one portable and one internal audience variant ($count skills)"
 }
 
-frontmatter_name() {
-  sed -n '2,/^---$/p' "$1" | sed -n 's/^name:[[:space:]]*//p' | head -n 1
-}
-
-test_public_variant_is_the_first_installer_hit_of_every_shared_name() {
+test_portable_variant_is_the_first_installer_hit_of_every_shared_name() {
   # skills.sh installers resolve --skill <name> by frontmatter name across
   # every category, ignore metadata.internal in install mode, and keep the
-  # first same-named hit of a sorted directory walk, so a public variant of a
-  # shared name is what third parties receive only because its category sorts
-  # first. docs/configuration.md "Operational home layout and state" owns the
-  # fact; tests/fm-skills-installer-live-e2e.test.sh proves it live.
-  local skill candidate name category first shared=0
-  for skill in "$ROOT"/skills/public/*/SKILL.md; do
-    [ -f "$skill" ] || continue
-    name=$(frontmatter_name "$skill")
-    first=''
+  # first same-named hit of a sorted directory walk, so the portable variant
+  # of a shared name is what third parties receive only because its directory
+  # sorts first (misc before operations for stow). docs/configuration.md
+  # "Operational home layout and state" owns the fact;
+  # tests/fm-skills-installer-live-e2e.test.sh proves it live.
+  local name candidate first portable internal hits shared=0
+  for name in $(cd "$ROOT" && for skill in skills/*/*/SKILL.md; do frontmatter_name "$skill"; done | LC_ALL=C sort -u); do
+    first='' portable='' internal='' hits=0
     while IFS= read -r candidate; do
       [ "$(frontmatter_name "$ROOT/$candidate")" = "$name" ] || continue
-      category=${candidate#skills/}
-      category=${category%%/*}
-      [ -n "$first" ] || first=$category
-      [ "$category" != public ] || continue
-      shared=$((shared + 1))
-      [ "$(printf '%s\n' public "$category" | LC_ALL=C sort | head -n 1)" = public ] \
-        || fail "category $category holds a $name variant but sorts before public under LC_ALL=C, so --skill $name would install it"
+      hits=$((hits + 1))
+      [ -n "$first" ] || first=$candidate
+      if is_internal "$ROOT/$candidate"; then
+        [ -z "$internal" ] || fail "frontmatter name $name is internal in both $internal and $candidate; at most one variant per name may be internal"
+        internal=$candidate
+      else
+        [ -z "$portable" ] || fail "frontmatter name $name is portable in both $portable and $candidate; at most one variant per name may be portable"
+        portable=$candidate
+      fi
     done < <(cd "$ROOT" && printf '%s\n' skills/*/*/SKILL.md | LC_ALL=C sort)
-    [ "$first" = public ] \
-      || fail "skills/public/$(basename "$(dirname "$skill")") is not the first $name hit of a C-sorted walk of skills/*/*/SKILL.md (first hit: ${first:-none})"
+    [ "$hits" -gt 1 ] || continue
+    shared=$((shared + 1))
+    [ -n "$portable" ] || fail "frontmatter name $name exists in more than one category with no portable variant"
+    [ "$first" = "$portable" ] \
+      || fail "$portable is not the first $name hit of a C-sorted walk of skills/*/*/SKILL.md (first hit: $first), so --skill $name would install the internal variant"
   done
   [ "$shared" -gt 0 ] \
-    || fail "expected at least one frontmatter name shared between public and an internal category (the two stow variants); update this test if that pairing was removed deliberately"
-  pass "the public variant is the first C-sorted installer hit for every shared skill name ($shared shared)"
+    || fail "expected at least one frontmatter name shared across categories (the two stow variants); update this test if that pairing was removed deliberately"
+  pass "the portable variant is the first C-sorted installer hit for every shared skill name ($shared shared)"
 }
 
 test_claude_alias_reaches_every_active_skill() {
@@ -108,6 +115,6 @@ test_claude_alias_reaches_every_active_skill() {
 }
 
 test_activation_links_are_committed_relative_links_into_the_tree
-test_every_canonical_skill_lives_in_exactly_one_known_category
-test_public_variant_is_the_first_installer_hit_of_every_shared_name
+test_every_canonical_skill_lives_in_a_known_category_as_at_most_two_audience_variants
+test_portable_variant_is_the_first_installer_hit_of_every_shared_name
 test_claude_alias_reaches_every_active_skill

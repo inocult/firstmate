@@ -2,7 +2,7 @@
 
 Orca is an experimental macOS backend in which the Orca app owns both the task worktree and terminal endpoint.
 The crewmate harness remains the agent process launched inside that endpoint.
-Firstmate agents load [`firstmate-orca`](../skills/experimental/firstmate-orca/SKILL.md) before operating or recovering this backend.
+Firstmate agents load [`firstmate-orca`](../skills/in-progress/firstmate-orca/SKILL.md) before operating or recovering this backend.
 
 ## Setup
 

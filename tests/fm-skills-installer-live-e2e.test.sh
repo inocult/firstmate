@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # tests/fm-skills-installer-live-e2e.test.sh - live drift guard proving the
-# real skills.sh installer still resolves `--skill stow` to the public variant
-# in skills/public/stow rather than the same-named internal skill in
-# skills/station/stow, and that discovery lists only the public skill.
+# real skills.sh installer still resolves `--skill stow` to the portable variant
+# in skills/misc/stow rather than the same-named internal skill in
+# skills/operations/stow, and that discovery lists only the portable skill.
 #
 # Why this file exists: the installer keys on the frontmatter name across
 # every category, ignores metadata.internal in install mode, and keeps the
-# first same-named hit of a sorted directory walk, so the public variant wins
-# only because `public` sorts before `station`. docs/configuration.md
+# first same-named hit of a sorted directory walk, so the portable variant wins
+# only because `misc` sorts before `operations`. docs/configuration.md
 # "Operational home layout and state" owns that fact and
 # tests/fm-skills-tree.test.sh pins the ordering portably; this guard runs the
 # real installer so a change in its resolution rule fails loudly instead of
@@ -47,18 +47,18 @@ if [ -z "$VERSION" ]; then
 fi
 note "skills CLI $VERSION"
 
-PUBLIC="$ROOT/skills/public/stow/SKILL.md"
-INTERNAL="$ROOT/skills/station/stow/SKILL.md"
-[ -f "$PUBLIC" ] || fail "public stow skill missing at skills/public/stow/SKILL.md"
-[ -f "$INTERNAL" ] || fail "internal stow skill missing at skills/station/stow/SKILL.md"
-[ "$(frontmatter_name "$PUBLIC")" = stow ] || fail "skills/public/stow/SKILL.md must declare frontmatter name stow"
-[ "$(frontmatter_name "$INTERNAL")" = stow ] || fail "skills/station/stow/SKILL.md must declare frontmatter name stow"
+PUBLIC="$ROOT/skills/misc/stow/SKILL.md"
+INTERNAL="$ROOT/skills/operations/stow/SKILL.md"
+[ -f "$PUBLIC" ] || fail "public stow skill missing at skills/misc/stow/SKILL.md"
+[ -f "$INTERNAL" ] || fail "internal stow skill missing at skills/operations/stow/SKILL.md"
+[ "$(frontmatter_name "$PUBLIC")" = stow ] || fail "skills/misc/stow/SKILL.md must declare frontmatter name stow"
+[ "$(frontmatter_name "$INTERNAL")" = stow ] || fail "skills/operations/stow/SKILL.md must declare frontmatter name stow"
 
 LAB=$(mktemp -d "${TMPDIR:-/tmp}/fm-skills-installer-live.XXXXXX") || fail "cannot create the guard lab"
 LAB=$(cd -P -- "$LAB" && pwd -P)
 mkdir -p "$LAB/install" "$LAB/list"
 
-# Install mode: --skill stow must resolve to the public variant even though
+# Install mode: --skill stow must resolve to the portable variant even though
 # the internal one shares its name and install mode ignores metadata.internal.
 (cd "$LAB/install" && npx --no-install skills add "$ROOT" --skill stow -a claude-code -y >"$LAB/install.log" 2>&1) \
   || fail "skills add --skill stow failed: $(cat "$LAB/install.log")"
@@ -71,7 +71,7 @@ if sed -n '2,/^---$/p' "$INSTALLED" | grep -Eq '^[[:space:]]*internal:[[:space:]
   fail "--skill stow installed the internal variant (metadata.internal is set)"
 fi
 cmp -s "$INSTALLED" "$PUBLIC" \
-  || fail "--skill stow installed a file that differs from skills/public/stow/SKILL.md ($(wc -l <"$INSTALLED") lines installed, $(wc -l <"$PUBLIC") in the public variant)"
+  || fail "--skill stow installed a file that differs from skills/misc/stow/SKILL.md ($(wc -l <"$INSTALLED") lines installed, $(wc -l <"$PUBLIC") in the public variant)"
 pass "--skill stow installs the public variant ($(wc -l <"$PUBLIC") lines, frontmatter name stow, no metadata.internal)"
 
 # Discovery: without --skill the installer honours metadata.internal, so it

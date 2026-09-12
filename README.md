@@ -207,9 +207,9 @@ Agent-only reference skills live in the same `skills/` tree and are loaded by fi
 ### Skills tree
 
 Every bundled skill lives at `skills/<category>/<name>/SKILL.md`, laid out like an installer-facing skills repository so you can install one skill without taking the whole distribution.
-The category says what to expect: `public` is the portable, installer-facing skills that reference no private path of this home, `station` is the operating contracts every home relies on, `missions` is the Plane ticket tier, `experimental` is backend- or integration-specific, and `deprecated` is redirect stubs kept for in-flight work.
+The category says what to expect, stability first and then domain: `deprecated` is redirect stubs and retired aliases, `in-progress` is skills that are new or not yet stable, including the backend- or integration-specific ones, `engineering` is skills about changing repositories and dispatching or supervising code work, `operations` is skills about running this home day to day, briefing, posture, and memory, and `misc` is thin persona wrappers and anything that fits nowhere else.
 `.agents/skills/<name>` is a relative symlink into that tree for each skill this home actually loads, so activation is expressed by which links exist, and `.claude/skills` points at `.agents/skills`.
-A skill name may exist once in an internal category and once in `public` as two audience variants that differ by design, and the activation link chooses which one this home loads.
+Audience is expressed by the `metadata.internal` marker rather than by location, and a skill name may exist in more than one category only as two audience variants that differ by design, with the activation link choosing which one this home loads.
 Skills that assume a live firstmate home carry `metadata.internal: true` in their frontmatter, which hides them from installer discovery (tools like the [skills.sh](https://skills.sh) `npx skills add` installer) without affecting how firstmate itself loads them.
 [`docs/configuration.md`](docs/configuration.md#operational-home-layout-and-state) owns the layout and category scheme.
 
