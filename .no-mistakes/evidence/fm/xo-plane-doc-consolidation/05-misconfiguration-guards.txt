@@ -1,0 +1,12 @@
+# Rule: "In Progress, In Review, Done and cancelled states must never be configured as pickup states"
+$ pickup_state_ids = ["4f1e2a10-backlog" (Backlog), "9a2f5c33-inprogress" (In Progress)]
+{"error": "pickup states must be separate from lifecycle states"}
+exit=1
+
+# Rule: "Every identifier written here must be the id of the state or label whose name it is being
+#        configured for ... an id copied off a neighbouring entry is still a real id"
+$ ready_label_id = "3c3c3c3c-bug"  (a real label id, but the row named "bug")
+config accepted: no validation error (the id is real)
+$ "$FM_PLANE_PYTHON" bin/fm-plane.py claim --item aaaabbbb-0001 --request-id op-002   # ticket does carry ready-for-agent
+{"error": "ticket lacks the ready-for-agent label"}
+exit=1

@@ -1,0 +1,14 @@
+# Same setup-stage plane.json (ready_label_id / pickup_state_ids / states still absent)
+
+$ "$FM_PLANE_PYTHON" bin/fm-plane.py list          # a ticket command: refuses until identifiers are configured
+{"error": "configure implementing, review and done Plane state IDs"}
+exit=1
+
+$ "$FM_PLANE_PYTHON" bin/fm-plane.py ensure-label --name needs-triage   # provisioning also reads a setup-stage config
+{
+  "project": "0f7c1d55-4d3e-4a51-9b9a-1c2d3e4f5a6b",
+  "name": "needs-triage",
+  "id": "1a1a1a1a-needs-triage",
+  "created": false
+}
+exit=0

@@ -1,0 +1,67 @@
+$ export FM_HOME=/tmp/plane-optest/home
+$ export FM_PLANE_PYTHON=/tmp/plane-optest/venv/bin/python   # the venv holding bin/requirements-plane.txt
+$ "$FM_PLANE_PYTHON" bin/fm-plane.py doctor
+{
+  "mcp_tools": [
+    "label",
+    "state",
+    "workitem",
+    "workitem_link",
+    "workitem_relation"
+  ],
+  "project": "0f7c1d55-4d3e-4a51-9b9a-1c2d3e4f5a6b",
+  "states": [
+    {
+      "id": "4f1e2a10-backlog",
+      "name": "Backlog",
+      "group": "backlog"
+    },
+    {
+      "id": "7c3d9b21-todo",
+      "name": "Todo",
+      "group": "unstarted"
+    },
+    {
+      "id": "9a2f5c33-inprogress",
+      "name": "In Progress",
+      "group": "started"
+    },
+    {
+      "id": "b5e8d744-inreview",
+      "name": "In Review",
+      "group": "started"
+    },
+    {
+      "id": "c6f9e855-done",
+      "name": "Done",
+      "group": "completed"
+    },
+    {
+      "id": "d7a0f966-cancelled",
+      "name": "Cancelled",
+      "group": "cancelled"
+    }
+  ],
+  "labels": [
+    {
+      "id": "1a1a1a1a-needs-triage",
+      "name": "needs-triage"
+    },
+    {
+      "id": "2b2b2b2b-ready",
+      "name": "ready-for-agent"
+    },
+    {
+      "id": "3c3c3c3c-bug",
+      "name": "bug"
+    }
+  ],
+  "suggested_ready_label_id": "2b2b2b2b-ready",
+  "suggested_pickup_state_ids": [
+    "4f1e2a10-backlog",
+    "7c3d9b21-todo"
+  ],
+  "executor": "mathieu-control",
+  "note": "MCP connected; no ticket or claim changed"
+}
+exit=0

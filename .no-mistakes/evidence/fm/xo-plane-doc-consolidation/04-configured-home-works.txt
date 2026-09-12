@@ -1,0 +1,58 @@
+# plane.json completed by hand from the doctor output, using only the Setup section
+
+$ "$FM_PLANE_PYTHON" bin/fm-plane.py list
+{
+  "results": [
+    {
+      "id": "aaaabbbb-0001",
+      "name": "Export ledger rows",
+      "state": "7c3d9b21-todo",
+      "description_stripped": "Acceptance: exports all rows",
+      "assignees": [
+        "human-a"
+      ],
+      "labels": [
+        "2b2b2b2b-ready"
+      ]
+    }
+  ],
+  "next_cursor": "",
+  "next_page_results": false
+}
+exit=0
+
+$ "$FM_PLANE_PYTHON" bin/fm-plane.py claim --item aaaabbbb-0001 --request-id op-001
+{
+  "execution": "9bed597a-aa9f-4e38-b292-b1b30ed9f6ef",
+  "executor": "mathieu-control",
+  "item": "aaaabbbb-0001",
+  "past_requests": [],
+  "phase": "implementing",
+  "pickup_state": "7c3d9b21-todo",
+  "pr": null,
+  "project": "0f7c1d55-4d3e-4a51-9b9a-1c2d3e4f5a6b",
+  "repository_url": "https://github.com/example-org/monorepo",
+  "request_id": "op-001",
+  "schema": 1,
+  "task": null,
+  "updated_at": 1789233474
+}
+exit=0
+
+$ "$FM_PLANE_PYTHON" bin/fm-plane.py status --item aaaabbbb-0001
+{
+  "execution": "9bed597a-aa9f-4e38-b292-b1b30ed9f6ef",
+  "executor": "mathieu-control",
+  "item": "aaaabbbb-0001",
+  "past_requests": [],
+  "phase": "implementing",
+  "pickup_state": "7c3d9b21-todo",
+  "pr": null,
+  "project": "0f7c1d55-4d3e-4a51-9b9a-1c2d3e4f5a6b",
+  "repository_url": "https://github.com/example-org/monorepo",
+  "request_id": "op-001",
+  "schema": 1,
+  "task": null,
+  "updated_at": 1789233474
+}
+exit=0

@@ -1,0 +1,23 @@
+# "The SDK belongs in its own virtual environment ... Adapter commands must be invoked with that same interpreter."
+
+$ python3 -V                     # the ambient interpreter, without the optional SDK
+Python 3.14.7
+$ python3 bin/fm-plane.py doctor
+{"error": "install the optional requirements-plane.txt in the adapter Python environment"}
+exit=1
+
+$ /tmp/plane-optest/venv/bin/python -V      # the environment holding bin/requirements-plane.txt
+Python 3.14.7
+$ /tmp/plane-optest/venv/bin/python bin/fm-plane.py doctor | head -8
+{
+  "mcp_tools": [
+    "label",
+    "state",
+    "workitem",
+    "workitem_link",
+    "workitem_relation"
+  ],
+exit=0
+
+# bin/fm-spawn.sh reads the variable from the launch environment, so an unset one silently falls back to python3:
+2264:  "${FM_PLANE_PYTHON:-python3}" "$SCRIPT_DIR/fm-plane.py" check --task "$ID" >/dev/null || {

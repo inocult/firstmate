@@ -1,0 +1,12 @@
+=== project whose labels are: exactly-one ===
+labels: ['needs-triage', 'ready-for-agent', 'bug']
+suggested_ready_label_id: "2b2b2b2b-ready"
+
+=== project whose labels are: ambiguous ===
+labels: ['needs-triage', 'ready-for-agent', 'ready-for-agent']
+suggested_ready_label_id: null
+
+=== project whose labels are: missing ===
+labels: ['needs-triage', 'Ready-For-Agent', 'ready for agent']
+suggested_ready_label_id: null
+

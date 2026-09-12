@@ -1,0 +1,40 @@
+$ FM_PLANE_PYTHON=<venv python> bin/fm-test-run.sh tests/fm-plane.test.sh
+FM_TEST_BEGIN 2026-09-12T17:19:52Z tests/fm-plane.test.sh family=standalone expected_gate_skip=none
+test_a_conflict_over_the_real_transport_still_names_the_label_and_its_id (__main__.AdapterTests.test_a_conflict_over_the_real_transport_still_names_the_label_and_its_id) ... ok
+test_a_create_response_without_an_id_is_reported_rather_than_assumed (__main__.AdapterTests.test_a_create_response_without_an_id_is_reported_rather_than_assumed) ... ok
+test_a_name_longer_than_a_convention_expects_is_still_provisioned (__main__.AdapterTests.test_a_name_longer_than_a_convention_expects_is_still_provisioned) ... ok
+test_a_variant_that_normalizes_onto_the_name_halts_naming_the_label_and_its_id (__main__.AdapterTests.test_a_variant_that_normalizes_onto_the_name_halts_naming_the_label_and_its_id) ... ok
+test_another_home_provisioning_the_same_name_concurrently_still_returns_the_created_id (__main__.AdapterTests.test_another_home_provisioning_the_same_name_concurrently_still_returns_the_created_id) ... ok
+test_bind_creates_valid_brief_and_shared_dispatch_check (__main__.AdapterTests.test_bind_creates_valid_brief_and_shared_dispatch_check) ... ok
+test_done_requires_merge_and_acceptance_then_is_retryable (__main__.AdapterTests.test_done_requires_merge_and_acceptance_then_is_retryable) ... ok
+test_existing_link_or_unknown_dependencies_prevent_claim (__main__.AdapterTests.test_existing_link_or_unknown_dependencies_prevent_claim) ... ok
+test_expanded_label_and_todo_pickup_release (__main__.AdapterTests.test_expanded_label_and_todo_pickup_release) ... ok
+test_external_state_is_not_silently_overwritten (__main__.AdapterTests.test_external_state_is_not_silently_overwritten) ... ok
+test_label_is_provisioned_once_and_adopted_on_every_later_run (__main__.AdapterTests.test_label_is_provisioned_once_and_adopted_on_every_later_run) ... ok
+test_label_removed_during_interrupted_claim_stops_dispatch (__main__.AdapterTests.test_label_removed_during_interrupted_claim_stops_dispatch) ... ok
+test_label_required_and_active_or_done_tickets_excluded (__main__.AdapterTests.test_label_required_and_active_or_done_tickets_excluded) ... ok
+test_overwatch_backoff_budget_and_changed_scope (__main__.AdapterTests.test_overwatch_backoff_budget_and_changed_scope) ... ok
+test_overwatch_disabled_by_default_and_error_pauses_pickup (__main__.AdapterTests.test_overwatch_disabled_by_default_and_error_pauses_pickup) ... ok
+test_overwatch_registers_durable_wake_and_off_preserves_work (__main__.AdapterTests.test_overwatch_registers_durable_wake_and_off_preserves_work) ... ok
+test_partial_plane_failure_stays_reserved_and_recovers (__main__.AdapterTests.test_partial_plane_failure_stays_reserved_and_recovers) ... ok
+test_provisioning_precedes_the_lifecycle_mapping_that_ticket_commands_require (__main__.AdapterTests.test_provisioning_precedes_the_lifecycle_mapping_that_ticket_commands_require) ... ok
+test_provisioning_refuses_invalid_names_and_ambiguous_duplicates_without_writing (__main__.AdapterTests.test_provisioning_refuses_invalid_names_and_ambiguous_duplicates_without_writing) ... ok
+test_real_mcp_protocol_and_ready_for_agent_discovery (__main__.AdapterTests.test_real_mcp_protocol_and_ready_for_agent_discovery) ... ok
+test_release_can_be_reclaimed_but_old_request_cannot (__main__.AdapterTests.test_release_can_be_reclaimed_but_old_request_cannot) ... ok
+test_retry_keeps_execution_and_human_assignment (__main__.AdapterTests.test_retry_keeps_execution_and_human_assignment) ... ok
+test_review_stays_claimed_and_pr_link_is_idempotent (__main__.AdapterTests.test_review_stays_claimed_and_pr_link_is_idempotent) ... ok
+test_setup_can_discover_states_before_mapping (__main__.AdapterTests.test_setup_can_discover_states_before_mapping) ... ok
+test_stale_update_does_not_overwrite_new_owner (__main__.AdapterTests.test_stale_update_does_not_overwrite_new_owner) ... ok
+test_transfer_invalidates_old_execution_and_preserves_pr (__main__.AdapterTests.test_transfer_invalidates_old_execution_and_preserves_pr) ... ok
+test_two_remote_claim_creates_have_one_winner (__main__.AdapterTests.test_two_remote_claim_creates_have_one_winner) ... ok
+test_wrong_repo_pr_is_rejected (__main__.AdapterTests.test_wrong_repo_pr_is_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 28 tests in 4.842s
+
+OK
+FM_TEST_END 2026-09-12T17:19:57Z tests/fm-plane.test.sh exit=0 duration_ms=4990 gate_skip=false
+FM_TEST_SUMMARY total=1 failed=0 skipped_gate=0 duration_ms=5032
+FM_TEST_SUMMARY_FAMILY family=standalone count=1 duration_ms=4990 failed=0
+FM_TEST_SLOWEST rank=1 script=tests/fm-plane.test.sh duration_ms=4990
+exit=0
