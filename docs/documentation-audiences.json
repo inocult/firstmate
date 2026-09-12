@@ -540,6 +540,10 @@
     {
       "path": ".agents/skills/prep/SKILL.md",
       "audience": "agent-runtime"
+    },
+    {
+      "path": ".agents/skills/operation/SKILL.md",
+      "audience": "agent-runtime"
     }
   ]
 }
