@@ -36,12 +36,12 @@ No new daemon is installed and no idle heartbeat behavior is changed.
 
 ## Setup
 
-`/prep` performs this setup and owns the split between the home half Control writes directly and the project half a worker delivers.
-The schema below remains the authority on what that configuration contains.
+The [prep skill](../.agents/skills/prep/SKILL.md) owns the setup procedure: `/prep` walks it end to end, preparing this home and commissioning the repository's own documentation through a worker on the project's delivery path.
+This section owns what that setup has to produce, and is what the skill and a by-hand operator both work from: the prerequisites, the configuration schema, and the rule each value has to satisfy, so an operator configuring `plane.json` by hand satisfies what is below rather than following a second procedure.
 
 Requires Git, Python 3.10+, the optional MCP SDK in `bin/requirements-plane.txt`, and a reachable authenticated Plane MCP server.
-Install the optional SDK into a virtual environment and set `FM_PLANE_PYTHON` to that environment's Python executable when launching Firstmate.
-The same interpreter must be used for adapter commands.
+The SDK belongs in its own virtual environment, and `FM_PLANE_PYTHON` must name that environment's Python executable in the environment Firstmate is launched with.
+Adapter commands must be invoked with that same interpreter.
 Each instance needs its own explicit `FM_HOME` and executor name.
 
 Store the following configuration privately at `FM_HOME/config/plane.json`.
@@ -82,9 +82,9 @@ The MCP workspace/base environment values must match this configuration.
 For a remote streamable HTTP server, replace `mcp` with `url` and optional `headers_from`, a map from header names to environment-variable names containing complete header values.
 Interactive OAuth setup remains with your MCP client; this adapter does not implement an OAuth login flow.
 
-Run `doctor` before configuring label and state IDs.
-It lists the project's actual states and labels, suggests the exact `ready-for-agent` label ID, and suggests pickup states in the backlog or unstarted groups.
-Set `ready_label_id` and `pickup_state_ids` from those confirmed results; a missing or ambiguous label needs explicit configuration.
+`doctor` is where `ready_label_id`, `pickup_state_ids` and the lifecycle state ids come from: it loads this configuration in setup mode, so it runs while those identifiers are still absent, and it returns the ticket tracker project's actual states and labels together with a suggested `ready-for-agent` label ID and the pickup candidates in its backlog and unstarted groups.
+It suggests that label ID only when exactly one label carries the name exactly, so a missing or ambiguous one has to be configured explicitly.
+Every identifier written here must be the id of the state or label whose name it is being configured for, because `doctor` returns each name beside its id and an id copied off a neighbouring entry is still a real id.
 The label is the planning team's promise that the ticket has sufficient scope and acceptance criteria.
 Pickup requires both this label and an eligible Backlog/Todo state, plus the existing dependency and shared-claim checks.
 In Progress, In Review, Done and cancelled states must never be configured as pickup states.
