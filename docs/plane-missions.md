@@ -87,7 +87,6 @@ Interactive OAuth setup remains with your MCP client; this adapter does not impl
 `doctor` is where those values come from: it is the only command that loads this configuration in setup mode, so it runs while those identifiers are still absent, and it returns the project's actual states and labels together with a suggested `ready-for-agent` label ID and the pickup candidates in its backlog and unstarted groups.
 It suggests that label ID only when exactly one label carries the name exactly, so a missing or ambiguous one has to be configured explicitly.
 Every identifier written here must be the id of the state or label whose name it is being configured for, because `doctor` returns each name beside its id and an id copied off a neighbouring entry is still a real id.
-A wrong but real id passes validation, except where the lifecycle and pickup sets overlap, and then fails silently rather than erroring.
 The label is the planning team's promise that the ticket has sufficient scope and acceptance criteria.
 Pickup requires both this label and an eligible Backlog/Todo state, plus the existing dependency and shared-claim checks.
 In Progress, In Review, Done and cancelled states must never be configured as pickup states.
