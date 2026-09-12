@@ -155,6 +155,7 @@ init_changed_fixture_repo() {
     "$repo/skills/core/quota-array-dispatch" \
     "$repo/skills/core/board/assets"
   : >"$repo/skills/core/example/SKILL.md"
+  : >"$repo/skills/core/example/LICENSE"
   : >"$repo/skills/core/harness-adapters/SKILL.md"
   : >"$repo/skills/core/harness-adapters/references/common/dispatch.md"
   : >"$repo/skills/core/quota-array-dispatch/SKILL.md"
@@ -391,6 +392,13 @@ test_changed_dependency_selection_and_unmapped_failure() {
   assert_contains "$listed" "tests/fm-bearings-snapshot.test.sh" "a skill asset named by its activation-link spelling selects the referencing suite"
   git -C "$repo" add skills/core/board/assets/template.html
   git -C "$repo" -c user.name=test -c user.email=test@example.invalid commit -qm skill-asset-change
+
+  printf '\n' >>"$repo/skills/core/example/LICENSE"
+  listed=$(cd "$repo" && bin/fm-test-run.sh --list --changed --base HEAD) \
+    || fail "a skill file no suite names must not abort changed selection: $listed"
+  assert_contains "$listed" "tests/fm-ask-user-authority.test.sh" "a skill file no suite names selects the skills-tree structural coverage"
+  git -C "$repo" add skills/core/example/LICENSE
+  git -C "$repo" -c user.name=test -c user.email=test@example.invalid commit -qm skill-unreferenced-file-change
 
   printf '\n' >>"$repo/bin/fm-procevent-quota.sh"
   printf '\n' >>"$repo/bin/fm-quota-choose.sh"

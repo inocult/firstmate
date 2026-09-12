@@ -1538,11 +1538,13 @@ families_for_changed_path() {
       # Any other file inside a canonical skill directory, such as an asset or
       # a nested reference. A test may name it by the canonical path or by the
       # .agents/skills/<name>/... spelling that resolves through the activation
-      # link, so the reference scan looks for both. A deleted file has no
-      # consuming suite left to select, the same rule the fixture case applies.
+      # link, so the reference scan looks for both. A file no suite names still
+      # belongs to the tree whose shape the skills-tree structural suite
+      # (pure-contract-unit) pins. A deleted file has no consuming suite left to
+      # select, the same rule the fixture case applies.
       if [ -e "$path" ]; then
         families_for_test_reference "$path" ".agents/skills/${path#skills/*/}" \
-          || printf '%s\n' "__unmapped__:$path"
+          || printf '%s\n' pure-contract-unit
       else
         families_for_test_reference "$path" ".agents/skills/${path#skills/*/}" || true
       fi
