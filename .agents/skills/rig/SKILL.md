@@ -31,9 +31,10 @@ Control performs these steps directly and reports the verified result.
 3. Write the connection half of `FM_HOME/config/plane.json` from those facts, then run `doctor`.
    `doctor` reads that file and fails without it, but it is the one command loaded in setup mode, so it tolerates the label, pickup and lifecycle identifiers still being absent.
 4. Confirm the identifiers `doctor` reports with the captain, then complete the same file with the readiness label, the eligible pickup states, and the implementing, review and done lifecycle states.
-5. Verify with `list`, not `doctor`.
-   Setup mode is exactly what skips the identifier checks step 4 just satisfied, so only a full-validation command proves the home is usable; `list` loads the completed configuration under full validation and reads one page of work items without writing.
-   A failure here is a blocker rather than a warning, because missions cannot be claimed without a working connection.
+5. Verify in two parts, because neither part covers the other.
+   First check every identifier written in step 4 against the `states` and `labels` arrays `doctor` already returned; no command validates that an ID names a real Plane object, so a well-formed but wrong label ID passes every check here and only surfaces later as tickets that never look ready.
+   Then run `list`, not `doctor`: setup mode is exactly what skips the identifier checks step 4 satisfied, and `list` loads the completed configuration under full validation and reads one page of work items without writing.
+   A failure in either part is a blocker rather than a warning, because missions cannot be claimed without a working connection.
 
 ## Project half
 
