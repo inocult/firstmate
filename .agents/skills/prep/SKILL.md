@@ -38,31 +38,51 @@ Control performs these steps directly and reports the verified result.
 3. Write the connection half of `FM_HOME/config/plane.json` from those facts, then run `doctor`.
    `doctor` reads that file and fails without it, but it is the one command loaded in setup mode, so it tolerates the label, pickup and lifecycle identifiers still being absent.
 4. Provision the vocabulary, then complete the configuration.
-   Compare all five canonical names against every label the latest `doctor` run returned, and settle that whole comparison before writing anything. Entering this step always compares against a current `doctor`, never against output from before someone changed the project's labels. The comparison is read-only and needs no write surface.
-   A label is a conflict when it normalizes onto a canonical name without being exactly it, comparing case-insensitively with every character that is not a letter or a digit ignored - which covers case, separators, surrounding whitespace and punctuation in one rule: `Ready for agent`, `ready_for_agent` and `Ready-For-Agent` each conflict with `ready-for-agent`, and `Won't fix` conflicts with `wontfix`. Adoption stays exact - only the exact canonical name is ever the role.
-   If the comparison finds any conflict, create nothing at all, not even the roles that compared clean, and report every conflict to the captain to settle in Plane before prepping continues. Never adopt a variant, never rename one, and never create a label beside one: two spellings divide the queue between them and nothing ever reports it.
+   Compare all five canonical names against every label the latest `doctor` run returned, and settle that whole comparison before writing anything.
+   Entering this step always compares against a current `doctor`, never against output from before someone changed the project's labels.
+   The comparison is read-only and needs no write surface.
+   A label is a conflict when it normalizes onto a canonical name without being exactly it, comparing case-insensitively with every character that is not a letter or a digit ignored, which covers case, separators, surrounding whitespace and punctuation in one rule.
+   So `Ready for agent`, `ready_for_agent` and `Ready-For-Agent` each conflict with `ready-for-agent`, and `Won't fix` conflicts with `wontfix`.
+   Adoption stays exact - only the exact canonical name is ever the role.
+   If the comparison finds any conflict, create nothing at all, not even the roles that compared clean, and report every conflict to the captain to settle in Plane before prepping continues.
+   Never adopt a variant, never rename one, and never create a label beside one: two spellings divide the queue between them and nothing ever reports it.
    Once the captain has settled them, re-enter this step by re-running `doctor` and comparing again, so the comparison reads the labels as they now stand.
    If the comparison is clean and the project already carries all five, nothing needs creating: go straight to the configuration below, with no write surface involved at all.
-   Creating a role the project is missing requires a confirmed Plane write surface resolving to the same workspace and the same project as `FM_HOME/config/plane.json`. That is a precondition, not a caution.
-   The adapter is not that surface: it lists labels and never writes them, and must not gain a label-write path for this. Where a harness offers one, Control's harness-level Plane connector is the current such surface - but this repository does not provision it, so do not assume it exists; it is configured entirely outside `FM_HOME/config/plane.json` and can be pointed somewhere else.
+   Creating a role the project is missing requires a confirmed Plane write surface resolving to the same workspace and the same project as `FM_HOME/config/plane.json`.
+   That is a precondition, not a caution.
+   The adapter is not that surface: it lists labels and never writes them, and must not gain a label-write path for this.
+   Where a harness offers one, Control's harness-level Plane connector is the current such surface, but this repository does not provision it, so do not assume it exists; it is configured entirely outside `FM_HOME/config/plane.json` and can be pointed somewhere else.
    With a confirmed write surface, create the missing roles using the wording above, then re-run `doctor` to pick up the new identifiers.
-   Without one - none available, one that resolves elsewhere, or one that cannot be compared - create nothing, and neither guess nor silently skip: halt the home half and report just the roles that are missing, with the meanings fixed above, for the captain to create in Plane by hand. Re-entry re-runs `doctor` and compares again, which needs no write surface; the roles the captain just created are then present and prepping continues, so a home on any harness can reach a prepped state this way.
+   Without one - none available, one that resolves elsewhere, or one that cannot be compared - create nothing, and neither guess nor silently skip: halt the home half and report just the roles that are missing, with the meanings fixed above, for the captain to create in Plane by hand.
+   Re-entry re-runs `doctor` and compares again, which needs no write surface; the roles the captain just created are then present and prepping continues, so a home on any harness can reach a prepped state this way.
    Then confirm the identifiers with the captain and complete `FM_HOME/config/plane.json` with the eligible pickup states, the implementing, review and done lifecycle states, and `ready_label_id` taken from the `ready-for-agent` role.
    `ready_label_id` is the only label identifier the home stores, because it is the only one the adapter reads; the other four roles are provisioned by name and need no stored ID.
 5. Verify, then report exactly how far that verification reaches.
-   First confirm all five canonical names appear exactly in the `labels` array of the most recent `doctor` run, whoever created the labels. The completion gate covers the whole set while only `ready_label_id` is stored, so verifying stored identifiers alone would leave four roles unchecked: a create that failed, was rate-limited, or returned something read as "already exists" would reach the project's committed docs as a role the tracker does not carry.
-   Then check every identifier written in step 4 against the `states` and `labels` arrays, matching on name rather than mere presence: `ready_label_id` must be the id of the label named exactly `ready-for-agent`, and each pickup and lifecycle state id must be the id of the state the captain confirmed by name. `doctor` returns every name beside its id, so this costs nothing and catches an id transcribed off a neighbouring row - `ready_label_id` holding the `needs-info` id clears a presence check and `list` alike, then surfaces only as a queue that is permanently empty.
+   First confirm all five canonical names appear exactly in the `labels` array of the most recent `doctor` run, whoever created the labels.
+   The completion gate covers the whole set while only `ready_label_id` is stored, so verifying stored identifiers alone would leave four roles unchecked: a create that failed, was rate-limited, or returned something read as "already exists" would reach the project's committed docs as a role the tracker does not carry.
+   Then check every identifier written in step 4 against the `states` and `labels` arrays, matching on name rather than mere presence: `ready_label_id` must be the id of the label named exactly `ready-for-agent`, and each pickup and lifecycle state id must be the id of the state the captain confirmed by name.
+   `doctor` returns every name beside its id, so this costs nothing and catches an id transcribed off a neighbouring row - `ready_label_id` holding the `needs-info` id clears a presence check and `list` alike, then surfaces only as a queue that is permanently empty.
    What that cannot catch is narrower: a state whose name the captain confirmed but whose behaviour does not match the lifecycle position it was configured for, and any change made in Plane after prep completes.
    Then run `list`, not `doctor`: setup mode is exactly what skips the identifier checks step 4 satisfied, and `list` loads the completed configuration under full validation and reads one page of work items without writing.
-   Both of those reach Plane only. Neither touches `coordination_remote`, which no adapter command opens until the first `claim` builds its registry, so check it read-only with `GIT_TERMINAL_PROMPT=0 timeout 45 git ls-remote <coordination_remote> 'refs/heads/fm-plane/*'`, the same way the registry bounds its own Git calls; without both guards an HTTPS remote with no credential helper prompts for a username and hangs the session instead of failing. No matching refs is the normal answer on a remote no mission has used yet.
-   Report the home half as verified only to that extent: Plane reachable with the configured identifiers real, and the coordination remote reachable and readable. The push `claim` performs and the credentials the transport resolves at mission time remain unproven until the first mission.
-   A failure in any part of this step is a blocker rather than a warning, because missions cannot be claimed without a working connection. A coordination remote that fails `ls-remote` is exactly that: `claim` pushes to it, so a home reported ready on a remote it cannot reach only moves the failure to the first mission.
+   Both of those reach Plane only.
+   Neither touches `coordination_remote`, which no adapter command opens until the first `claim` builds its registry, so check it read-only with `GIT_TERMINAL_PROMPT=0 timeout 45 git ls-remote <coordination_remote> 'refs/heads/fm-plane/*'`, the same way the registry bounds its own Git calls.
+   Without both guards an HTTPS remote with no credential helper prompts for a username and hangs the session instead of failing.
+   No matching refs is the normal answer on a remote no mission has used yet.
+   Report the home half as verified only to that extent: Plane reachable with the configured identifiers real, and the coordination remote reachable and readable.
+   The push `claim` performs and the credentials the transport resolves at mission time remain unproven until the first mission.
+   A failure in any part of this step is a blocker rather than a warning, because missions cannot be claimed without a working connection.
+   A coordination remote that fails `ls-remote` is exactly that: `claim` pushes to it, so a home reported ready on a remote it cannot reach only moves the failure to the first mission.
 
 If any of the five canonical roles is unresolved for any reason - a conflict the captain has not settled, a role missing from `doctor`'s labels, no confirmed write surface to create it through, an identifier that did not verify - the home half does not complete and no ticket can be claimed.
 The convention is the whole set, so an unsettled conflict on `wontfix` halts prepping exactly as one on `ready-for-agent` does; otherwise the worker commits a role name the tracker does not carry.
 Report the home as unprepared, name what is outstanding, and do not commission the project half.
 
 ## Project half
+
+Commissioning requires the implementation repository to already be a registered project: a local clone under `projects/`, with a standing delivery posture in the registry.
+That is what a delivery path resolves through, and prep neither clones nor registers a repository.
+`project-management` owns that intake; route the captain there when the repository is not registered.
+When it is not, report that as the outstanding blocker and stop short of commissioning, leaving the verified home half exactly as it stands.
 
 Commission this through the project's selected delivery path once the home half completes, and never before.
 The brief carries the captain's answer to the single repository question.
@@ -85,6 +105,8 @@ Never write firstmate's own `AGENTS.md` from this skill, because `firstmate-codi
 ## Completion
 
 Report only what has actually happened: what was verified and how far that reaches, which canonical roles this prep created, any conflict left with the captain, the confirmed pickup states, and that the project half has been commissioned, naming the delivery path it went through.
-Commissioning is dispatch, not delivery. The project half's documents land under the project's own delivery path and merge authority, on that path's schedule rather than this skill's, so never report the layout as landed here.
-The repository is prepped only once those documents are on its default branch. That is a later condition to confirm separately, and no mission should assume it from this report.
+Commissioning is dispatch, not delivery.
+The project half's documents land under the project's own delivery path and merge authority, on that path's schedule rather than this skill's, so never report the layout as landed here.
+The repository is prepped only once those documents are on its default branch.
+That is a later condition to confirm separately, and no mission should assume it from this report.
 Arming automatic pickup is a separate captain decision that `/overwatch on` owns.
