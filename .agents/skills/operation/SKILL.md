@@ -13,9 +13,7 @@ metadata:
 Adapted from Matt Pocock's `skills/engineering/wayfinder/SKILL.md`, retrieved with blob SHA `812805b760baf328db0ebdef6f3807e381f97016`.
 Upstream: https://github.com/mattpocock/skills/blob/main/skills/engineering/wayfinder/SKILL.md
 The upstream MIT notice is preserved in `LICENSE` beside this file.
-This adaptation renames the skill to `/operation` and names the four type labels as the configured project carries them; the workflow, the ticket types, the fog-of-war discipline and the tracker-generic language are upstream's.
-Removed from upstream: the assignee-based claim, because this project's human assignees are never modified; charting's research dispatch, because it would have this session commit inside a project; the links from a ticket to the assets created while resolving it, because material held in this home means nothing to the colleagues who share that project; the per-session cap's research carve-out, because the dispatch it existed for is gone; and the tracker paragraph's setup pointers and local-markdown fallback, because they name a skill and a document section that do not exist here and a map off the shared tracker is invisible to every other session.
-Two further lines differ: the map template's example entry states the name-wrapping-a-link convention in words, because this repository's documentation link check reads upstream's placeholder target as a broken local link; and a Task ticket's answer records what access now exists rather than where a credential is kept, because that answer is posted to the shared project.
+This adaptation renames the skill, matches the type labels to the configured project and drops the upstream instructions this repository's hard rules forbid; it retains the map workflow and the fog-of-war discipline.
 
 A loose idea has arrived, too big for one agent session, and wrapped in fog: the way from here to the **destination** isn't visible yet. An operation is about finding that way, not charging at the destination. This skill charts the way as a **shared map** on the repo's issue tracker, then works its **decision tickets** (questions whose resolution is a decision, not slices of a build to execute) one at a time until the route is clear.
 
@@ -35,7 +33,7 @@ The map is a single issue on this repo's issue tracker, labelled `wayfinder:map`
 
 The map is an **index**, not a store. It lists the decisions made and points at the tickets that hold their detail; a decision lives in exactly one place, its ticket, so the map never restates it, only gists it and links.
 
-**Where the map, its child tickets, blocking, and frontier queries physically live is tracker-specific.** The issue tracker should have been provided to you. If no tracker is configured for the repository this effort is about, stop and say so.
+**Where the map, its child tickets, blocking, and frontier queries physically live is tracker-specific.** The issue tracker should have been provided to you. If no tracker has been provided, stop and say so.
 
 ### The map body
 
@@ -85,8 +83,8 @@ The answer isn't part of the body; it's recorded on resolution (see [Work throug
 
 Every ticket is either **HITL** (human in the loop, worked _with_ a human who speaks for themselves) or **AFK**, driven by the agent alone. A HITL ticket only resolves through that live exchange; the agent never stands in for the human's side of it (a grilling agent that answers its own questions has broken this).
 
-- **Research** (AFK): Reading documentation, third-party APIs, or local resources like knowledge bases to surface a fact a decision waits on. Resolved by a subagent that calls the Skill tool with "research". Use when knowledge outside the current working directory is required.
-- **Prototype** (HITL): Raise the fidelity of the discussion by making a cheap, rough, concrete artifact to react to (an outline, a rough take, a stub, or UI/logic code) by calling the Skill tool with "prototype". Use when "how should it look" or "how should it behave" is the key question.
+- **Research** (AFK): Reading documentation, third-party APIs, or local resources like knowledge bases to surface a fact a decision waits on. Use when knowledge outside the current working directory is required.
+- **Prototype** (HITL): Raise the fidelity of the discussion by making a cheap, rough, concrete artifact to react to (an outline, a rough take, a stub, or UI/logic code). Use when "how should it look" or "how should it behave" is the key question.
 - **Grilling** (HITL): Conversation. The default case. Always call the Skill tool twice, for "grilling" and "domain-modeling".
 - **Task** (HITL or AFK): Manual work that must happen before a _decision_ can be made: nothing to decide, prototype, or research, but the discussion is blocked until it's done. Signing up for a service so its API can be judged, provisioning access, moving data so its shape can be seen. This is the one type that _does_ rather than decides, and it earns its place by unblocking a decision, not by delivering the destination. The agent drives it alone where it can (AFK); otherwise it hands the human a precise checklist (HITL). Resolved when the work is done; the answer records what was done and any resulting facts (what access now exists and what it grants, new URLs, row counts) later tickets depend on, never where a credential is kept.
 
@@ -134,5 +132,3 @@ User invokes with a map (URL or number). A ticket is **optional**: without one, 
 3. Resolve it. **Zoom as needed**: fetch the full body of any related or closed ticket on demand; call the Skill tool for whichever skills the `## Notes` block names. If in doubt, call the Skill tool twice, for "grilling" and "domain-modeling".
 4. Record the resolution: post the answer as a **resolution comment**, **close** the issue, and **append a context pointer** to the map's Decisions-so-far.
 5. Add newly-surfaced tickets (create-then-wire); graduate any fog the answer has made specifiable, clearing each graduated patch from **Not yet specified** so it lives only as its new ticket. If the answer reveals that a ticket (this one or another) sits beyond the destination, **rule it out of scope** rather than resolving it on the route. If the decision invalidates other parts of the map, update or delete those tickets.
-
-The user may run unblocked tickets in parallel, so expect other sessions to be editing the tracker concurrently.
