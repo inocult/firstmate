@@ -57,6 +57,13 @@ No actual At Bryde ticket, label or state IDs are bundled.
   "coordination_remote": "git@github.com:YOUR_ORG/YOUR_MONOREPO.git",
   "executor": "mathieu-control",
   "ready_label_id": "READY_FOR_AGENT_LABEL_UUID",
+  "role_label_ids": {
+    "needs-triage": "NEEDS_TRIAGE_LABEL_UUID",
+    "needs-info": "NEEDS_INFO_LABEL_UUID",
+    "ready-for-agent": "READY_FOR_AGENT_LABEL_UUID",
+    "ready-for-human": "READY_FOR_HUMAN_LABEL_UUID",
+    "wontfix": "WONTFIX_LABEL_UUID"
+  },
   "pickup_state_ids": ["BACKLOG_STATE_UUID", "TODO_STATE_UUID"],
   "states": {
     "implementing": "IN_PROGRESS_STATE_UUID",
@@ -85,6 +92,7 @@ Interactive OAuth setup remains with your MCP client; this adapter does not impl
 Run `doctor` before configuring label and state IDs.
 It lists the project's actual states and labels, suggests the exact `ready-for-agent` label ID, and suggests pickup states in the backlog or unstarted groups.
 Set `ready_label_id` and `pickup_state_ids` from those confirmed results; a missing or ambiguous label needs explicit configuration.
+`role_label_ids` records the project's five canonical triage role labels, whose names and descriptions the Plane project owns; the adapter never reads it, and `ready-for-agent` repeats the `ready_label_id` the adapter does read.
 The label is the planning team's promise that the ticket has sufficient scope and acceptance criteria.
 Pickup requires both this label and an eligible Backlog/Todo state, plus the existing dependency and shared-claim checks.
 In Progress, In Review, Done and cancelled states must never be configured as pickup states.
