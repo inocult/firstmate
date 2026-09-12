@@ -209,7 +209,8 @@ Agent-only reference skills live in the same `skills/` tree and are loaded by fi
 Every bundled skill lives at `skills/<category>/<name>/SKILL.md`, laid out like an installer-facing skills repository so you can install one skill without taking the whole distribution.
 The category says what to expect: `core` is the operating contracts every home relies on, `missions` is the Plane ticket tier, `experimental` is backend- or integration-specific, and `deprecated` is redirect stubs kept for in-flight work, while `public` is the portable, installer-facing skills that reference no private path of this home.
 `.agents/skills/<name>` is a relative symlink into that tree for each skill this home actually loads, so activation is expressed by which links exist, and `.claude/skills` points at `.agents/skills`.
-A skill name may exist once in an internal category and once in `public` as two audience variants that differ by design, and the activation link chooses which one this home loads.
+A skill name exists exactly once across the tree, because installers resolve `--skill <name>` by frontmatter name across every category and would otherwise install whichever same-named variant they walk first.
+The portable `stow-notes` in `public` and the internal `stow` in `core` are therefore two audience variants under distinct names, and the activation links still choose which skills this home loads.
 Skills that assume a live firstmate home carry `metadata.internal: true` in their frontmatter, which hides them from installer discovery (tools like the [skills.sh](https://skills.sh) `npx skills add` installer) without affecting how firstmate itself loads them.
 [`docs/configuration.md`](docs/configuration.md#operational-home-layout-and-state) owns the layout and category scheme.
 
