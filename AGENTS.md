@@ -64,7 +64,7 @@ README.md            public overview and development notes
 .tasks.toml          tracked tasks-axi markdown backend config for the default backlog backend (section 10)
 .agents/skills/      activation links, one committed relative symlink per skill this home loads, into skills/<category>/<name>/; docs/configuration.md "Operational home layout and state" owns the layout
 .claude/skills       symlink to .agents/skills for claude compatibility
-skills/              canonical skill source, skills/<category>/<name>/SKILL.md, committed; categories deprecated, in-progress, engineering, operations, and misc express stability then domain per docs/configuration.md; audience is the metadata.internal marker, not location, a name may exist in more than one category only as audience variants, and the activation link picks the loaded one
+skills/              canonical skill source, skills/<category>/<name>/SKILL.md, committed; categories deprecated, fieldcraft, in-progress, misc, orders, and playbooks are derived from each skill's frontmatter per docs/configuration.md; audience is the metadata.internal marker, not location, a name may exist in more than one category only as audience variants, and the activation link picks the loaded one
 bin/                 helper scripts, committed; read each script's header before first use
 .env                 optional Relay pairing token (presence-gates section 14) and mail-plane credentials (schema: docs/configuration.md "Mail plane"); LOCAL, gitignored
 config/crew-harness  crewmate harness override; LOCAL, gitignored; absent or "default" = same as firstmate. Inherited as the literal file: a concrete primary adapter value also controls a secondmate home's own crewmates (section 4)

@@ -9,7 +9,12 @@ set -u
 # shellcheck source=tests/lib.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
-CATEGORIES="deprecated in-progress engineering operations misc"
+CATEGORIES="deprecated fieldcraft in-progress misc orders playbooks"
+# Placement is derived from frontmatter (docs/configuration.md "Operational
+# home layout and state"); these two memberships are the explicit lists the
+# precedence starts from.
+DEPRECATED_SKILLS="decision-hold-lifecycle"
+IN_PROGRESS_SKILLS="breach firstmate-codexapp firstmate-orca fmx-respond operation overwatch plane-missions prep"
 
 category_known() {
   case " $CATEGORIES " in
@@ -25,6 +30,46 @@ frontmatter_name() {
 # Audience is the metadata.internal marker, not the category a skill lives in.
 is_internal() {
   sed -n '2,/^---$/p' "$1" | grep -Eq '^[[:space:]]*internal:[[:space:]]*true[[:space:]]*$'
+}
+
+is_user_invocable() {
+  sed -n '2,/^---$/p' "$1" | grep -Eq '^user-invocable:[[:space:]]*true[[:space:]]*$'
+}
+
+listed() {
+  case " $2 " in
+    *" $1 "*) return 0 ;;
+  esac
+  return 1
+}
+
+test_every_category_is_derived_from_frontmatter_by_precedence() {
+  # A redirect stub or retired alias is deprecated; a newly added or backend- or
+  # integration-specific skill is in-progress; no metadata.internal marker means
+  # portable, so fieldcraft; then user-invocable true means orders; anything
+  # else is playbooks. Every skill derives one of those, so misc must be empty.
+  local skill category name expected count=0
+  for skill in "$ROOT"/skills/*/*/SKILL.md; do
+    [ -f "$skill" ] || fail "no canonical skills found under skills/<category>/<name>/"
+    category=$(basename "$(dirname "$(dirname "$skill")")")
+    name=$(basename "$(dirname "$skill")")
+    if listed "$name" "$DEPRECATED_SKILLS"; then expected=deprecated
+    elif listed "$name" "$IN_PROGRESS_SKILLS"; then expected=in-progress
+    elif ! is_internal "$skill"; then expected=fieldcraft
+    elif is_user_invocable "$skill"; then expected=orders
+    else expected=playbooks
+    fi
+    [ "$category" = "$expected" ] \
+      || fail "skills/$category/$name derives $expected from its frontmatter and the explicit deprecated and in-progress lists; misc is only for a skill no rule places"
+    count=$((count + 1))
+  done
+  for name in $DEPRECATED_SKILLS; do
+    [ -f "$ROOT/skills/deprecated/$name/SKILL.md" ] || fail "listed deprecated skill $name is absent; prune DEPRECATED_SKILLS when a stub is removed"
+  done
+  for name in $IN_PROGRESS_SKILLS; do
+    [ -f "$ROOT/skills/in-progress/$name/SKILL.md" ] || fail "listed in-progress skill $name is absent; prune IN_PROGRESS_SKILLS when a skill is promoted"
+  done
+  pass "every skill sits in the category its frontmatter derives by precedence ($count skills)"
 }
 
 test_activation_links_are_committed_relative_links_into_the_tree() {
@@ -74,7 +119,7 @@ test_portable_variant_is_the_first_installer_hit_of_every_shared_name() {
   # every category, ignore metadata.internal in install mode, and keep the
   # first same-named hit of a sorted directory walk, so the portable variant
   # of a shared name is what third parties receive only because its directory
-  # sorts first (misc before operations for stow). docs/configuration.md
+  # sorts first (fieldcraft before orders for stow). docs/configuration.md
   # "Operational home layout and state" owns the fact;
   # tests/fm-skills-installer-live-e2e.test.sh proves it live.
   local name candidate first portable internal hits shared=0
@@ -116,5 +161,6 @@ test_claude_alias_reaches_every_active_skill() {
 
 test_activation_links_are_committed_relative_links_into_the_tree
 test_every_canonical_skill_lives_in_a_known_category_as_at_most_two_audience_variants
+test_every_category_is_derived_from_frontmatter_by_precedence
 test_portable_variant_is_the_first_installer_hit_of_every_shared_name
 test_claude_alias_reaches_every_active_skill

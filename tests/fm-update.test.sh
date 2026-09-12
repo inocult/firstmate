@@ -128,8 +128,8 @@ bump_origin() {
     printf 'echo b-%s\n' "$RANDOM" > "$w/seed/bin/tool.sh"
   fi
   if [ "$mode" = skills ]; then
-    mkdir -p "$w/seed/skills/operations/note"
-    printf 's-%s\n' "$RANDOM" > "$w/seed/skills/operations/note/SKILL.md"
+    mkdir -p "$w/seed/skills/orders/note"
+    printf 's-%s\n' "$RANDOM" > "$w/seed/skills/orders/note/SKILL.md"
   fi
   git -C "$w/seed" add -A
   git -C "$w/seed" commit -qm "bump-$mode"
