@@ -49,6 +49,10 @@
 # "Delivery contract: mode=<mode>" line. bin/fm-spawn.sh reads that line and refuses
 # to launch a ship task whose explicit --mode disagrees, so an adjusted brief and the
 # recorded task metadata cannot drift apart.
+# Every ship brief binds `done:` to its mode's one accepted done line and evidence
+# in both the status protocol (rule 4) and the Definition of done, rendering the
+# same bin/fm-dod-lib.sh fm_dod_done_binding at both sites, so a done line without
+# that evidence is declared not a done where the worker reports and where it gates.
 # Ship briefs begin with a worktree-isolation assertion before the branch step.
 # --mode is refused on scout and secondmate scaffolds: a scout's deliverable is a
 # report rather than a merge, and a charter is not a delivery contract.
@@ -446,6 +450,10 @@ case "$MODE" in
     ;;
 esac
 DOD=$(fm_dod_block "$MODE" "$ID") || exit 1
+# The same done binding the Definition of done carries, indented into the status
+# protocol's rule 4 so the worker reads it where it reports, not only at the gate.
+DONE_BINDING=$(fm_dod_done_binding "$MODE" "$ID") || exit 1
+DONE_BINDING=$(printf '%s\n' "$DONE_BINDING" | sed 's/^/   /')
 
 cat > "$BRIEF" <<EOF
 You are a crewmate: an autonomous worker agent managed by firstmate. Work on your own; do not wait for a human.
@@ -479,6 +487,7 @@ $RULE1
    copies that URL from your line rather than assembling one.
    A mid-task \`working:\` line (including setup complete) is nonterminal: do not end the
    turn after it; continue the same stage until a defined \`done:\` gate under Definition of done.
+$DONE_BINDING
    Use \`$PAUSED_VERB: {why}\` - distinct from \`blocked:\` - ONLY when you are deliberately idling on a
    known external wait you expect to clear on its own (an upstream release, a rate-limit reset,
    a scheduled window): firstmate then leaves your idle pane alone and rechecks it on a long

@@ -260,7 +260,7 @@ test_ship_mode_is_explicit_not_registry() {
   brief="$home/data/brief-explicit-a5/brief.md"
   grep -qx "Delivery contract: mode=no-mistakes" "$brief" \
     || fail "registered direct-PR posture overrode the explicit --mode"
-  assert_grep "Firstmate will then instruct you to run /no-mistakes" "$brief" \
+  assert_grep "start /no-mistakes in that same turn to validate and ship the PR" "$brief" \
     "explicit no-mistakes brief did not render the pipeline definition of done"
 
   # An unregistered project is not a blocker either, because nothing is looked up.
@@ -901,7 +901,90 @@ test_worker_role_scope() {
   pass "fm-brief: scaffolds leave the worker role scope to the launch boundary and keep the secondmate contract"
 }
 
+# The delivery contract binds only if the worker cannot read a local commit as
+# done. Three parallel no-mistakes workers reported done after a local commit on
+# 2026-09-12 because the brief itself offered a done line at the commit and left
+# the pipeline to a later steer. Every ship brief must now name its mode's one
+# accepted done line and declare any other done line not a done, both where the
+# worker reports (the status protocol, rule 4) and where it gates (the Definition
+# of done); it must carry no other mode's done line; and the no-mistakes brief
+# must have the worker start the pipeline itself with no done line at the commit.
+test_done_line_is_bound_to_delivery_mode() {
+  local home id mode brief line protocol dod part file
+  # shellcheck disable=SC2016  # single quotes are deliberate: the backticks must stay literal
+  local not_a_done='a `done:` line without that evidence is not a done'
+  local stopped_short='firstmate treats it as a worker that stopped short of delivery'
+  home="$TMP_ROOT/done-binding-home"
+  mkdir -p "$home/data"
+  for mode in no-mistakes direct-PR local-only; do
+    id="brief-done-binding-$(printf '%s' "$mode" | tr '[:upper:]' '[:lower:]')"
+    FM_HOME="$home" "$ROOT/bin/fm-brief.sh" "$id" some-proj --mode "$mode" >/dev/null 2>&1 \
+      || fail "$mode: brief should scaffold"
+    brief="$home/data/$id/brief.md"
+    # shellcheck disable=SC2016  # single quotes are deliberate: the backticks and braces must stay literal
+    case "$mode" in
+      no-mistakes) line='`done: PR {url} checks green`' ;;
+      direct-PR) line='`done: PR {url}`' ;;
+      local-only) line="\`done: ready in branch fm/$id\`" ;;
+    esac
+    # The status protocol is rule 4 up to rule 5; the gate is everything from the
+    # Definition of done heading on. Both must carry the same binding.
+    protocol="$TMP_ROOT/done-binding-$id-protocol"
+    dod="$TMP_ROOT/done-binding-$id-dod"
+    awk '/^5\. / { exit } /^4\. Report status/ { emit=1 } emit' "$brief" > "$protocol"
+    awk '/^# Definition of done$/ { emit=1 } emit' "$brief" > "$dod"
+    [ -s "$protocol" ] || fail "$mode: brief has no status protocol rule 4 to bind"
+    [ -s "$dod" ] || fail "$mode: brief has no Definition of done to bind"
+    for part in protocol dod; do
+      file="$TMP_ROOT/done-binding-$id-$part"
+      assert_grep "the only \`done:\` line that counts is $line" "$file" \
+        "$mode: the $part does not name the mode's one accepted done line"
+      assert_grep "$not_a_done" "$file" \
+        "$mode: the $part does not declare a done line without evidence not a done"
+      assert_grep "$stopped_short" "$file" \
+        "$mode: the $part does not say a bare done is treated as a worker that stopped short"
+    done
+    assert_no_grep 'done: {summary}' "$brief" \
+      "$mode: brief still offers a free-form done line"
+    assert_no_grep "Firstmate will then instruct you to run /no-mistakes" "$brief" \
+      "$mode: brief still leaves the pipeline start to a later steer"
+    case "$mode" in
+      no-mistakes)
+        assert_grep 'A local commit with passing local checks, a started pipeline run, or an open PR still waiting on CI is not done' "$brief" \
+          "no-mistakes brief does not rule out the commit-with-local-checks false done"
+        assert_grep 'working: implementation committed, starting no-mistakes' "$dod" \
+          "no-mistakes brief does not report the commit as a nonterminal working line"
+        assert_grep 'do not wait for firstmate to tell you to start the pipeline' "$dod" \
+          "no-mistakes brief still waits for a steer to start the pipeline"
+        assert_grep "append \`done: PR {url} checks green\` and stop" "$dod" \
+          "no-mistakes brief lost its CI-green done gate"
+        # shellcheck disable=SC2016  # single quotes are deliberate: the backticks and braces must stay literal
+        assert_no_grep '`done: PR {url}`' "$brief" \
+          "no-mistakes brief carries the direct-PR done line"
+        assert_no_grep 'ready in branch' "$brief" \
+          "no-mistakes brief carries the local-only done line"
+        ;;
+      direct-PR)
+        assert_grep 'A local commit or a pushed branch with no PR is not done' "$brief" \
+          "direct-PR brief does not rule out the commit-without-PR false done"
+        assert_no_grep 'checks green' "$brief" \
+          "direct-PR brief carries the no-mistakes done line"
+        assert_no_grep 'ready in branch' "$brief" \
+          "direct-PR brief carries the local-only done line"
+        ;;
+      local-only)
+        assert_grep 'Uncommitted work or a branch that no longer fast-forwards is not done' "$brief" \
+          "local-only brief does not rule out the uncommitted false done"
+        assert_no_grep 'done: PR' "$brief" \
+          "local-only brief carries a PR done line"
+        ;;
+    esac
+  done
+  pass "fm-brief.sh: every ship brief binds done to its mode's evidence at the report site and at the gate"
+}
+
 test_worker_role_scope
+test_done_line_is_bound_to_delivery_mode
 test_script_parses
 test_no_heredoc_in_command_substitution
 test_help_includes_entire_header
