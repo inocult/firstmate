@@ -1,0 +1,7 @@
+$ CI invariant: readlink .claude/skills
+../.agents/skills
+total 16
+drwxr-xr-x 1 inocult inocult    30 Sep 12 15:47 .
+drwxr-xr-x 1 inocult inocult   796 Sep 12 15:47 ..
+-rw-r--r-- 1 inocult inocult  1068 Sep 12 15:47 LICENSE
+-rw-r--r-- 1 inocult inocult 11693 Sep 12 15:47 SKILL.md

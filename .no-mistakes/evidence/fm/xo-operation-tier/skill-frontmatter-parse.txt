@@ -1,0 +1,4 @@
+parser=PyYAML
+{'name': 'operation', 'user-invocable': True, 'metadata': {'internal': True}}
+description= 'Plan a huge chunk of work (more than one agent session can hold) as a shared map of decision tickets on your issue track' ... len 321
+OK: name=operation, user-invocable=true

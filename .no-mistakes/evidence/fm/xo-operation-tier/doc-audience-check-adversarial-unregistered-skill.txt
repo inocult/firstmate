@@ -1,0 +1,3 @@
+$ bin/fm-doc-audience-check.sh --inventory <copy with the .agents/skills/operation/SKILL.md entry removed>
+fm-doc-audience-check: unclassified: .agents/skills/operation/SKILL.md
+exit=1

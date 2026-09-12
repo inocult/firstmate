@@ -1,0 +1,13 @@
+Live Plane check, 2026-09-12: `label list` on project Platform (PLAT, id 0212707d-4cab-4d11-af83-e3d3a3008fc1), workspace 35d6e1db-...
+The five labels /operation uses exist in the live project:
+  wayfinder:map        49d51700-e528-4be2-8d73-d2c12a78a3cc  created 2026-09-09T11:12:41Z
+  wayfinder:research   fad9af33-3786-45d9-b396-fd8396121166  created 2026-09-09T11:12:46Z
+  wayfinder:prototype  35a75269-a51f-49c5-8320-9cda8c66738c  created 2026-09-09T11:12:51Z
+  wayfinder:grilling   d314e5f3-902a-4242-a24e-0561217e6643  created 2026-09-09T11:12:56Z
+  wayfinder:task       f4c3fd1a-0ab4-4fdc-8117-ba74dd0d7fd2  created 2026-09-09T11:13:01Z
+Other labels present: wontfix, ready-for-human, ready-for-agent, needs-info, needs-triage (10 total).
+ok   wayfinder:grilling exists live
+ok   wayfinder:map exists live
+ok   wayfinder:prototype exists live
+ok   wayfinder:research exists live
+ok   wayfinder:task exists live
