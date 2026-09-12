@@ -2,6 +2,7 @@
 from mcp.server.fastmcp import FastMCP
 
 server = FastMCP("plane-test")
+labels = [{"id": "other", "name": "other"}, {"id": "label-ready", "name": "ready-for-agent"}]
 ticket = {"id": "item-1", "name": "Add export", "description_stripped": "Export all rows", "state": "ready", "labels": ["label-ready"]}
 
 
@@ -24,10 +25,16 @@ def state(action: str, project_id: str = "") -> list[dict]:
 
 
 @server.tool()
-def label(action: str, project_id: str = "", cursor: str | None = None, per_page: int = 100) -> dict:
+def label(action: str, project_id: str = "", name: str = "",
+          cursor: str | None = None, per_page: int = 100) -> dict:
+    if action == "create":
+        labels.append({"id": f"label-{len(labels) + 1}", "name": name})
+        return labels[-1]
+    if action != "list":
+        raise ValueError("unsupported operation")
     if cursor is None:
-        return {"results": [{"id": "other", "name": "other"}], "next_cursor": "labels-2", "next_page_results": True}
-    return {"results": [{"id": "label-ready", "name": "ready-for-agent"}], "next_page_results": False}
+        return {"results": labels[:1], "next_cursor": "labels-2", "next_page_results": True}
+    return {"results": labels[1:], "next_page_results": False}
 
 
 @server.tool()

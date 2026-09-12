@@ -1,8 +1,10 @@
 """CLI contract for Plane-backed missions.
 
 Config is private at FM_HOME/config/plane.json. A confirmed shared claim is
-required before bind/check can authorize a task. Plane mutations only update
+required before bind/check can authorize a task. Ticket mutations only update
 state and PR links, never assignees, descriptions, labels or ticket contents.
+The separate ensure-label command adds a label to the project vocabulary and
+touches no ticket, so provisioning cannot relabel work someone else owns.
 """
 
 import argparse
@@ -73,6 +75,64 @@ def description(item):
     value = item.get("description_html", "") or ""
     value = re.sub(r"</(?:p|h[1-6]|li|div|pre)>|<br\s*/?>", "\n", value, flags=re.I)
     return html.unescape(re.sub(r"<[^>]*>", "", value)).strip()
+
+
+def label_name(name):
+    if not isinstance(name, str) or not name or name != name.strip():
+        raise AdapterError("label name must be non-empty without surrounding whitespace")
+    if re.search(r"[\x00-\x1f\x7f]", name):
+        raise AdapterError("label name must not contain control characters")
+    return name
+
+
+def label_key(name):
+    """Fold case, whitespace, separators and punctuation so near-duplicates collide."""
+    return re.sub(r"[\W_]+", "", name.casefold())
+
+
+async def project_labels(plane, project):
+    """Every label in the project, following the server's own pagination."""
+    labels = []
+    cursor = None
+    while True:
+        page = await plane.call("label", "list", project_id=project,
+                                per_page=100, **({"cursor": cursor} if cursor else {}))
+        labels.extend(rows(page))
+        if not isinstance(page, dict) or not page.get("next_page_results"):
+            return labels
+        next_cursor = page.get("next_cursor")
+        if not next_cursor or next_cursor == cursor:
+            raise AdapterError("label pagination did not advance")
+        cursor = next_cursor
+
+
+def label_named(labels, name):
+    matches = [label for label in labels if isinstance(label, dict) and label.get("name") == name]
+    if len(matches) > 1:
+        raise AdapterError("that label name already exists more than once; reconcile it before provisioning")
+    if matches and not matches[0].get("id"):
+        raise AdapterError("the existing label has no ID; inspect the project before provisioning")
+    return matches[0] if matches else None
+
+
+async def ensure_label(plane, project, name):
+    """Add one label to the project vocabulary, or adopt the existing one unchanged."""
+    name = label_name(name)
+    existing = await project_labels(plane, project)
+    adopted = label_named(existing, name)
+    if adopted:
+        return {"project": project, "name": name, "id": adopted["id"], "created": False}
+    key = label_key(name)
+    conflict = next((label for label in existing if isinstance(label, dict)
+                     and isinstance(label.get("name"), str) and label_key(label["name"]) == key), None)
+    if conflict:
+        raise AdapterError(f"existing label {conflict['name']!r} (id {conflict.get('id') or 'unknown'}) "
+                           f"differs from {name!r} only by case, separators or punctuation; "
+                           "reconcile it in Plane before provisioning")
+    created = await plane.call("label", "create", project_id=project, name=name)
+    if not isinstance(created, dict) or not created.get("id"):
+        raise AdapterError("Plane did not return the created label's ID; inspect the project before retrying")
+    return {"project": project, "name": name, "id": created["id"], "created": True}
 
 
 class Missions:
@@ -299,24 +359,15 @@ async def run(args, config):
     async with Plane(config["mcp"]) as plane:
         if args.command == "doctor":
             states = rows(await plane.call("state", "list", project_id=config["project_id"]))
-            labels = []
-            cursor = None
-            while True:
-                page = await plane.call("label", "list", project_id=config["project_id"],
-                                        per_page=100, **({"cursor": cursor} if cursor else {}))
-                labels.extend(rows(page))
-                if not isinstance(page, dict) or not page.get("next_page_results"):
-                    break
-                next_cursor = page.get("next_cursor")
-                if not next_cursor or next_cursor == cursor:
-                    raise AdapterError("label pagination did not advance")
-                cursor = next_cursor
+            labels = await project_labels(plane, config["project_id"])
             candidates = [label for label in labels if label.get("name") == "ready-for-agent"]
             return {"mcp_tools": sorted(plane.tools), "project": config["project_id"], "states": states,
                     "labels": labels,
                     "suggested_ready_label_id": candidates[0]["id"] if len(candidates) == 1 else None,
                     "suggested_pickup_state_ids": [s["id"] for s in states if s.get("group") in ("backlog", "unstarted")],
                     "executor": config["executor"], "note": "MCP connected; no ticket or claim changed"}
+        if args.command == "ensure-label":
+            return await ensure_label(plane, config["project_id"], args.name)
         if args.command == "list":
             # Preserve pagination; listing is candidate discovery, not claim authority.
             return await plane.call("workitem", "list", project_id=config["project_id"],
@@ -381,11 +432,22 @@ async def run(args, config):
             registry.close()
 
 
+def adapter_error(exc):
+    """The MCP session runs inside an anyio task group, which re-raises adapter errors wrapped in a group."""
+    if isinstance(exc, AdapterError):
+        return exc
+    if isinstance(exc, BaseExceptionGroup):
+        return next(filter(None, (adapter_error(inner) for inner in exc.exceptions)), None)
+    return None
+
+
 def main():
     parser = argparse.ArgumentParser(description="Plane MCP intake, shared Git claims and Pocock implementation briefs")
     parser.add_argument("--config", help="private config path; default FM_HOME/config/plane.json")
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("doctor", help="connect to MCP and inspect available tools without writing")
+    label = sub.add_parser("ensure-label", help="add one label to the project vocabulary; an existing one is adopted")
+    label.add_argument("--name", required=True, help="exact label name; repeat runs adopt it instead of duplicating it")
     listing = sub.add_parser("list", help="read one page of work items; preserve pagination")
     listing.add_argument("--cursor", default="")
     check = sub.add_parser("check", help="validate shared ownership for a bound task, without MCP")
@@ -413,13 +475,14 @@ def main():
             cmd.add_argument("--to-executor", required=True)
     args = parser.parse_args()
     try:
-        config = load_config(args.config or home() / "config/plane.json", setup=args.command == "doctor")
+        # Provisioning runs before the lifecycle mapping exists, so it reads a setup-stage config.
+        config = load_config(args.config or home() / "config/plane.json",
+                             setup=args.command in ("doctor", "ensure-label"))
         result = asyncio.run(run(args, config))
         print(json.dumps(result, indent=2))
-    except AdapterError as exc:
-        print(json.dumps({"error": str(exc)}), file=sys.stderr)
-        sys.exit(1)
-    except Exception:
+    except Exception as exc:
+        reported = adapter_error(exc)
         # Transport errors can include keys or private ticket contents.
-        print(json.dumps({"error": "adapter operation failed; claim retained; inspect connectivity/configuration"}), file=sys.stderr)
+        print(json.dumps({"error": str(reported) if reported else
+                          "adapter operation failed; claim retained; inspect connectivity/configuration"}), file=sys.stderr)
         sys.exit(1)
