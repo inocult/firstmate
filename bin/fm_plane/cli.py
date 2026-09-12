@@ -129,11 +129,9 @@ async def ensure_label(plane, project, name):
         raise AdapterError(f"existing label {conflict['name']!r} (id {conflict.get('id') or 'unknown'}) "
                            f"differs from {name!r} only by case, separators or punctuation; "
                            "reconcile it in Plane before provisioning")
-    await plane.call("label", "create", project_id=project, name=name)
-    # Confirm from the project's own listing; a create response is not proof it persisted.
-    created = label_named(await project_labels(plane, project), name)
-    if not created:
-        raise AdapterError("label creation was not confirmed; inspect the project before retrying")
+    created = await plane.call("label", "create", project_id=project, name=name)
+    if not isinstance(created, dict) or not created.get("id"):
+        raise AdapterError("Plane did not return the created label's ID; inspect the project before retrying")
     return {"project": project, "name": name, "id": created["id"], "created": True}
 
 

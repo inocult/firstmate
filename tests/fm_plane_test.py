@@ -33,6 +33,7 @@ class FakePlane:
         self.calls = []
         self.fail_update = False
         self.drop_create = False
+        self.rival = ""
 
     async def __aenter__(self):
         return self
@@ -48,6 +49,8 @@ class FakePlane:
             if action == "create":
                 if self.drop_create:
                     return {}
+                if self.rival:
+                    self.labels.append({"id": "label-rival", "name": self.rival})
                 self.labels.append(dict({key: value for key, value in args.items() if key != "project_id"},
                                         id="label-%d" % (len(self.labels) + 1)))
                 return copy.deepcopy(self.labels[-1])
@@ -109,6 +112,8 @@ class AdapterTests(unittest.TestCase):
         self.assertEqual(self.label_names(), ["ready-for-agent", "needs-triage"])
         creates = [args for resource, action, args in self.plane.calls if (resource, action) == ("label", "create")]
         self.assertEqual(creates, [{"project_id": "project-1", "name": "needs-triage"}])
+        lists = [args for resource, action, args in self.plane.calls if (resource, action) == ("label", "list")]
+        self.assertEqual(len(lists), 3)
 
     def test_a_name_longer_than_a_convention_expects_is_still_provisioned(self):
         long_name = "needs-triage-" + "x" * 200
@@ -133,11 +138,17 @@ class AdapterTests(unittest.TestCase):
             self.ensure()
         self.assertNotIn("create", [action for resource, action, _ in self.plane.calls if resource == "label"])
 
-    def test_unconfirmed_label_creation_is_reported_rather_than_assumed(self):
+    def test_a_create_response_without_an_id_is_reported_rather_than_assumed(self):
         self.plane.drop_create = True
         with self.assertRaises(AdapterError):
             self.ensure()
         self.assertEqual(self.label_names(), [])
+
+    def test_another_home_provisioning_the_same_name_concurrently_still_returns_the_created_id(self):
+        self.plane.rival = "needs-triage"
+        provisioned = self.ensure()
+        self.assertEqual((provisioned["created"], provisioned["id"]), (True, "label-2"))
+        self.assertEqual(self.label_names(), ["needs-triage", "needs-triage"])
 
     def test_provisioning_precedes_the_lifecycle_mapping_that_ticket_commands_require(self):
         path = Path(self.tmp.name) / "unmapped.json"
