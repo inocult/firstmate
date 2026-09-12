@@ -37,8 +37,7 @@ No new daemon is installed and no idle heartbeat behavior is changed.
 ## Setup
 
 The [prep skill](../.agents/skills/prep/SKILL.md) owns the setup procedure: `/prep` walks it end to end, preparing this home and commissioning the repository's own documentation through a worker on the project's delivery path.
-This section owns what that setup has to produce, and is what the skill and a by-hand operator both work from: the prerequisites, the configuration schema, and the rule each value has to satisfy.
-This section owns the configuration file itself, so an operator configuring `plane.json` by hand satisfies what is below rather than following a second procedure.
+This section owns what that setup has to produce, and is what the skill and a by-hand operator both work from: the prerequisites, the configuration schema, and the rule each value has to satisfy, so an operator configuring `plane.json` by hand satisfies what is below rather than following a second procedure.
 
 Requires Git, Python 3.10+, the optional MCP SDK in `bin/requirements-plane.txt`, and a reachable authenticated Plane MCP server.
 The SDK belongs in its own virtual environment, and `FM_PLANE_PYTHON` must name that environment's Python executable in the environment Firstmate is launched with.
