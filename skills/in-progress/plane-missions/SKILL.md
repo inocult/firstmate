@@ -25,7 +25,7 @@ Record the returned display identifier on the local ledger row as a `Ticket: <id
 
 Control files two kinds of work, and the kind decides who moves the ticket next.
 Work Control files for the planning team to assess keeps `needs-triage` and Control does not dispatch it; the planning team's readiness label is the only thing that makes it claimable, after which it is picked up under the next section like any other ticket.
-Work Control dispatches itself is filed as the shared record of that work, not as something for pickup: at dispatch Control moves the ticket to the implementing lifecycle state through the surface the binding document names for that move, at landing Control moves it to done the same way, and the ticket never carries the readiness label.
+Work Control dispatches itself is filed as the shared record of that work, not as something for pickup: at dispatch Control moves the ticket to the implementing lifecycle state through the surface the binding document names for moving a Control-filed ticket between lifecycle states, at landing Control moves it to done through that same surface, and the ticket never carries the readiness label.
 The pickup predicate is then false on both the label and the state, so Overwatch never claims Control-dispatched work a second time; a ticket that can be picked up twice is worse than no ticket.
 
 ## Picking up and delivering a ticket
