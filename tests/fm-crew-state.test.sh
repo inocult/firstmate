@@ -40,6 +40,11 @@
 #       provably down (explicit daemon-status probe fails) reads unknown -
 #       "unverified", never failed; the same record with the daemon up stays
 #       failed.
+#   (m) held for merge: a gone endpoint on a ship task whose metadata records
+#       pr= and whose merge poll is armed (state/<id>.check.sh) reads done, held
+#       for merge, naming the PR, on tmux and herdr alike; either record alone,
+#       a scout, an unreachable backend, a live idle pane, and an attributed run
+#       keep their existing classification.
 set -u
 
 # shellcheck source=tests/lib.sh
@@ -1806,6 +1811,186 @@ test_no_run_tmux_unreadable_reads_unreachable_not_gone() {
   pass "a tmux that fails to answer reads unknown/unreachable, never gone"
 }
 
+# --- (m) held for merge: a delivered ship task's exited worker reads done ------
+# The 2026-09 delivered-task incident: a worker that exits after reporting its
+# PR leaves a gone endpoint while firstmate has already recorded pr= and armed
+# the merge poll (state/<id>.check.sh). The task waits on the captain's merge,
+# not on a worker, yet it read unknown · none, and the watcher then treated the
+# empty window as a wedge suspect every few minutes until the merge. With both
+# records present, a gone endpoint reads done, held for merge, naming the PR.
+# The fixtures lay out the records exactly as bin/fm-pr-check.sh leaves them - a
+# pr= line in the meta and a mode-0700 regular check script - and never assert
+# anything about the helper's source.
+HELD_PR='https://github.com/example/repo/pull/42'
+
+arm_held_records() {  # <case-dir> <id> [worktree] [extra meta kv...]
+  local d=$1 id=$2 wt=${3:-$1/wt}
+  shift 3 2>/dev/null || shift "$#"
+  fm_write_meta "$d/state/$id.meta" "window=fm:fm-$id" "worktree=$wt" "kind=ship" "pr=$HELD_PR" "$@"
+  printf '#!/usr/bin/env bash\nexit 0\n' > "$d/state/$id.check.sh"
+  chmod 0700 "$d/state/$id.check.sh"
+}
+
+test_gone_window_held_for_merge_reads_done() {
+  reset_fakes
+  local d; d=$(new_case held-gone-window)
+  make_repo_on_branch "$d/wt" fm/feat-held-gone
+  make_fakebin "$d" >/dev/null
+  arm_held_records "$d" feat-held-gone "$d/wt"
+  printf 'done: PR %s checks green\n' "$HELD_PR" > "$d/state/feat-held-gone.status"
+  FM_FAKE_AXI_STATUS=""
+  FM_FAKE_RUNS_LIST=""
+  FM_FAKE_TMUX_MISSING=1
+  local out; out=$(run_crew_state "$d" feat-held-gone)
+  assert_contains "$out" "state: done" "a gone window with pr= and an armed merge poll reads done"
+  assert_contains "$out" "held for merge" "the verdict names the wait as held for merge"
+  assert_contains "$out" "$HELD_PR" "the verdict names the recorded PR"
+  assert_not_contains "$out" "state: unknown" "a held-for-merge task never reads unknown"
+  assert_not_contains "$out" "backend target gone" "a held-for-merge task is not reported as a dead endpoint"
+  pass "a gone window on a delivered task with an armed merge poll reads done, held for merge"
+}
+
+# The classification comes from the two records, not from the status log: a log
+# whose last line maps to no state at all (a decision-closing resolved:) still
+# reads held for merge once the endpoint is gone.
+test_gone_window_held_for_merge_does_not_depend_on_status_log() {
+  reset_fakes
+  local d; d=$(new_case held-gone-resolved-log)
+  make_repo_on_branch "$d/wt" fm/feat-held-resolved
+  make_fakebin "$d" >/dev/null
+  arm_held_records "$d" feat-held-resolved "$d/wt"
+  printf 'done: PR %s checks green\nresolved [key=nm-01RUN-review]: firstmate accepted the finding\n' "$HELD_PR" \
+    > "$d/state/feat-held-resolved.status"
+  FM_FAKE_AXI_STATUS=""
+  FM_FAKE_RUNS_LIST=""
+  FM_FAKE_TMUX_MISSING=1
+  local out; out=$(run_crew_state "$d" feat-held-resolved)
+  assert_contains "$out" "state: done" "held for merge is read from the records even when the log's last line is not a state"
+  assert_contains "$out" "held for merge" "the record-derived verdict names the wait"
+  assert_contains "$out" "$HELD_PR" "the record-derived verdict names the recorded PR"
+  assert_not_contains "$out" "accepted the finding" "a resolved: line's prose never leaks into the held-for-merge detail"
+  pass "held for merge is derived from pr= and the armed poll, not from the status log"
+}
+
+test_herdr_husk_held_for_merge_reads_done() {
+  command -v jq >/dev/null 2>&1 || { pass "herdr held-for-merge test skipped without jq"; return; }
+  reset_fakes
+  local d; d=$(new_case held-herdr-husk)
+  make_repo_on_branch "$d/wt" fm/feat-held-herdr
+  make_fakebin "$d" >/dev/null
+  arm_held_records "$d" feat-held-herdr "$d/wt" "backend=herdr" "harness=claude"
+  # bin/fm-pr-check.sh records pr= as the last line; a meta whose backend keys
+  # follow it must still read as the herdr task it is.
+  fm_write_meta "$d/state/feat-held-herdr.meta" "window=default:w1:p2" "worktree=$d/wt" "kind=ship" \
+    "backend=herdr" "harness=claude" "pr=$HELD_PR"
+  printf 'done: PR %s checks green\n' "$HELD_PR" > "$d/state/feat-held-herdr.status"
+  FM_FAKE_AXI_STATUS=""
+  FM_FAKE_RUNS_LIST=""
+  FM_FAKE_TMUX_MISSING=1
+  FM_FAKE_HERDR_READ_FAIL=1
+  FM_FAKE_HERDR_HUSK=1
+  local out; out=$(run_crew_state "$d" feat-held-herdr)
+  assert_contains "$out" "state: done" "a herdr husk pane on a delivered task with an armed merge poll reads done"
+  assert_contains "$out" "held for merge" "the herdr verdict names the wait as held for merge"
+  assert_contains "$out" "$HELD_PR" "the herdr verdict names the recorded PR"
+  assert_not_contains "$out" "agent gone, pane shell remains" "a held-for-merge husk is not reported as agent death"
+  pass "a herdr husk on a delivered task with an armed merge poll reads done, held for merge"
+}
+
+# Each record alone is not held for merge: pr= without an armed poll (the poll
+# retired, or never armed) and an armed check without pr= both keep the gone
+# endpoint's existing unknown verdict, as does a scout carrying both.
+test_gone_window_needs_both_held_records() {
+  local spec name id
+  for spec in \
+    'no-check|feat-held-nocheck|pr-only' \
+    'no-pr|feat-held-nopr|check-only' \
+    'scout|feat-held-scout|scout'
+  do
+    reset_fakes
+    name=${spec%%|*}; id=$(printf '%s' "$spec" | cut -d'|' -f2)
+    local d; d=$(new_case "held-$name")
+    make_repo_on_branch "$d/wt" "fm/$id"
+    make_fakebin "$d" >/dev/null
+    case "${spec##*|}" in
+      pr-only)
+        fm_write_meta "$d/state/$id.meta" "window=fm:fm-$id" "worktree=$d/wt" "kind=ship" "pr=$HELD_PR" ;;
+      check-only)
+        fm_write_meta "$d/state/$id.meta" "window=fm:fm-$id" "worktree=$d/wt" "kind=ship"
+        printf '#!/usr/bin/env bash\nexit 0\n' > "$d/state/$id.check.sh"
+        chmod 0700 "$d/state/$id.check.sh" ;;
+      scout)
+        arm_held_records "$d" "$id" "$d/wt"
+        fm_write_meta "$d/state/$id.meta" "window=fm:fm-$id" "worktree=$d/wt" "kind=scout" "pr=$HELD_PR" ;;
+    esac
+    printf 'done: PR %s checks green\n' "$HELD_PR" > "$d/state/$id.status"
+    FM_FAKE_AXI_STATUS=""
+    FM_FAKE_RUNS_LIST=""
+    FM_FAKE_TMUX_MISSING=1
+    local out; out=$(run_crew_state "$d" "$id")
+    assert_contains "$out" "state: unknown" "[$name] a gone window without both held records stays unknown"
+    assert_contains "$out" "backend target gone" "[$name] a gone window without both held records keeps its death evidence"
+    assert_not_contains "$out" "held for merge" "[$name] one record alone never reads held for merge"
+  done
+  pass "held for merge requires pr= and the armed merge poll on a ship task; either alone stays unknown"
+}
+
+# An endpoint that merely failed to answer is not gone: the held records do not
+# turn an unreachable backend into a delivery verdict.
+test_unreachable_backend_with_held_records_stays_unknown() {
+  reset_fakes
+  local d; d=$(new_case held-unreachable)
+  make_repo_on_branch "$d/wt" fm/feat-held-unreach
+  make_fakebin "$d" >/dev/null
+  arm_held_records "$d" feat-held-unreach "$d/wt"
+  printf 'done: PR %s checks green\n' "$HELD_PR" > "$d/state/feat-held-unreach.status"
+  FM_FAKE_AXI_STATUS=""
+  FM_FAKE_RUNS_LIST=""
+  FM_FAKE_TMUX_UNREADABLE=1
+  local out; out=$(run_crew_state "$d" feat-held-unreach)
+  assert_contains "$out" "state: unknown" "an unreachable backend stays unknown despite the held records"
+  assert_contains "$out" "backend unreachable" "an unreachable backend is reported as unreachable, not delivered"
+  assert_not_contains "$out" "held for merge" "held for merge needs a gone endpoint, not an unanswered probe"
+  pass "an unreachable backend with held records stays unknown and unreachable"
+}
+
+# A live idle pane keeps the ordinary status-log fallback, and an attributed run
+# keeps the run-step authoritative: the held records change only the gone-endpoint
+# verdict.
+test_held_records_do_not_override_live_pane_or_run_step() {
+  reset_fakes
+  local d; d=$(new_case held-live-idle)
+  make_repo_on_branch "$d/wt" fm/feat-held-live
+  make_fakebin "$d" >/dev/null
+  arm_held_records "$d" feat-held-live "$d/wt" "harness=claude"
+  fm_write_meta "$d/state/feat-held-live.meta" "window=fm:fm-feat-held-live" "worktree=$d/wt" "kind=ship" \
+    "harness=claude" "pr=$HELD_PR"
+  arm_idle_record "$d/state" feat-held-live
+  printf 'done: PR %s checks green\n' "$HELD_PR" > "$d/state/feat-held-live.status"
+  FM_FAKE_AXI_STATUS=""
+  FM_FAKE_RUNS_LIST=""
+  local out; out=$(run_crew_state "$d" feat-held-live)
+  assert_contains "$out" "state: done" "a live idle pane still falls to its status log"
+  assert_contains "$out" "source: status-log" "a live idle pane keeps the status-log source"
+  assert_not_contains "$out" "held for merge" "a live pane is not read through the gone-endpoint rule"
+
+  reset_fakes
+  d=$(new_case held-run-step)
+  make_repo_on_branch "$d/wt" fm/feat-held-run
+  make_fakebin "$d" >/dev/null
+  arm_held_records "$d" feat-held-run "$d/wt"
+  # A working verb, so the attributed run's own step - not the ci-ready log
+  # rule - decides, proving the run-step path is what the held records defer to.
+  printf 'working: implementation committed, starting no-mistakes\n' > "$d/state/feat-held-run.status"
+  FM_FAKE_AXI_STATUS=$(run_running fm/feat-held-run)
+  FM_FAKE_TMUX_MISSING=1
+  out=$(run_crew_state "$d" feat-held-run)
+  assert_contains "$out" "state: working" "an attributed running step stays authoritative over the held records"
+  assert_contains "$out" "source: run-step" "an attributed run stays authoritative over the held records"
+  assert_not_contains "$out" "held for merge" "the run-step verdict is not replaced by the gone-endpoint rule"
+  pass "held records change only the gone-endpoint verdict; live panes and attributed runs are unchanged"
+}
+
 # A closed/unreadable pane must NOT mask an authoritative run-step: judge by the
 # run-step, not the shell. The common case is a finished crew whose agent has
 # exited and closed its window (the normal gap between completion and teardown) -
@@ -2540,6 +2725,12 @@ test_no_run_idle_pane_custom_paused_verb
 test_no_run_idle_secondmate_resolved_event_not_state
 test_dead_window_ignores_stale_status_log
 test_no_run_tmux_unreadable_reads_unreachable_not_gone
+test_gone_window_held_for_merge_reads_done
+test_gone_window_held_for_merge_does_not_depend_on_status_log
+test_herdr_husk_held_for_merge_reads_done
+test_gone_window_needs_both_held_records
+test_unreachable_backend_with_held_records_stays_unknown
+test_held_records_do_not_override_live_pane_or_run_step
 test_dead_window_still_reports_terminal_run_step
 test_dead_window_still_reports_active_run_step
 test_no_timeout_uses_perl_bound

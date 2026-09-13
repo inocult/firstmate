@@ -3007,6 +3007,185 @@ test_wedge_escalation_resets_when_pane_becomes_active() {
   pass "a pane becoming active again resets the consecutive wedge-escalation counter"
 }
 
+# --- held for merge: a delivered task's exited worker is never a stale alarm --
+# The 2026-09 delivered-task incident: five ship tasks in one day each raised a
+# string of stale and possible-wedge alarms every FM_STALE_ESCALATE_SECS until
+# the captain merged. Each worker had exited after reporting its PR, firstmate
+# had recorded pr= and armed the merge poll (state/<id>.check.sh), and the
+# task waited on nothing but that merge - yet the empty window read as a
+# wedge suspect: a terminal last line alarmed on first sight, and a
+# non-terminal one surfaced and then re-armed the wedge timer on every poll.
+# The fixtures lay out exactly those records - the pr= line bin/fm-pr-check.sh
+# writes and a mode-0700 regular check script - over a pane whose foreground
+# command is a bare shell, which the tmux classifier reads as a confidently
+# dead agent. fm-crew-state's canned verdict is left at its unknown default:
+# the exemption must come from the records and the dead agent alone.
+HELD_PR='https://github.com/example/repo/pull/42'
+
+# Lay out one held-for-merge task: meta (window, kind, harness, backend, pr=),
+# an armed check script, a status log primed as already seen, and a pane hash
+# already counted once so the first poll finds it stable. The check script
+# stands in for the armed merge poll's presence, which is all the record test
+# reads; the slow check sweep is held off (a fresh .last-check, as the other
+# cases here do) so its authentication of that stand-in cannot pre-empt the
+# stale path these cases isolate - the real poll's own sweep is covered by the
+# PR-poll suites.
+make_held_task() {  # <state> <task> <window> <capture-file> <pane-text> <status-line> [check:yes|no] [pr:yes|no]
+  local state=$1 task=$2 window=$3 capture=$4 text=$5 status_line=$6 check=${7:-yes} pr=${8:-yes} key sig
+  touch "$state/.last-check"
+  printf '%s' "$text" > "$capture"
+  printf 'window=%s\nkind=ship\nharness=claude\nbackend=tmux\n' "$window" > "$state/$task.meta"
+  [ "$pr" = yes ] && printf 'pr=%s\n' "$HELD_PR" >> "$state/$task.meta"
+  if [ "$check" = yes ]; then
+    printf '#!/usr/bin/env bash\nexit 0\n' > "$state/$task.check.sh"
+    chmod 0700 "$state/$task.check.sh"
+  fi
+  printf '%s\n' "$status_line" > "$state/$task.status"
+  sig=$(seen_sig "$state/$task.status"); printf '%s' "$sig" > "$state/.seen-${task}_status"
+  key=$(printf '%s' "$window" | tr ':/.' '___')
+  printf '%s' "$(hash_text "$text")" > "$state/.hash-$key"
+  printf '1\n' > "$state/.count-$key"
+}
+
+stale_wakes_for() {  # <state> <window>
+  awk -F '\t' -v w="$2" '$3 == "stale" && $4 == w { n++ } END { print n + 0 }' \
+    "$1/.wake-queue" 2>/dev/null || echo 0
+}
+
+test_held_for_merge_dead_agent_absorbs_first_sight_stale() {
+  local spec name status_line dir state fakebin out capture_file window key pane_hash pid
+  for spec in \
+    "terminal|done: PR $HELD_PR checks green" \
+    'nonterminal|resolved [key=nm-01RUN-review]: firstmate accepted the finding'
+  do
+    name=${spec%%|*}; status_line=${spec#*|}
+    dir=$(make_case "held-merge-$name"); state="$dir/state"; fakebin="$dir/fakebin"
+    out="$dir/watch.out"; capture_file="$dir/pane.txt"
+    window="test:fm-held-$name"
+    make_held_task "$state" "held-$name" "$window" "$capture_file" 'bare shell after the worker exited' "$status_line"
+    key=$(printf '%s' "$window" | tr ':/.' '___')
+    pane_hash=$(hash_text 'bare shell after the worker exited')
+    PATH="$fakebin:$PATH" FM_FAKE_TMUX_WINDOW="$window" FM_FAKE_TMUX_CAPTURE="$capture_file" \
+      FM_FAKE_TMUX_CURRENT_COMMAND=zsh \
+      FM_STATE_OVERRIDE="$state" FM_CREW_STATE_BIN="$fakebin/fm-crew-state.sh" FM_STALE_ESCALATE_SECS=240 FM_POLL=1 FM_SIGNAL_GRACE=1 \
+      FM_CHECK_INTERVAL=999999 FM_HEARTBEAT=999999 "$WATCH" > "$out" &
+    pid=$!
+    wait_for_absorbed "$state" "$pid" 'held for merge' \
+      || { reap "$pid"; fail "[$name] a delivered task's dead agent was not absorbed as held for merge: $(cat "$out")"; }
+    grep -F "$HELD_PR" "$state/.watch-triage.log" >/dev/null \
+      || fail "[$name] the held-for-merge absorb did not name the recorded PR"
+    if ! wait_poll_cycle "$state" "$pid"; then
+      reap "$pid"; fail "[$name] watcher exited on a held-for-merge stale (should keep supervising): $(cat "$out")"
+    fi
+    reap "$pid"
+    [ ! -s "$out" ] || fail "[$name] held-for-merge stale printed a wake reason: $(cat "$out")"
+    [ "$(stale_wakes_for "$state" "$window")" -eq 0 ] || fail "[$name] held-for-merge stale queued a stale wake"
+    [ "$(cat "$state/.stale-$key" 2>/dev/null || true)" = "$pane_hash" ] || fail "[$name] held-for-merge absorb did not record the pane hash as classified"
+    [ ! -e "$state/.stale-since-$key" ] || fail "[$name] held-for-merge absorb started a wedge timer"
+    [ ! -e "$state/.wedge-escalations-$key" ] || fail "[$name] held-for-merge absorb kept an escalation count"
+  done
+  pass "a delivered task's exited worker is absorbed as held for merge on first sight, terminal or non-terminal log alike"
+}
+
+# The repeat-poll half of the incident: a non-terminal hash already classified
+# stale re-enters wedge_timer_check on every poll, so once the timer passed the
+# threshold the pane escalated as a possible wedge, the timer restarted, and it
+# escalated again every FM_STALE_ESCALATE_SECS. A held-for-merge task must drop
+# that timer and its count instead of escalating.
+test_held_for_merge_dead_agent_never_wedge_escalates() {
+  local dir state fakebin out capture_file window key pane_hash pid
+  dir=$(make_case held-merge-wedge); state="$dir/state"; fakebin="$dir/fakebin"
+  out="$dir/watch.out"; capture_file="$dir/pane.txt"
+  window="test:fm-held-wedge"
+  make_held_task "$state" held-wedge "$window" "$capture_file" 'bare shell, unchanged for hours' \
+    'resolved [key=nm-01RUN-review]: firstmate accepted the finding'
+  key=$(printf '%s' "$window" | tr ':/.' '___')
+  pane_hash=$(hash_text 'bare shell, unchanged for hours')
+  # Already classified on this hash, with a wedge timer well past the threshold
+  # and two escalations already fired - the third would demand deep inspection.
+  printf '%s' "$pane_hash" > "$state/.stale-$key"
+  echo $(( $(date +%s) - 500 )) > "$state/.stale-since-$key"
+  printf '2\n' > "$state/.wedge-escalations-$key"
+  PATH="$fakebin:$PATH" FM_FAKE_TMUX_WINDOW="$window" FM_FAKE_TMUX_CAPTURE="$capture_file" \
+    FM_FAKE_TMUX_CURRENT_COMMAND=zsh \
+    FM_STATE_OVERRIDE="$state" FM_CREW_STATE_BIN="$fakebin/fm-crew-state.sh" FM_STALE_ESCALATE_SECS=240 FM_POLL=1 FM_SIGNAL_GRACE=1 \
+    FM_CHECK_INTERVAL=999999 FM_HEARTBEAT=999999 "$WATCH" > "$out" &
+  pid=$!
+  wait_for_absorbed "$state" "$pid" 'held for merge' \
+    || { reap "$pid"; fail "a held-for-merge pane past the wedge threshold was not absorbed: $(cat "$out")"; }
+  if ! wait_poll_cycle "$state" "$pid"; then
+    reap "$pid"; fail "watcher exited on a held-for-merge pane past the wedge threshold: $(cat "$out")"
+  fi
+  reap "$pid"
+  grep -F "possible wedge" "$out" >/dev/null && fail "a held-for-merge task was escalated as a possible wedge: $(cat "$out")"
+  [ "$(stale_wakes_for "$state" "$window")" -eq 0 ] || fail "a held-for-merge pane past the wedge threshold queued a stale wake"
+  [ ! -e "$state/.stale-since-$key" ] || fail "the wedge timer survived the held-for-merge absorb"
+  [ ! -e "$state/.wedge-escalations-$key" ] || fail "the escalation count survived the held-for-merge absorb"
+  pass "a held-for-merge task past the wedge threshold drops its timer and count instead of escalating"
+}
+
+# Every condition is load-bearing: the same records over a LIVE agent, a dead
+# agent with the poll retired, and a dead agent with no pr= all keep alarming,
+# so a delivered worker steered into follow-up work and then parked still
+# surfaces and a lone record never silences a task.
+test_held_for_merge_needs_dead_agent_and_both_records() {
+  local spec name command check pr dir state fakebin out capture_file window pid
+  for spec in \
+    'live-agent|claude|yes|yes' \
+    'poll-retired|zsh|no|yes' \
+    'no-pr|zsh|yes|no'
+  do
+    name=$(printf '%s' "$spec" | cut -d'|' -f1)
+    command=$(printf '%s' "$spec" | cut -d'|' -f2)
+    check=$(printf '%s' "$spec" | cut -d'|' -f3)
+    pr=$(printf '%s' "$spec" | cut -d'|' -f4)
+    dir=$(make_case "held-merge-$name"); state="$dir/state"; fakebin="$dir/fakebin"
+    out="$dir/watch.out"; capture_file="$dir/pane.txt"
+    window="test:fm-held-$name"
+    make_held_task "$state" "held-$name" "$window" "$capture_file" 'idle pane' \
+      "done: PR $HELD_PR checks green" "$check" "$pr"
+    PATH="$fakebin:$PATH" FM_FAKE_TMUX_WINDOW="$window" FM_FAKE_TMUX_CAPTURE="$capture_file" \
+      FM_FAKE_TMUX_CURRENT_COMMAND="$command" \
+      FM_STATE_OVERRIDE="$state" FM_CREW_STATE_BIN="$fakebin/fm-crew-state.sh" FM_STALE_ESCALATE_SECS=240 FM_POLL=1 FM_SIGNAL_GRACE=1 \
+      FM_CHECK_INTERVAL=999999 FM_HEARTBEAT=999999 "$WATCH" > "$out" &
+    pid=$!
+    wait_for_exit "$pid" 100 || fail "[$name] the stale was absorbed although the task is not held for merge with a dead agent: $(cat "$out")"
+    grep -F "stale: $window" "$out" >/dev/null || fail "[$name] the surfaced wake was not the stale alarm: $(cat "$out")"
+    grep -F 'held for merge' "$state/.watch-triage.log" >/dev/null 2>&1 \
+      && fail "[$name] the triage log claims a held-for-merge absorb for a task that is not one"
+  done
+  pass "held for merge requires a dead agent, pr= and an armed poll together; a live agent or a lone record still alarms"
+}
+
+# In the away posture the watcher normally queues every stale once per hash for
+# the daemon to triage. A held-for-merge task is exempt there too: the merge
+# poll is its only signal in either posture, so nothing is handed to the daemon.
+test_held_for_merge_dead_agent_absorbed_under_afk() {
+  local dir state fakebin out capture_file window key pane_hash pid
+  dir=$(make_case held-merge-afk); state="$dir/state"; fakebin="$dir/fakebin"
+  out="$dir/watch.out"; capture_file="$dir/pane.txt"
+  window="test:fm-held-afk"
+  make_held_task "$state" held-afk "$window" "$capture_file" 'bare shell while the captain is away' \
+    "done: PR $HELD_PR checks green"
+  key=$(printf '%s' "$window" | tr ':/.' '___')
+  pane_hash=$(hash_text 'bare shell while the captain is away')
+  : > "$state/.afk"
+  PATH="$fakebin:$PATH" FM_FAKE_TMUX_WINDOW="$window" FM_FAKE_TMUX_CAPTURE="$capture_file" \
+    FM_FAKE_TMUX_CURRENT_COMMAND=zsh \
+    FM_STATE_OVERRIDE="$state" FM_CREW_STATE_BIN="$fakebin/fm-crew-state.sh" FM_STALE_ESCALATE_SECS=240 FM_POLL=1 FM_SIGNAL_GRACE=1 \
+    FM_CHECK_INTERVAL=999999 FM_HEARTBEAT=999999 "$WATCH" > "$out" &
+  pid=$!
+  wait_for_absorbed "$state" "$pid" 'held for merge' \
+    || { reap "$pid"; fail "under afk, a held-for-merge dead agent was handed to the daemon instead of absorbed: $(cat "$out")"; }
+  if ! wait_poll_cycle "$state" "$pid"; then
+    reap "$pid"; fail "watcher exited under afk on a held-for-merge stale: $(cat "$out")"
+  fi
+  reap "$pid"
+  [ "$(stale_wakes_for "$state" "$window")" -eq 0 ] || fail "under afk, a held-for-merge stale was queued for the daemon"
+  [ "$(cat "$state/.stale-$key" 2>/dev/null || true)" = "$pane_hash" ] || fail "under afk, the held-for-merge absorb did not record the pane hash"
+  pass "a held-for-merge dead agent is absorbed in the away posture too, never queued for the daemon"
+}
+
 # --- busy pane duration bound: a completed-turn age gate on top of busy -----
 # 2026-07 hibit-agent-focus-nonsteal-r1 incident: a busy pane (herdr "working"
 # and/or the harness's rendered busy footer) is unconditional, unbounded proof
@@ -4846,6 +5025,10 @@ test_stale_terminal_status_overridden_by_active_run
 test_nonterminal_stale_provably_working_absorbed_then_escalated
 test_wedge_escalation_marks_demand_deep_inspection_after_threshold
 test_wedge_escalation_resets_when_pane_becomes_active
+test_held_for_merge_dead_agent_absorbs_first_sight_stale
+test_held_for_merge_dead_agent_never_wedge_escalates
+test_held_for_merge_needs_dead_agent_and_both_records
+test_held_for_merge_dead_agent_absorbed_under_afk
 test_busy_pane_below_turn_age_bound_is_absorbed
 test_busy_pane_stable_hash_escalates_past_turn_age_bound
 test_busy_pane_changing_hash_escalates_past_turn_age_bound

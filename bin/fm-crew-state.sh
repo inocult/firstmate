@@ -88,6 +88,14 @@
 #      unreachable, and an alive endpoint whose scrollback read failed is still
 #      classified by step 4. Backends with no classifier keep reading a failed
 #      capture as gone. The fallback's own comment owns the per-verdict rules.
+#      One exception to the unknown-on-death rule: a gone endpoint on a ship task
+#      whose metadata records pr= and whose merge poll is armed (state/<id>.check.sh
+#      exists) reports done · status-log as held for merge, naming the PR. The
+#      task waits on a merge decision, not on a worker, so its exited worker is the
+#      expected shape, and the armed poll corroborates that the delivery record is
+#      current rather than a stale log (task_held_for_merge_pr in
+#      bin/fm-classify-lib.sh owns the record test). An unreachable endpoint is
+#      not gone and keeps reading unknown.
 #
 # Read-only and side-effect free. Always exits 0 on a successful read regardless
 # of state; exit 2 only on a usage error (no id).
@@ -778,6 +786,22 @@ fi
 # verdict reports unknown rather than trusting a possibly-stale status log as
 # the current state.
 [ -n "$BACKEND_TARGET" ] || emit unknown none "no backend target recorded"
+
+# Every gone-class verdict in the fallback first asks whether the task is held
+# for merge (task_held_for_merge_pr in bin/fm-classify-lib.sh): a delivered ship
+# task with pr= recorded and its merge poll armed has nothing left for a worker
+# to do, so its exited worker reads as the delivery it is, naming the PR the
+# captain is deciding on, never as a dead endpoint with no state. Only the gone
+# verdicts route here; the unreachable verdict stays unknown, because a backend
+# that failed to answer has not shown the endpoint gone.
+emit_gone() {  # <detail>
+  local held_pr
+  if held_pr=$(task_held_for_merge_pr "$ID" "$STATE"); then
+    emit "done" status-log "PR held for merge (worker exited, merge poll armed): $held_pr"
+  fi
+  emit unknown none "$1"
+}
+
 if ! pane_readable "$BACKEND_TARGET"; then
   # A failed probe is not itself evidence the pane is gone: the herdr CLI can
   # error or stall under load, and tmux can fail to be executed at all (a
@@ -813,16 +837,16 @@ if ! pane_readable "$BACKEND_TARGET"; then
     tmux:alive|herdr:alive)
       ;;
     tmux:missing|herdr:missing)
-      emit unknown none "backend target gone: $BACKEND_TARGET"
+      emit_gone "backend target gone: $BACKEND_TARGET"
       ;;
     tmux:dead|herdr:dead)
-      emit unknown none "backend target gone: $BACKEND_TARGET (agent gone, pane shell remains)"
+      emit_gone "backend target gone: $BACKEND_TARGET (agent gone, pane shell remains)"
       ;;
     tmux:*|herdr:*)
       emit unknown none "backend unreachable ($TASK_BACKEND endpoint state: $AGENT_STATE)"
       ;;
     *)
-      emit unknown none "backend target gone: $BACKEND_TARGET"
+      emit_gone "backend target gone: $BACKEND_TARGET"
       ;;
   esac
 fi
