@@ -1,0 +1,25 @@
+### bin/fm-doc-audience-check.sh on the change (target commit 71d4e6c)
+$ bin/fm-doc-audience-check.sh
+fm-doc-audience-check: ok surfaces=110 local_links=404
+[exit=0]
+
+### Adversarial: delete breach's pointer line to docs/tracker-binding.md in a throwaway copy
+fm-doc-audience-check: required owner pointer missing: skills/in-progress/breach/SKILL.md -> docs/tracker-binding.md
+[exit=1]
+
+### Adversarial: leave docs/tracker-binding.md unclassified in the inventory (throwaway copy)
+fm-doc-audience-check: unclassified: docs/tracker-binding.md
+[exit=1]
+
+### tests/fm-documentation-audiences.test.sh
+ok - documentation inventory classifies every maintained prose surface exactly once
+ok - classification, setup routing, and maintained-prose scope fail safely
+ok - required documentation owner pointers cannot silently disappear
+ok - local links resolve while dates, versions, commands, and incident prose remain semantically reviewed
+
+### tests/fm-skills-tree.test.sh
+ok - every activation link is a committed relative symlink to a same-named skill in a known category (29 links)
+ok - every canonical skill lives in a known category, repeating a name only as one portable and one internal audience variant (30 skills)
+ok - every skill sits in the category its frontmatter derives by precedence (30 skills)
+ok - the portable variant is the first C-sorted installer hit for every shared skill name (1 shared)
+ok - the Claude skills alias reaches every active skill through the activation links

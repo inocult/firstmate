@@ -1,0 +1,102 @@
+### Binding claims driven against bin/fm-plane.py with a persistent local fake tracker (stdio MCP)
+### fake tracker state file: state.json; claim record: bare git remote shared.git
+
+## 1. doctor proves only the connection and advertised tools; changes nothing
+$ fm-plane.py doctor
+{
+ "mcp_tools": [
+  "label",
+  "state",
+  "workitem",
+  "workitem_link",
+  "workitem_relation"
+ ],
+ "suggested_ready_label_id": "label-ready",
+ "suggested_pickup_state_ids": [
+  "ready"
+ ],
+ "note": "MCP connected; no ticket or claim changed"
+}
+[exit=0]
+  [tracker] ticket.state=ready links=[] labels=['label-ready']
+
+## 2. claim by UUID: requires readiness label + pickup state, writes claim record, moves ticket to implementing
+$ fm-plane.py claim --item item-1 --request-id req-1
+  "execution": "30fb05fc-f45d-4ebb-86e1-d17605512157",
+  "phase": "implementing",
+[exit=0]
+  [tracker] ticket.state=active links=[] labels=['label-ready']
+  [claim]   phase=implementing pr=None task=None
+
+## 3. bind a local task: writes the private receipt data/<task>/plane.json
+$ fm-plane.py bind --item item-1 --execution 30fb05fc-f45d-4ebb-86e1-d17605512157 --task mission-1 --mode direct-PR
+[exit=0]
+brief.md
+plane.json
+{"execution": "30fb05fc-f45d-4ebb-86e1-d17605512157", "item": "item-1"}
+
+## 4. tracker unreachable (mcp.command=/bin/false): only check runs; status and transfer fail before dispatch
+$ fm-plane.py --config unreachable.json check --task mission-1
+  "phase": "implementing",
+  "task": "mission-1",
+[exit=0]
+$ fm-plane.py --config unreachable.json status --item item-1
+{"error": "adapter operation failed; claim retained; inspect connectivity/configuration"}
+[exit=1]
+$ fm-plane.py --config unreachable.json transfer --item item-1 --execution ... --to-executor control-b --previous-stopped --reason handoff
+{"error": "adapter operation failed; claim retained; inspect connectivity/configuration"}
+[exit=1]
+  [claim]   phase=implementing pr=None task=mission-1
+$ fm-plane.py status --item item-1   (tracker reachable again)
+  "phase": "implementing",
+[exit=0]
+
+## 5. pr registers the link and keeps implementing
+$ fm-plane.py pr --item item-1 --execution 30fb05fc-f45d-4ebb-86e1-d17605512157 --url https://github.com/example/product/pull/42
+[exit=0]
+  [tracker] ticket.state=active links=['https://github.com/example/product/pull/42'] labels=['label-ready']
+  [claim]   phase=implementing pr=https://github.com/example/product/pull/42 task=mission-1
+
+## 6. review moves the ticket to review
+$ fm-plane.py review --item item-1 --execution 30fb05fc-f45d-4ebb-86e1-d17605512157
+[exit=0]
+  [tracker] ticket.state=review links=['https://github.com/example/product/pull/42'] labels=['label-ready']
+  [claim]   phase=review pr=https://github.com/example/product/pull/42 task=mission-1
+
+## 7. HAZARD: re-registering the same PR URL on an execution already in review moves the ticket backwards
+$ fm-plane.py pr --item item-1 --execution 30fb05fc-f45d-4ebb-86e1-d17605512157 --url https://github.com/example/product/pull/42
+[exit=0]
+  [tracker] ticket.state=active links=['https://github.com/example/product/pull/42'] labels=['label-ready']
+  [claim]   phase=implementing pr=https://github.com/example/product/pull/42 task=mission-1
+
+## 8. sync repairs a missing link without changing phase (link deleted by hand in the fake tracker)
+  (link removed in tracker)
+  [tracker] ticket.state=review links=[] labels=['label-ready']
+$ fm-plane.py sync --item item-1 --execution 30fb05fc-f45d-4ebb-86e1-d17605512157
+[exit=0]
+  [tracker] ticket.state=review links=['https://github.com/example/product/pull/42'] labels=['label-ready']
+  [claim]   phase=review pr=https://github.com/example/product/pull/42 task=mission-1
+
+## 9. the adapter cannot resolve a display identifier: claim --item PLAT-27 is refused
+$ fm-plane.py claim --item PLAT-27 --request-id req-2
+{"error": "Plane returned an unexpected work item"}
+[exit=1]
+  [tracker] ticket.state=review links=['https://github.com/example/product/pull/42'] labels=['label-ready']
+
+## 10. ensure-label writes the project vocabulary and touches no ticket
+$ fm-plane.py ensure-label --name needs-triage
+  "id": "label-3",
+  "created": true
+[exit=0]
+  [tracker] ticket.state=review links=['https://github.com/example/product/pull/42'] labels=['label-ready']
+
+## fake tracker call log (every tracker write the adapter issued, in order)
+  workitem/update id=item-1 state=active
+  workitem_link/create https://github.com/example/product/pull/42
+  workitem/update id=item-1 state=active
+  workitem/update id=item-1 state=review
+  workitem/update id=item-1 state=active
+  workitem/update id=item-1 state=review
+  workitem_link/create https://github.com/example/product/pull/42
+  workitem/update id=item-1 state=review
+  label/create needs-triage

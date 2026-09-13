@@ -1,0 +1,23 @@
+### Case-sensitive grep for the tracker's name across the rewritten skills (decision constraint: must return nothing)
+$ grep -rn Plane skills/in-progress/breach skills/in-progress/firstmate-orca skills/in-progress/overwatch skills/in-progress/plane-missions skills/in-progress/prep skills/orders/afk skills/playbooks/secondmate-provisioning skills/playbooks/stuck-crewmate-recovery
+[exit=1 - no matches]
+
+### AGENTS.md (must name the tracker at most once, on the section 10 pointer line)
+$ grep -n Plane AGENTS.md
+[exit=1 - no matches]
+
+### Where the tracker is named: docs/tracker-binding.md only (outside the adapter's own docs)
+$ grep -rln "\bPlane\b" AGENTS.md skills docs/tracker-binding.md
+docs/tracker-binding.md
+
+### Pointers from the four rewritten skills and AGENTS.md to the owner
+skills/in-progress/prep/SKILL.md:14:[`docs/tracker-binding.md`](../../../docs/tracker-binding.md) fixes which tracker this home uses and which surface performs ...
+skills/in-progress/overwatch/SKILL.md:13:[`docs/tracker-binding.md`](../../../docs/tracker-binding.md) owns which surface performs each ticket operation named h...
+skills/in-progress/plane-missions/SKILL.md:11:[`docs/tracker-binding.md`](../../../docs/tracker-binding.md) is the single owner of this home's tracker binding, ...
+skills/in-progress/breach/SKILL.md:23:[`docs/tracker-binding.md`](../../../docs/tracker-binding.md) owns which surface performs each ticket operation named here...
+AGENTS.md:520:[`docs/tracker-binding.md`](docs/tracker-binding.md) is the single owner of which tracker holds this home's tickets, which surface performs each t...
+
+### Session connector (Plane MCP attached to this session), read-only: retrieve_by_identifier PLAT-41
+workitem(action=retrieve_by_identifier, workitem_identifier=PLAT-41, fields=id,sequence_id,project)
+-> {"id": "3423a968-e82e-45d3-8833-d5ed99a5eb31", "sequence_id": 41, "project": "0212707d-4cab-4d11-af83-e3d3a3008fc1"}
+(same-workspace-and-project confirmation against FM_HOME/config/plane.json was not possible here: that private file is outside the repository)
