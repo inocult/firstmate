@@ -261,7 +261,10 @@ xox_load_config() {
   else
     XOX_RELAY=$(xox_env_get XOX_RELAY_URL "$env_file")
   fi
-  [ -n "$XOX_RELAY" ] || XOX_RELAY="https://myxo.io"
+  # The relay host, its Discord bot, and its X handle are third-party
+  # registrations, not runtime identifiers, so the xo rename deliberately left
+  # them at the spellings that are actually registered and deployed.
+  [ -n "$XOX_RELAY" ] || XOX_RELAY="https://myfirstmate.io"
   XOX_RELAY=${XOX_RELAY%/}
   if [ -n "${XOX_DRY_RUN+x}" ]; then
     dry=${XOX_DRY_RUN-}

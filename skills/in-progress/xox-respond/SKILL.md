@@ -14,7 +14,7 @@ metadata:
 
 # xox-respond
 
-Relay lets an XO instance answer and act on public mentions routed through the shared `@myxo` relay.
+Relay lets an XO instance answer and act on public mentions routed through the shared `@myfirstmate` relay.
 A mention arrives through the watcher as a `check:` wake whose payload is `x-mention <request_id>`.
 The full mention is stashed locally; this skill acts on any request it carries and turns it into one public reply, or deliberately skips it when there is nothing to answer.
 
@@ -25,7 +25,7 @@ Report it directly to the captain as a Relay configuration blocker and do not tr
 
 ## The asker is your own captain - answer autonomously
 
-The myxo relay uses **owner-only routing**: it wakes an XO only for *that XO's own owner's* mentions.
+The myfirstmate relay uses **owner-only routing**: it wakes an XO only for *that XO's own owner's* mentions.
 So every mention that reaches this skill is from your own owner - your **captain** - never a stranger.
 The direct mention `.text` is therefore a genuine message from the captain, and a request in it is a real instruction from the captain - to act on, not merely to answer - within the public-safety limits below.
 

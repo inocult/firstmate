@@ -114,9 +114,10 @@ xo_operational_input_body() {  # <current-message> <result-var>
   return 1
 }
 
-# Historical payload literals are intentionally isolated below this line.
-# They exist only for persisted pre-protocol transcripts and must never be used
-# by current producers or current-path tests.
+# Untyped payload literals are intentionally isolated below this line. They
+# carry no protocol header, so classification has to recognize their exact
+# bytes; they must never be used by current producers or current-path tests to
+# construct anything.
 # shellcheck disable=SC2016 # Backticks are literal historical prompt markup.
 XO_LEGACY_SESSIONSTART='Run `bin/xo-session-start.sh` now, exactly once, before executing any other instructions.'
 XO_LEGACY_WATCHER_PREFIX='XO WATCHER WAKE: '
@@ -124,20 +125,30 @@ XO_LEGACY_WATCHER_SUFFIX=$'\n\nRun bin/xo-wake-drain.sh first and handle the que
 XO_LEGACY_TURNEND_PREFIX=$'TURN WOULD END BLIND - supervision is off. The watcher cycle is missing, failed, or unhealthy. Follow the harness recovery instruction below before ending the turn.\n\n'
 XO_LEGACY_AWAY_PREFIX="${XO_OPERATIONAL_MARK}Supervisor escalate ("
 
+# The same untyped payloads as they were spelled before the firstmate-to-xo
+# rename. They exist only for transcripts persisted before that rename and must
+# never be used by current producers or current-path tests. The turn-end and
+# away payloads never carried the old project name, so they need no twin here.
+# shellcheck disable=SC2016 # Backticks are literal historical prompt markup.
+XO_PRERENAME_SESSIONSTART='Run `bin/fm-session-start.sh` now, exactly once, before executing any other instructions.'
+XO_PRERENAME_WATCHER_PREFIX='FIRSTMATE WATCHER WAKE: '
+XO_PRERENAME_WATCHER_SUFFIX=$'\n\nRun bin/fm-wake-drain.sh first and handle the queued wake. Watcher continuity is extension-owned.'
+XO_PRERENAME_OPERATIONAL_PREFIX="${XO_OPERATIONAL_MARK}FIRSTMATE_OP: "
+
 xo_legacy_operational_input_kind() {  # <message> <result-var>
   local message=${1-} result_var=${2-}
   [ -n "$result_var" ] || return 2
 
-  # PR 899 landed an untyped XO_OP prefix. Its subtype cannot be
+  # PR 899 landed an untyped operational prefix. Its subtype cannot be
   # recovered without body prose, so it is explicitly generic.
   case "$message" in
-    "$XO_OPERATIONAL_PREFIX"?*)
+    "$XO_OPERATIONAL_PREFIX"?*|"$XO_PRERENAME_OPERATIONAL_PREFIX"?*)
       printf -v "$result_var" '%s' legacy-operational
       return 0
       ;;
   esac
 
-  if [ "$message" = "$XO_LEGACY_SESSIONSTART" ]; then
+  if [ "$message" = "$XO_LEGACY_SESSIONSTART" ] || [ "$message" = "$XO_PRERENAME_SESSIONSTART" ]; then
     printf -v "$result_var" '%s' session-start
     return 0
   fi
@@ -148,6 +159,11 @@ xo_legacy_operational_input_kind() {  # <message> <result-var>
       ;;
     "$XO_LEGACY_WATCHER_PREFIX"*"$XO_LEGACY_WATCHER_SUFFIX")
       [ "${#message}" -gt "$(( ${#XO_LEGACY_WATCHER_PREFIX} + ${#XO_LEGACY_WATCHER_SUFFIX} ))" ] || return 1
+      printf -v "$result_var" '%s' watcher
+      return 0
+      ;;
+    "$XO_PRERENAME_WATCHER_PREFIX"*"$XO_PRERENAME_WATCHER_SUFFIX")
+      [ "${#message}" -gt "$(( ${#XO_PRERENAME_WATCHER_PREFIX} + ${#XO_PRERENAME_WATCHER_SUFFIX} ))" ] || return 1
       printf -v "$result_var" '%s' watcher
       return 0
       ;;

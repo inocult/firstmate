@@ -590,7 +590,7 @@ These skills are not captain-invocable; load them only at their precise triggers
 
 ## 14. Relay
 
-Relay is the public-mention integration older docs and some emitted lines still call "X mode"; its identifiers keep the `XOX_`, `x-`, and `xo-x-` spellings.
+Relay is the public-mention integration older docs and some emitted lines still call "X mode"; its identifiers keep the `XOX_`, `x-`, and `xo-x-` spellings, and its relay host, Discord bot, and X handle keep the `myfirstmate` spellings they are registered under, because those are third-party registrations rather than runtime identifiers.
 Relay ships inert and causes no behavior change until the home opts in by placing `XOX_PAIRING_TOKEN` in its gitignored `.env`.
 That token is consent for public replies and normal reversible lifecycle actions from eligible mentions, not authority for destructive, irreversible, or security-sensitive action; those still require trusted-channel confirmation.
 `docs/configuration.md` owns activation, generated state, cadence, wire protocol, and opt-out mechanics.

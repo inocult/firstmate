@@ -889,7 +889,7 @@ else
   printf 'absent\n'
 fi
 
-# Public commitments made through the myxo relay. A promise to reply in a
+# Public commitments made through the myfirstmate relay. A promise to reply in a
 # public thread must survive compaction and restart, so it is surfaced from disk
 # here rather than from conversation memory. xo-public-followup-lib.sh owns both
 # gates: a home that never opted into the relay runs one [ -f ] test, prints no

@@ -111,7 +111,7 @@ SH
 
 # make_home <name> [relay-on|relay-off]: an xo home with its own backlog.
 # relay-off omits .env entirely, which is exactly what a home that never opted
-# into the myxo relay looks like.
+# into the myfirstmate relay looks like.
 make_home() {  # <name> [relay-on|relay-off]
   local home="$TMP_ROOT/$1" relay=${2:-relay-on}
   mkdir -p "$home/data" "$home/state" "$home/config" "$home/projects"
@@ -630,7 +630,7 @@ test_outward_delivery_stays_with_the_owning_home() {
     XO_STATE_OVERRIDE="$child/state" FAKE_CURL_LOG="$log" \
     expect_failure "a home without relay consent must not deliver a public reply" \
     "$PF" deliver pf-own
-  assert_contains "$EXPECT_OUT" "has not opted into the myxo relay" \
+  assert_contains "$EXPECT_OUT" "has not opted into the myfirstmate relay" \
     "the refusal must name the missing relay consent"
   [ "$(followup_posts "$log")" -eq 0 ] || fail "the refused delivery must post nothing"
   FAKE_CURL_LOG="$log" run_pf "$owner" deliver pf-own >/dev/null \
@@ -1225,7 +1225,7 @@ test_cleanup_refuses_while_a_public_reply_is_owed() {
 
 # --- 7. zero overhead for homes that do not use the relay ----------------------
 
-# The hard acceptance criterion. A home that never opted into the myxo
+# The hard acceptance criterion. A home that never opted into the myfirstmate
 # relay must see no process, no tasks-axi call, no scan, no output, and no file.
 test_relay_disabled_home_pays_nothing() {
   local home tasks_log out rc before after cmd

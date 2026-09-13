@@ -3124,7 +3124,7 @@ fi
 # thread, and this cleanup removes the task records that make the promise
 # reconcilable. Refuse while this home still owes a public reply for exactly this
 # work. Both gates live in bin/xo-public-followup-lib.sh, so a home that never
-# opted into the myxo relay runs one [ -f ] test and nothing else here.
+# opted into the myfirstmate relay runs one [ -f ] test and nothing else here.
 if [ "$FORCE" != "--force" ] && [ "$PUBLIC_FOLLOWUP_PARENT_UNRESOLVED" = 1 ]; then
   echo "REFUSED: cannot resolve the primary home for marked secondmate $SECOND_MATE_ID; refusing cleanup without its durable parent binding." >&2
   exit 1
@@ -3135,7 +3135,7 @@ if [ "$FORCE" != "--force" ] \
   && xo_pf_has_registrations "$PUBLIC_FOLLOWUP_STATE"; then
   if ! PUBLIC_FOLLOWUP_BLOCKING=$(XO_HOME="$PUBLIC_FOLLOWUP_HOME" XO_STATE_OVERRIDE="$PUBLIC_FOLLOWUP_STATE" \
       "$SCRIPT_DIR/xo-public-followup.sh" guard-work "$PUBLIC_FOLLOWUP_WORK_HOME" "$ID" 2>/dev/null); then
-    echo "REFUSED: task $ID still owes a public reply through the myxo relay." >&2
+    echo "REFUSED: task $ID still owes a public reply through the myfirstmate relay." >&2
     printf '%s\n' "$PUBLIC_FOLLOWUP_BLOCKING" >&2
     echo "Deliver it with bin/xo-public-followup.sh deliver <obligation-id>, waive it with tasks-axi public-followup waive, or use --force after explicit discard approval." >&2
     exit 1

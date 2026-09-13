@@ -32,7 +32,7 @@
 # platform/budget even after this inbox file is drained.
 #
 # Config (home .env, XOX_ENV_FILE, or env): XOX_PAIRING_TOKEN (required),
-# XOX_RELAY_URL (default https://myxo.io). Auth: Authorization: Bearer
+# XOX_RELAY_URL (default https://myfirstmate.io). Auth: Authorization: Bearer
 # <token>.
 set -u
 

@@ -338,8 +338,8 @@ Before the worktree is returned, teardown concludes the task's own no-mistakes r
 
 ## Optional Relay
 
-Relay is opt-in presence for the shared `@myxo` bot on both public surfaces it supports, X and Discord.
-A user enables it by putting `XOX_PAIRING_TOKEN` in the XO home's gitignored `.env`; `XOX_RELAY_URL` is optional and defaults to `https://myxo.io`.
+Relay is opt-in presence for the shared `@myfirstmate` bot on both public surfaces it supports, X and Discord.
+A user enables it by putting `XOX_PAIRING_TOKEN` in the XO home's gitignored `.env`; `XOX_RELAY_URL` is optional and defaults to `https://myfirstmate.io`.
 That token is standing authorization for XO to answer public mentions and act autonomously on normal reversible mention requests.
 Destructive, irreversible, or security-sensitive asks are escalated for trusted-channel confirmation instead of being executed from a public mention.
 The relay uses owner-only routing: a mention delivered to a home is from that home's owner, while its surrounding conversation context may still include other public accounts.

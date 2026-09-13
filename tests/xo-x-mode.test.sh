@@ -186,7 +186,7 @@ test_poll_empty_env_relay_overrides_env_file() {
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "poll empty-env-relay exit"
   [ -z "$out" ] || fail "poll 204 with empty env relay must be silent (got: $out)"
-  assert_grep "url=https://myxo.io/connector/poll" "$log" \
+  assert_grep "url=https://myfirstmate.io/connector/poll" "$log" \
     "empty env relay must override .env and fall back to the default relay"
   pass "xo-x-poll lets an explicitly empty relay env override .env"
 }

@@ -19,7 +19,7 @@
 # pass.
 #
 # Live post config (home .env, XOX_ENV_FILE, or env): XOX_PAIRING_TOKEN
-# (required), XOX_RELAY_URL (default https://myxo.io). Auth:
+# (required), XOX_RELAY_URL (default https://myfirstmate.io). Auth:
 # Authorization: Bearer <token>.
 #
 # Preview / dry-run: with XOX_DRY_RUN set (truthy), nothing is posted. Instead the

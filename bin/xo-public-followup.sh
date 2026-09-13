@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # xo-public-followup.sh - the deterministic consumer and delivery owner for
-# public commitments made through the myxo relay (X and Discord).
+# public commitments made through the myfirstmate relay (X and Discord).
 #
 # THE PROBLEM THIS SOLVES: xo promises a public final reply, routes the
 # work out, and then the conversation compacts or the session restarts. Nothing
@@ -268,7 +268,7 @@ cmd_register() {
   done
 
   xo_pf_relay_active "$XO_HOME" \
-    || die "this home has not opted into the myxo relay, so it cannot own a public commitment" 1
+    || die "this home has not opted into the myfirstmate relay, so it cannot own a public commitment" 1
   require_tools
 
   xo_pf_slug_valid "$id"       || die "unsafe obligation id: $id"
@@ -1065,7 +1065,7 @@ cmd_deliver() {
 
   xo_pf_slug_valid "$id" || die "unsafe obligation id: $id"
   xo_pf_relay_active "$XO_HOME" \
-    || die "this home has not opted into the myxo relay, so it cannot post a public reply" 1
+    || die "this home has not opted into the myfirstmate relay, so it cannot post a public reply" 1
   require_tools
 
   local payload delivery attempt request platform text tmp_text hash chunks rc receipt receipt_fields receipt_dry_run link_status link_rc
@@ -1317,7 +1317,7 @@ cmd_rechain() {
   done
 
   xo_pf_relay_active "$XO_HOME" \
-    || die "this home has not opted into the myxo relay, so it cannot own a public commitment" 1
+    || die "this home has not opted into the myfirstmate relay, so it cannot own a public commitment" 1
   require_tools
   xo_pf_slug_valid "$new_id" || die "unsafe obligation id: $new_id"
   xo_pf_slug_valid "$from" || die "unsafe source obligation id: $from"

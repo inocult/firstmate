@@ -101,6 +101,35 @@ test_isolated_legacy_matrix() {
   pass "operational input: historical prose compatibility is isolated from current parsing"
 }
 
+# Transcripts persisted before the firstmate-to-xo rename are a byte contract
+# this owner still has to read: their untyped payloads spell the old project
+# name, and misreading one as captain dialog mirrors supervision traffic to the
+# branch. The bytes are written out literally, never interpolated from the
+# constants under test.
+test_prerename_transcripts_still_classify() {
+  local marker expected message parsed
+  marker=$XO_OPERATIONAL_MARK
+  # shellcheck disable=SC2016 # Backticks are literal persisted prompt markup.
+  set -- \
+    session-start 'Run `bin/fm-session-start.sh` now, exactly once, before executing any other instructions.' \
+    watcher $'FIRSTMATE WATCHER WAKE: signal: done\n\nRun bin/fm-wake-drain.sh first and handle the queued wake. Watcher continuity is extension-owned.' \
+    legacy-operational "${marker}FIRSTMATE_OP: body whose historical subtype is unknowable"
+  while [ "$#" -gt 0 ]; do
+    expected=$1
+    message=$2
+    shift 2
+    ! xo_operational_input_kind "$message" parsed \
+      || fail "pre-rename $expected transcript leaked into the current parser"
+    xo_operational_input_classify "$message" parsed \
+      || fail "pre-rename $expected transcript was not recognized"
+    [ "$parsed" = "$expected" ] \
+      || fail "pre-rename $expected transcript became $parsed"
+    [ "$(classify_cli "$message")" = "$expected" ] \
+      || fail "cross-language CLI lost the pre-rename $expected transcript"
+  done
+  pass "operational input: transcripts persisted before the xo rename still classify"
+}
+
 test_genuine_near_misses_remain_unclassified() {
   local marker fixture parsed
   marker=$XO_OPERATIONAL_MARK
@@ -155,6 +184,7 @@ test_current_generic_matrix
 test_current_from_xo_carrier
 test_landed_untyped_prefix_is_explicitly_legacy
 test_isolated_legacy_matrix
+test_prerename_transcripts_still_classify
 test_genuine_near_misses_remain_unclassified
 test_cross_language_adapter_uses_the_owner
 test_invalid_current_encodings_are_rejected
