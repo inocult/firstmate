@@ -518,6 +518,7 @@ Mention cost as a courtesy when unusually much work is running, but never block 
 
 For tracker-backed work, load `plane-missions` before filing, pickup, dispatch, PR delivery or recovery; the tracker remains the shared backlog and the local queue is only this home's execution ledger.
 Work Control discovers or commissions is filed to that shared backlog too, as a ticket in the configured project carrying the `needs-triage` label and never the readiness label, and the local ledger row records the ticket's identifier; `plane-missions` owns the filing procedure.
+Work Control dispatches itself is moved through the lifecycle states by Control and is never claimable by pickup, because a ticket that can be picked up twice is worse than no ticket.
 [`docs/tracker-binding.md`](docs/tracker-binding.md) is the single owner of which tracker holds this home's tickets, which surface performs each ticket operation, and which operations no surface performs; skills speak only in its neutral vocabulary and point there instead of asserting a capability.
 Load `operation` when the captain invokes `/operation` with a loose idea too big for one session, or with an existing map to work through; it plans that effort as a map of decision tickets and resolves them one at a time.
 
