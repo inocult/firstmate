@@ -106,6 +106,30 @@
     {
       "source": "docs/trace-context.md",
       "target": "docs/verification/trace-context.md"
+    },
+    {
+      "source": "AGENTS.md",
+      "target": "docs/tracker-binding.md"
+    },
+    {
+      "source": "skills/in-progress/plane-missions/SKILL.md",
+      "target": "docs/tracker-binding.md"
+    },
+    {
+      "source": "skills/in-progress/breach/SKILL.md",
+      "target": "docs/tracker-binding.md"
+    },
+    {
+      "source": "skills/in-progress/overwatch/SKILL.md",
+      "target": "docs/tracker-binding.md"
+    },
+    {
+      "source": "skills/in-progress/prep/SKILL.md",
+      "target": "docs/tracker-binding.md"
+    },
+    {
+      "source": "docs/plane-missions.md",
+      "target": "docs/tracker-binding.md"
     }
   ],
   "surfaces": [
@@ -544,6 +568,10 @@
     {
       "path": "skills/in-progress/operation/SKILL.md",
       "audience": "agent-runtime"
+    },
+    {
+      "path": "docs/tracker-binding.md",
+      "audience": "operator-current"
     }
   ]
 }
