@@ -1,0 +1,1191 @@
+# shellcheck shell=bash
+# Fused backlog transitions for the scripts that own a task's physical record.
+# Usage: . bin/xo-tasks-axi-lib.sh; . bin/xo-backlog-transition-lib.sh
+# (this library reads that one's backend gate and never sources it itself, so a
+# caller that already sourced it keeps its memoised compatibility verdict).
+#
+# INVARIANT. In ordinary successful lifecycle state, `state/<id>.meta` exists
+# <=> this home's backlog row for <id> is In flight; the one teardown crash
+# window is represented by `state/<id>.backlog-close`. The script performing the
+# mechanical record change owns the paired backlog transition and runs it in the
+# same process, under the per-task meta lock it already holds, before it reports
+# success. Nothing else - not a later agent turn, not a printed reminder - is
+# load-bearing for the pairing.
+#   bin/xo-spawn.sh      meta published => `tasks-axi start`
+#   bin/xo-teardown.sh   meta removed => `tasks-axi done`, or `tasks-axi reopen`
+#                        with the deliverable recorded when the row is still an
+#                        open captain call (bin/xo-captain-hold.sh `open`), so
+#                        cleanup never retires the captain's own question
+#   bin/xo-bootstrap.sh  replays whatever a crash left behind, THIS HOME ONLY.
+# bin/xo-fleet-snapshot.sh's classifier and bin/xo-secondmate-reconcile.sh's
+# cross-home nudge stay defense in depth, not the primary mechanism.
+#
+# SCOPE. xo_backlog_transition_applies is the single gate. It excludes
+# secondmates (persistent agents are never backlog items, AGENTS.md section 10),
+# homes whose configured backlog backend is manual and markdown homes that keep
+# no backlog file. Those return-1 exemptions are never errors; an
+# unresolvable configured data directory, a backend resolution error, or
+# incompatible tasks-axi instead returns 2 so callers refuse before mutation.
+#
+# ADDRESSING. Every call runs from the configured data directory's parent so
+# that home's `.tasks.toml` supplies the adapter selection, done_keep, and the
+# archive path. A markdown backlog also passes `--file <data>/backlog.md` so the
+# change lands in the home that owns the task regardless of the caller's working
+# directory. A configured non-markdown adapter is addressed by that root alone,
+# because `--file` would override the adapter's own workspace path. The parent of
+# the data directory is the addressing root rather than XO_HOME, so a home whose
+# data directory is relocated keeps its backlog and its archive together. A root
+# with no `.tasks.toml` gets tasks-axi's built-in defaults.
+# bin/xo-tasks-axi-lib.sh owns backend precedence and configuration failures.
+#
+# CRASH RECOVERY. Only teardown needs a durable record: it removes the meta and
+# with it the completion links, so a process killed between the two halves would
+# leave nothing to reconstruct the close from. It writes
+# `state/<id>.backlog-close` first, and removes it once the close lands.
+# The writer and replay share one complete-record validator, and teardown stages
+# that record before destructive cleanup, so it never publishes or acts on a close
+# replay would reject. The validator pins the data path to this home's configured
+# root before any recovery mutation, then re-runs exactly that close.
+# `tasks-axi done` on an already-closed task backfills links
+# without moving the close date, so replay is idempotent. Spawn needs no marker:
+# it publishes the meta first, so a crash
+# leaves the meta itself as the evidence that the row is owed a start.
+# A captain-held row uses the same record with a `mode=retain` line: replay then
+# records the deliverable and reopens the row instead of closing it, and never
+# closes a row that reads as an open captain call. An answer that closes the row
+# first applies any supported retained artifact from the validated record, then
+# replay simply retires the record.
+
+# Set by xo_backlog_transition_applies for a return-1 exemption.
+# shellcheck disable=SC2034 # Output global, read by the sourcing caller.
+XO_BACKLOG_TRANSITION_SKIP=
+# Set by the mutating helpers when they return non-zero.
+XO_BACKLOG_TRANSITION_ERROR=
+XO_BACKLOG_ROW_RESULT=
+XO_BACKLOG_ROW_STATE=
+XO_BACKLOG_ROW_ERROR=
+# Set by xo_backlog_row_probe on a found row: the tasks-axi hold kind, empty when
+# the row is not held.
+# shellcheck disable=SC2034 # Output global, read by the sourcing caller.
+XO_BACKLOG_ROW_HOLD_KIND=
+# Set by xo_backlog_close_marker_replay: closed | closed_incomplete | retained |
+# retained_incomplete | answered | stale | noop.
+# shellcheck disable=SC2034 # Output global, read by the sourcing caller.
+XO_BACKLOG_CLOSE_REPLAY_RESULT=
+
+# Emit each byte of a value as a decimal number, locale-independently.
+# Deliberately perl rather than od: the spawn and teardown lifecycle runs under a
+# curated PATH (tests/xo-teardown.test.sh make_path_without_lsof pins that set)
+# that excludes od, and a validator that cannot run must never wedge dispatch or
+# cleanup. perl is already in that curated set and is already used elsewhere in
+# this repo for the same portability reason.
+xo_backlog_bytes_of_string() {  # <string>
+  perl -e 'print join(" ", unpack("C*", $ARGV[0])), "\n"' -- "$1"
+}
+
+xo_backlog_bytes_of_file() {  # <path>
+  perl -e 'open(my $f, "<", $ARGV[0]) or exit 1; binmode $f; local $/; my $c = <$f>; $c = "" unless defined $c; print join(" ", unpack("C*", $c)), "\n"' -- "$1"
+}
+
+xo_backlog_control_bytes_valid() {  # <allow-newline: 0|1> <od-bytes>
+  printf '%s\n' "$2" | awk -v allow_newline="$1" '
+    { for (i = 1; i <= NF; i++) if (($i < 32 && !(allow_newline && $i == 10)) || $i == 127) exit 1 }
+  '
+}
+
+xo_backlog_directory_present() {
+  local path=$1 label=$2 check=$1
+  while [ "$check" != / ] && [ "${check%/}" != "$check" ]; do
+    check=${check%/}
+  done
+  if [ ! -d "$check" ] || [ -L "$check" ]; then
+    XO_BACKLOG_TRANSITION_ERROR="$label is not a real directory at $path"
+    return 1
+  fi
+}
+
+xo_backlog_data_absolute() {
+  local data=$1 raw_bytes check
+  raw_bytes=$(xo_backlog_bytes_of_string "$data") || return 1
+  if ! xo_backlog_control_bytes_valid 0 "$raw_bytes"; then
+    printf 'error: data directory contains an invalid control byte\n' >&2
+    return 2
+  fi
+  check=$data
+  while [ "$check" != / ] && [ "${check%/}" != "$check" ]; do
+    check=${check%/}
+  done
+  if [ ! -d "$check" ]; then
+    XO_BACKLOG_TRANSITION_ERROR="data directory is not a directory at $data"
+    return 1
+  fi
+  if ! data=$(CDPATH='' cd -- "$data" 2>/dev/null && pwd -P); then
+    return 1
+  fi
+  printf '%s\n' "$data"
+}
+
+xo_backlog_file() {  # <data-dir>
+  local data
+  data=$(xo_backlog_data_absolute "$1") || {
+    XO_BACKLOG_TRANSITION_ERROR="data directory cannot be resolved: $1"
+    return 1
+  }
+  if [ "$data" = / ]; then
+    printf '/backlog.md\n'
+  else
+    printf '%s/backlog.md\n' "$data"
+  fi
+}
+
+# The directory a backlog's own `.tasks.toml` is resolved from.
+xo_backlog_root() {  # <data-dir>
+  local data parent
+  data=$(xo_backlog_data_absolute "$1") || {
+    XO_BACKLOG_TRANSITION_ERROR="data directory cannot be resolved: $1"
+    return 1
+  }
+  case "$data" in
+    */*)
+      parent=${data%/*}
+      [ -n "$parent" ] || parent=/
+      ;;
+    *) parent=. ;;
+  esac
+  printf '%s\n' "$parent"
+}
+
+xo_backlog_data_relative() {  # <data-dir>
+  local data root
+  data=$(xo_backlog_data_absolute "$1") || {
+    XO_BACKLOG_TRANSITION_ERROR="data directory cannot be resolved: $1"
+    return 1
+  }
+  root=$(xo_backlog_root "$data") || return 1
+  if [ "$data" = "$root" ]; then
+    printf '.\n'
+    return 0
+  fi
+  if [ "$root" = / ]; then
+    printf '%s\n' "${data#/}"
+    return 0
+  fi
+  case "$data" in
+    "$root"/*) printf '%s\n' "${data#"$root"/}" ;;
+    *) printf '%s\n' "$data" ;;
+  esac
+}
+
+
+# The parent an authorized data directory was named from, kept in the caller's
+# own path shape. xo_backlog_record_parent_authorized only applies its XO_HOME
+# containment guard to a root that still spells out `$XO_HOME`, so a root
+# already resolved through `pwd -P` would skip that guard whenever the data
+# directory is a symlink.
+xo_backlog_authorized_root() {  # <authorized-data-dir>
+  local data=$1 parent
+  while [ "$data" != / ] && [ "${data%/}" != "$data" ]; do
+    data=${data%/}
+  done
+  case "$data" in
+    /) parent=/ ;;
+    */*)
+      parent=${data%/*}
+      [ -n "$parent" ] || parent=/
+      ;;
+    *) parent=. ;;
+  esac
+  printf '%s\n' "$parent"
+}
+
+# Any adapter selection or exemption derived from a home's `.tasks.toml` is only
+# as safe as that file, so validate it before reading it.
+xo_backlog_config_present() {  # <root> <authorized-root>
+  local root=$1 authorized_root=$2 tasks_config="$1/.tasks.toml"
+  if [ -e "$tasks_config" ] || [ -L "$tasks_config" ]; then
+    # Leave a dangling config symlink for the backend resolver to diagnose as
+    # unreadable; reject an existing special file through the home-bound
+    # validator before any backend parser can touch it.
+    if [ -L "$tasks_config" ] && [ ! -e "$tasks_config" ]; then
+      return 0
+    fi
+    xo_backlog_record_present "$tasks_config" "tasks-axi config" "$authorized_root" || return 1
+  fi
+  return 0
+}
+
+# Every home is bound to its own data directory, whichever adapter it configures,
+# so the boundary is authorized first and unconditionally. Only the markdown
+# backlog's regular-file requirement is adapter-specific: another adapter keeps
+# its rows in its own workspace and need not carry <data>/backlog.md at all.
+xo_backlog_source_present() {  # <data-dir> <authorized-data-dir> [root authorized-root]
+  local data=$1 authorized_data=$2 root=${3:-} authorized_root=${4:-} file backend
+  if [ -z "$root" ]; then
+    root=$(xo_backlog_root "$data") || return 1
+    authorized_root=$(xo_backlog_authorized_root "$authorized_data")
+  fi
+  if [ -z "$authorized_root" ]; then
+    authorized_root=$(xo_backlog_authorized_root "$authorized_data")
+  fi
+  xo_backlog_config_present "$root" "$authorized_root" || return 1
+  backend=$(xo_tasks_axi_backend "$root" 2>&1) || {
+    XO_BACKLOG_TRANSITION_ERROR=$backend
+    return 2
+  }
+  file=$(xo_backlog_file "$data") || return 1
+  if [ "$backend" = markdown ]; then
+    xo_backlog_record_present "$file" "backlog file" "$authorized_data"
+    return $?
+  fi
+  xo_backlog_record_parent_authorized "$file" "backlog data directory" "$authorized_data" parent-only
+}
+
+# Resolve how the owning home's backlog is addressed, for reads and mutations
+# alike: sets XO_BACKLOG_AXI_ROOT to the cd target and XO_BACKLOG_AXI_FILE to
+# the markdown --file path, empty for every other backend. This is the single
+# place that decision is made. A markdown backlog is addressed as
+# <data>/backlog.md so the change lands in the home that owns the task
+# regardless of the caller's working directory; any other configured adapter
+# is addressed by that root alone, because --file would override the adapter's
+# own workspace path. The caller invokes xo_tasks_axi inside its own subshell
+# - the bound wrapper execs, so a nested subshell here would add a process
+# layer between tasks-axi and the caller, which the lock-holding callers'
+# interruption contract counts on not existing.
+xo_backlog_tasks_axi_addressing() {  # <data-dir>
+  XO_BACKLOG_AXI_FILE=
+  local data root backend
+  data=$(xo_backlog_data_absolute "$1") || return $?
+  root=$(xo_backlog_root "$data") || return $?
+  backend=$(xo_tasks_axi_backend "$root" 2>&1) || {
+    XO_BACKLOG_TRANSITION_ERROR=$backend
+    return 2
+  }
+  XO_BACKLOG_AXI_ROOT=$root
+  if [ "$backend" = markdown ]; then
+    XO_BACKLOG_AXI_FILE=$(xo_backlog_file "$data") || return 1
+  fi
+}
+
+xo_backlog_transition_applies() {  # <config-dir> <data-dir> <kind>
+  local config=$1 data authorized_data=$2 kind=$3 file root backend authorized_root
+  XO_BACKLOG_TRANSITION_SKIP=
+  if [ "$kind" = secondmate ]; then
+    XO_BACKLOG_TRANSITION_SKIP="secondmates are not backlog items"
+    return 1
+  fi
+  if xo_backlog_backend_manual "$config"; then
+    XO_BACKLOG_TRANSITION_SKIP="config/backlog-backend selects manual editing"
+    return 1
+  fi
+  if ! data=$(xo_backlog_data_absolute "$2"); then
+    XO_BACKLOG_TRANSITION_ERROR="data directory cannot be resolved: $2"
+    return 2
+  fi
+  root=$(xo_backlog_root "$data") || return 2
+  authorized_root=$(xo_backlog_authorized_root "$authorized_data")
+  xo_backlog_config_present "$root" "$authorized_root" || return 2
+  backend=$(xo_tasks_axi_backend "$root" 2>&1) || {
+    XO_BACKLOG_TRANSITION_ERROR=$backend
+    return 2
+  }
+  if [ "$backend" = markdown ]; then
+    file=$(xo_backlog_file "$data") || return 2
+    if [ ! -e "$file" ] && [ ! -L "$file" ]; then
+      XO_BACKLOG_TRANSITION_SKIP="this home keeps no markdown backlog at $file"
+      return 1
+    fi
+  fi
+  if ! xo_backlog_source_present "$data" "$authorized_data" "$root" "$authorized_root"; then
+    return 2
+  fi
+  if ! xo_tasks_axi_compatible; then
+    XO_BACKLOG_TRANSITION_ERROR="automatic backlog transitions require tasks-axi ${XO_TASKS_AXI_MIN:-(unknown minimum)} or newer with the required update and mv features"
+    return 2
+  fi
+  return 0
+}
+
+# Run `tasks-axi` with an optional XO_TASKS_AXI_TIMEOUT bound. A caller that
+# holds a lock across the call - the spawn commit and its preservation
+# read-back run under the per-task meta lock - sets the bound, so an
+# unresponsive tasks-axi cannot hold that lock open indefinitely; a timed-out
+# call exits 124, or 137 when the kill-after had to fire (GNU timeout's own
+# status for a KILL-forced expiry), and the callers treat either as the bound
+# expiring and report the timeout as the reason through their existing error
+# plumbing. GNU timeout is used where it exists,
+# gtimeout where coreutils ships under that name, and a small perl watchdog
+# elsewhere (a stock macOS host has perl but no timeout variant; perl is
+# already a hard dependency of this library's byte validators, so the
+# fallback adds no new tool). Every bounded path forces termination: a
+# tasks-axi that ignores SIGTERM must not outlive the bound, since an
+# unbounded call under the lock is exactly the hang the bound exists to
+# prevent - so the GNU variants carry a kill-after of one further bound
+# (TERM at the bound, KILL after that grace) and the watchdog kills the
+# same way. When a bound was requested but no bounding mechanism exists at
+# all, the call fails closed instead of running unbounded. Must be the last
+# command of a subshell: the exec keeps the tasks-axi process exactly where
+# the plain call sat, and the bound kills the child, not the caller.
+xo_tasks_axi_timeout_expired() {  # <status>
+  case $1 in
+    124 | 137) return 0 ;;
+  esac
+  return 1
+}
+
+xo_tasks_axi() {
+  local bound=${XO_TASKS_AXI_TIMEOUT:-}
+  if [ -z "$bound" ]; then
+    exec tasks-axi "$@"
+  fi
+  if command -v timeout >/dev/null 2>&1; then
+    exec timeout -k "$bound" "$bound" tasks-axi "$@"
+  elif command -v gtimeout >/dev/null 2>&1; then
+    exec gtimeout -k "$bound" "$bound" tasks-axi "$@"
+  elif command -v perl >/dev/null 2>&1; then
+    # Fork, run tasks-axi in the child, and poll waitpid(WNOHANG) until the
+    # child exits or the bound expires: the same contract as
+    # `timeout $bound tasks-axi ...`. Expiry kills the child with TERM, waits
+    # one further bound of grace, then KILL, and exits 124 so the callers'
+    # timeout plumbing reports it. Polling rather than alarm+die keeps the
+    # bound off perl's platform-dependent syscall-restart signal semantics.
+    exec perl -MPOSIX=WNOHANG -e '
+      my $bound = shift;
+      exit 127 unless defined $bound && $bound =~ /\A[0-9]+\z/;
+      my $pid = fork;
+      exit 127 unless defined $pid;
+      if ($pid == 0) { exec @ARGV; exit 127 }
+      my $step = 0.05;
+      my $elapsed = 0;
+      while (1) {
+        my $done = waitpid $pid, WNOHANG;
+        exit(($? & 127) ? 128 + ($? & 127) : $? >> 8) if $done == $pid;
+        exit 127 if $done == -1;
+        if ($elapsed >= $bound) {
+          kill "TERM", $pid;
+          my $grace = 0;
+          my $gone = waitpid $pid, WNOHANG;
+          while ($gone == 0 && $grace < $bound) {
+            select undef, undef, undef, $step;
+            $grace += $step;
+            $gone = waitpid $pid, WNOHANG;
+          }
+          kill "KILL", $pid if $gone == 0;
+          waitpid $pid, 0;
+          exit 124;
+        }
+        select undef, undef, undef, $step;
+        $elapsed += $step;
+      }
+    ' -- "$bound" tasks-axi "$@"
+  fi
+  printf 'xo_tasks_axi: cannot bound tasks-axi within %ss: none of timeout, gtimeout, or perl is available\n' "$bound" >&2
+  exit 127
+}
+
+# Print one row's `tasks-axi show` output (plus stderr); the exit status is
+# tasks-axi's. Extra flags (such as --full) are passed through.
+xo_backlog_row_show() {  # <resolved-data-dir> <id> [flag...]
+  local data=$1 id=$2 addressing_status
+  shift 2
+  xo_backlog_tasks_axi_addressing "$data"
+  addressing_status=$?
+  if [ "$addressing_status" -ne 0 ]; then
+    [ -z "${XO_BACKLOG_TRANSITION_ERROR:-}" ] || printf '%s\n' "$XO_BACKLOG_TRANSITION_ERROR" >&2
+    return "$addressing_status"
+  fi
+  if [ -n "$XO_BACKLOG_AXI_FILE" ]; then
+    (cd "$XO_BACKLOG_AXI_ROOT" 2>/dev/null && xo_tasks_axi show "$id" "$@" --file "$XO_BACKLOG_AXI_FILE" 2>&1)
+  else
+    (cd "$XO_BACKLOG_AXI_ROOT" 2>/dev/null && xo_tasks_axi show "$id" "$@" 2>&1)
+  fi
+}
+
+xo_backlog_row_list() {  # <resolved-data-dir> [flag...]
+  local data=$1 addressing_status
+  shift
+  xo_backlog_tasks_axi_addressing "$data"
+  addressing_status=$?
+  if [ "$addressing_status" -ne 0 ]; then
+    [ -z "${XO_BACKLOG_TRANSITION_ERROR:-}" ] || printf '%s\n' "$XO_BACKLOG_TRANSITION_ERROR" >&2
+    return "$addressing_status"
+  fi
+  if [ -n "$XO_BACKLOG_AXI_FILE" ]; then
+    (cd "$XO_BACKLOG_AXI_ROOT" 2>/dev/null && xo_tasks_axi list "$@" --file "$XO_BACKLOG_AXI_FILE" 2>&1)
+  else
+    (cd "$XO_BACKLOG_AXI_ROOT" 2>/dev/null && xo_tasks_axi list "$@" 2>&1)
+  fi
+}
+
+xo_backlog_row_probe() {  # <data-dir> <id>
+  local data authorized_data=$1 id=$2 out state held blocked hold_kind command_status source_status
+  if ! data=$(xo_backlog_data_absolute "$1"); then
+    XO_BACKLOG_ROW_RESULT=error
+    XO_BACKLOG_ROW_STATE=
+    XO_BACKLOG_ROW_ERROR="data directory cannot be resolved: $1"
+    return 1
+  fi
+  XO_BACKLOG_ROW_RESULT=error
+  XO_BACKLOG_ROW_STATE=
+  XO_BACKLOG_ROW_HOLD_KIND=
+  XO_BACKLOG_ROW_ERROR=
+  xo_backlog_source_present "$data" "$authorized_data"
+  source_status=$?
+  if [ "$source_status" -ne 0 ]; then
+    XO_BACKLOG_ROW_ERROR=$XO_BACKLOG_TRANSITION_ERROR
+    return "$source_status"
+  fi
+  out=$(xo_backlog_row_show "$data" "$id")
+  command_status=$?
+  if [ "$command_status" -ne 0 ]; then
+    if printf '%s\n' "$out" | grep -q '^code: NOT_FOUND$'; then
+      XO_BACKLOG_ROW_RESULT=not_found
+    else
+      XO_BACKLOG_ROW_ERROR=$(printf '%s\n' "$out" | sed -n '1p')
+      if [ -z "$XO_BACKLOG_ROW_ERROR" ]; then
+        if xo_tasks_axi_timeout_expired "$command_status" && [ -n "${XO_TASKS_AXI_TIMEOUT:-}" ]; then
+          XO_BACKLOG_ROW_ERROR="tasks-axi show $id did not finish within ${XO_TASKS_AXI_TIMEOUT}s"
+        else
+          XO_BACKLOG_ROW_ERROR="tasks-axi show $id failed with no output"
+        fi
+      fi
+    fi
+    return "$command_status"
+  fi
+  state=$(printf '%s\n' "$out" | sed -n 's/^  state: *//p' | head -1)
+  held=$(printf '%s\n' "$out" | sed -n 's/^  held: *//p' | head -1)
+  blocked=$(printf '%s\n' "$out" | sed -n 's/^  blocked: *//p' | head -1)
+  hold_kind=$(printf '%s\n' "$out" | sed -n 's/^  hold_kind: *//p' | head -1)
+  if [ -z "$state" ]; then
+    XO_BACKLOG_ROW_ERROR="tasks-axi show $id returned no state"
+    return 1
+  fi
+  XO_BACKLOG_ROW_RESULT=found
+  XO_BACKLOG_ROW_STATE="$state ${held:-no} ${blocked:-no}"
+  case "$hold_kind" in
+    ''|'"-"'|-) XO_BACKLOG_ROW_HOLD_KIND= ;;
+    *) XO_BACKLOG_ROW_HOLD_KIND=$hold_kind ;;
+  esac
+  return 0
+}
+
+# Run one tasks-axi mutation against <home>'s backlog, capturing its first
+# output line in XO_BACKLOG_TRANSITION_ERROR on failure. The home boundary is
+# authorized through xo_backlog_source_present first; xo_backlog_tasks_axi owns
+# how the selected adapter is addressed (ADDRESSING above).
+xo_backlog_mutate() {  # <data-dir> <verb> <id> [flag...]
+  local data authorized_data=$1 verb=$2 id=$3 out command_status source_status
+  if ! data=$(xo_backlog_data_absolute "$1"); then
+    XO_BACKLOG_TRANSITION_ERROR="data directory cannot be resolved: $1"
+    return 1
+  fi
+  shift 3
+  XO_BACKLOG_TRANSITION_ERROR=
+  xo_backlog_source_present "$data" "$authorized_data"
+  source_status=$?
+  [ "$source_status" -eq 0 ] || return "$source_status"
+  xo_backlog_tasks_axi_addressing "$data"
+  source_status=$?
+  [ "$source_status" -eq 0 ] || return "$source_status"
+  if [ -n "$XO_BACKLOG_AXI_FILE" ]; then
+    out=$(cd "$XO_BACKLOG_AXI_ROOT" 2>/dev/null && xo_tasks_axi "$verb" "$id" "$@" --file "$XO_BACKLOG_AXI_FILE" 2>&1)
+  else
+    out=$(cd "$XO_BACKLOG_AXI_ROOT" 2>/dev/null && xo_tasks_axi "$verb" "$id" "$@" 2>&1)
+  fi
+  command_status=$?
+  [ "$command_status" -ne 0 ] || return 0
+  XO_BACKLOG_TRANSITION_ERROR=$(printf '%s\n' "$out" | sed -n '1p')
+  if [ -z "$XO_BACKLOG_TRANSITION_ERROR" ]; then
+    if xo_tasks_axi_timeout_expired "$command_status" && [ -n "${XO_TASKS_AXI_TIMEOUT:-}" ]; then
+      XO_BACKLOG_TRANSITION_ERROR="tasks-axi $verb $id did not finish within ${XO_TASKS_AXI_TIMEOUT}s"
+    else
+      XO_BACKLOG_TRANSITION_ERROR="tasks-axi $verb $id failed with no output"
+    fi
+  fi
+  return "$command_status"
+}
+
+xo_backlog_start() {  # <data-dir> <id>
+  xo_backlog_mutate "$1" start "$2"
+}
+
+xo_backlog_done() {  # <data-dir> <id> [flag...]
+  local data=$1 id=$2
+  shift 2
+  xo_backlog_mutate "$data" "done" "$id" "$@"
+}
+
+xo_backlog_row_artifact_supported() {
+  local id=$1 flag=${2:-} value=${3:-}
+  case "$flag" in
+    --pr) return 0 ;;
+    --report) [ "$value" = "data/$id/report.md" ] ;;
+    *) return 1 ;;
+  esac
+}
+
+# Keep a captain-held row open across the removal of the work record that
+# discovered it: record the finished work's deliverable as one line at the end
+# of the task body (a line already present is left alone), preserve supported
+# artifacts on the row, and return it to Queued, the conventional post-cleanup
+# shape for an open captain call.
+# bin/xo-fleet-snapshot.sh classifies that retained hold from its structured
+# fields; only bin/xo-captain-hold.sh answer resolves the call.
+xo_backlog_retain() {  # <data-dir> <id> [flag...]
+  local data authorized_data=$1 id=$2 out command_status previous_arg=''
+  local arg deliverable='' line body new_body tmp
+  local -a row_args=()
+  if ! data=$(xo_backlog_data_absolute "$1"); then
+    XO_BACKLOG_TRANSITION_ERROR="data directory cannot be resolved: $1"
+    return 1
+  fi
+  shift 2
+  XO_BACKLOG_TRANSITION_ERROR=
+  for arg in "$@"; do
+    case "$previous_arg" in
+      --report)
+        deliverable="${deliverable:+$deliverable; }report $arg"
+        if xo_backlog_row_artifact_supported "$id" --report "$arg"; then
+          row_args=(--report "$arg")
+        fi
+        ;;
+      --pr)
+        deliverable="${deliverable:+$deliverable; }PR $arg"
+        row_args=(--pr "$arg")
+        ;;
+      --note) deliverable="${deliverable:+$deliverable; }$arg" ;;
+    esac
+    previous_arg=$arg
+  done
+  if [ -n "$deliverable" ]; then
+    out=$(xo_backlog_row_show "$data" "$id" --full)
+    command_status=$?
+    if [ "$command_status" -ne 0 ]; then
+      XO_BACKLOG_TRANSITION_ERROR=$(printf '%s\n' "$out" | sed -n '1p')
+      [ -n "$XO_BACKLOG_TRANSITION_ERROR" ] \
+        || XO_BACKLOG_TRANSITION_ERROR="tasks-axi show $id failed with no output"
+      return "$command_status"
+    fi
+    body=$(printf '%s\n' "$out" | sed -n 's/^  body: //p' | head -1 \
+      | LC_ALL=C perl -MJSON::PP -e '
+        local $/;
+        my $shown = <STDIN>;
+        $shown =~ s/\s+\z//;
+        exit 0 if $shown eq "" || $shown eq "-";
+        my $value = $shown =~ /\A"/ ? decode_json($shown) : $shown;
+        print $value unless $value eq "-";
+      ') || {
+      XO_BACKLOG_TRANSITION_ERROR="could not decode the task body of $id"
+      return 1
+    }
+    line="Deliverable of the finished work: $deliverable"
+    case $'\n'"$body"$'\n' in
+      *$'\n'"$line"$'\n'*) ;;
+      *)
+        new_body=$line
+        [ -z "$body" ] || new_body=$(printf '%s\n\n%s' "$body" "$line")
+        tmp=$(umask 077; mktemp "${TMPDIR:-/tmp}/xo-backlog-retain-body.XXXXXX") || {
+          XO_BACKLOG_TRANSITION_ERROR="cannot stage the deliverable for $id"
+          return 1
+        }
+        if ! printf '%s\n' "$new_body" > "$tmp"; then
+          rm -f -- "$tmp"
+          XO_BACKLOG_TRANSITION_ERROR="cannot stage the deliverable for $id"
+          return 1
+        fi
+        if ! xo_backlog_mutate "$authorized_data" update "$id" --body-file "$tmp"; then
+          rm -f -- "$tmp"
+          return 1
+        fi
+        rm -f -- "$tmp"
+        ;;
+    esac
+  fi
+  if [ "${#row_args[@]}" -gt 0 ]; then
+    xo_backlog_mutate "$authorized_data" update "$id" "${row_args[@]}" || return 1
+  fi
+  xo_backlog_mutate "$authorized_data" reopen "$id"
+}
+
+xo_backlog_canonical_existing() {
+  LC_ALL=C perl -MCwd=realpath -e '
+    my $resolved = realpath($ARGV[0]);
+    exit 1 unless defined $resolved;
+    print $resolved;
+  ' "$1" 2>/dev/null
+}
+
+xo_backlog_record_parent_authorized() {  # <path> <label> <root> [parent-only]
+  local path=$1 label=$2 root=$3 parent_only=${4:-} parent base parent_resolved expected_path
+  local path_resolved root_resolved root_prefix home_resolved final_matches=1
+  parent=${path%/*}
+  [ "$parent" != "$path" ] || parent=.
+  base=${path##*/}
+  root_resolved=$(xo_backlog_canonical_existing "$root") || {
+    XO_BACKLOG_TRANSITION_ERROR="$label authorized directory cannot be resolved at $root"
+    return 1
+  }
+  [ -d "$root_resolved" ] || {
+    XO_BACKLOG_TRANSITION_ERROR="$label authorized directory is not a directory at $root"
+    return 1
+  }
+  if [ -n "${XO_HOME:-}" ]; then
+    case "$root" in
+      "$XO_HOME"|"$XO_HOME"/*)
+        home_resolved=$(xo_backlog_canonical_existing "$XO_HOME") || {
+          XO_BACKLOG_TRANSITION_ERROR="$label home directory cannot be resolved at $XO_HOME"
+          return 1
+        }
+        case "$root_resolved" in
+          "$home_resolved"|"$home_resolved"/*) ;;
+          *)
+            XO_BACKLOG_TRANSITION_ERROR="$label authorized directory resolves outside this home at $root"
+            return 1
+            ;;
+        esac
+        ;;
+    esac
+  fi
+  parent_resolved=$(xo_backlog_canonical_existing "$parent") || {
+    XO_BACKLOG_TRANSITION_ERROR="$label parent directory cannot be resolved at $path"
+    return 1
+  }
+  expected_path=${parent_resolved%/}/$base
+  if [ -z "$parent_only" ] && { [ -e "$path" ] || [ -L "$path" ]; }; then
+    path_resolved=$(xo_backlog_canonical_existing "$path") || {
+      XO_BACKLOG_TRANSITION_ERROR="$label cannot be resolved at $path"
+      return 1
+    }
+    [ "$path_resolved" = "$expected_path" ] || final_matches=0
+  else
+    path_resolved=$expected_path
+  fi
+  root_prefix=${root_resolved%/}/
+  case "$path_resolved" in
+    "$root_prefix"*) ;;
+    *)
+      XO_BACKLOG_TRANSITION_ERROR="$label resolves outside its authorized directory at $path"
+      return 1
+      ;;
+  esac
+  if [ "$final_matches" != 1 ]; then
+    XO_BACKLOG_TRANSITION_ERROR="$label resolves through a different final path at $path"
+    return 1
+  fi
+}
+
+xo_backlog_record_present() {
+  local path=$1 label=${2:-record} root=$3
+  xo_backlog_record_parent_authorized "$path" "$label" "$root" || return 1
+  if [ ! -f "$path" ]; then
+    XO_BACKLOG_TRANSITION_ERROR="$label is not a regular file at $path"
+    return 1
+  fi
+  return 0
+}
+
+xo_backlog_record_remove() {
+  local path=$1 label=$2 root=$3
+  xo_backlog_record_parent_authorized "$path" "$label" "$root" || return 1
+  if [ -e "$path" ] || [ -L "$path" ]; then
+    xo_backlog_record_present "$path" "$label" "$root" || return 1
+  fi
+  if ! rm -f "$path" 2>/dev/null || [ -e "$path" ] || [ -L "$path" ]; then
+    XO_BACKLOG_TRANSITION_ERROR="$label could not be removed at $path"
+    return 1
+  fi
+  return 0
+}
+
+xo_backlog_record_publish() {
+  local source=$1 target=$2 label=$3 root=$4
+  xo_backlog_record_present "$source" "$label staged record" "$root" || return 1
+  xo_backlog_record_parent_authorized "$target" "$label target" "$root" || return 1
+  if [ -e "$target" ] || [ -L "$target" ]; then
+    xo_backlog_record_present "$target" "$label target" "$root" || return 1
+  fi
+  if ! mv -f "$source" "$target" 2>/dev/null || ! xo_backlog_record_present "$target" "$label" "$root"; then
+    [ -n "$XO_BACKLOG_TRANSITION_ERROR" ] \
+      || XO_BACKLOG_TRANSITION_ERROR="$label publication failed at $target"
+    return 1
+  fi
+  return 0
+}
+
+xo_backlog_meta_spawn_gen() {
+  local meta=$1 state=$2 count value
+  XO_BACKLOG_META_SPAWN_GEN=
+  xo_backlog_record_present "$meta" "task record" "$state" || return 1
+  count=$(LC_ALL=C awk -F= '$1 == "spawn_gen" { count++ } END { print count + 0 }' "$meta" 2>/dev/null) || {
+    XO_BACKLOG_TRANSITION_ERROR="unreadable spawn generation in task record $meta"
+    return 1
+  }
+  if [ "$count" -ne 1 ]; then
+    XO_BACKLOG_TRANSITION_ERROR="task record $meta has $count spawn generation fields; exactly one is required"
+    return 1
+  fi
+  value=$(LC_ALL=C awk -F= '$1 == "spawn_gen" { sub(/^[^=]*=/, ""); print }' "$meta" 2>/dev/null) || {
+    XO_BACKLOG_TRANSITION_ERROR="unreadable spawn generation in task record $meta"
+    return 1
+  }
+  case "$value" in
+    ''|.*|*[!A-Za-z0-9._-]*)
+      XO_BACKLOG_TRANSITION_ERROR="invalid spawn generation in task record $meta"
+      return 1
+      ;;
+  esac
+  XO_BACKLOG_META_SPAWN_GEN=$value
+}
+
+# The same incarnation, read for a caller that only needs to notice a CHANGE.
+# A record predating the field carries no incarnation to compare, so it yields
+# an empty value and proceeds instead of refusing; comparing that empty value
+# across a wait still catches a record that gained, lost, or altered one. An
+# ambiguous or unreadable field is still an error, because a record that cannot
+# name one exact incarnation cannot be compared at all.
+xo_backlog_meta_spawn_gen_optional() {  # <meta> <state>
+  local meta=$1 state=$2 count
+  XO_BACKLOG_META_SPAWN_GEN=
+  xo_backlog_record_present "$meta" "task record" "$state" || return 1
+  count=$(LC_ALL=C awk -F= '$1 == "spawn_gen" { count++ } END { print count + 0 }' "$meta" 2>/dev/null) || {
+    XO_BACKLOG_TRANSITION_ERROR="unreadable spawn generation in task record $meta"
+    return 1
+  }
+  [ "$count" -ne 0 ] || return 0
+  xo_backlog_meta_spawn_gen "$meta" "$state"
+}
+
+xo_backlog_row_dispatchable() {
+  case "$1" in
+    in_flight\ no\ no|queued\ no\ no) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+xo_backlog_dispatch_transition() {
+  local meta=$1 data=$2 id=$3 state=$4 row row_status
+  xo_backlog_record_present "$meta" "task record" "$state" || return 1
+  xo_backlog_row_probe "$data" "$id"
+  row_status=$?
+  if [ "$row_status" -ne 0 ]; then
+    if [ "$XO_BACKLOG_ROW_RESULT" = not_found ]; then
+      XO_BACKLOG_TRANSITION_ERROR="backlog item $id vanished before dispatch commit"
+    else
+      XO_BACKLOG_TRANSITION_ERROR=$XO_BACKLOG_ROW_ERROR
+    fi
+    return "$row_status"
+  fi
+  row=$XO_BACKLOG_ROW_STATE
+  if ! xo_backlog_row_dispatchable "$row"; then
+    XO_BACKLOG_TRANSITION_ERROR="backlog item $id is not dispatchable in state $row"
+    return 1
+  fi
+  case "$row" in
+    in_flight\ no\ no) return 0 ;;
+    queued\ no\ no) xo_backlog_start "$data" "$id" ;;
+  esac
+}
+
+xo_backlog_dispatch_rollback() {
+  local meta=$1 busy_script=$2 state=$3 id=$4 gen=$5 failed=0
+  xo_backlog_record_remove "$meta" "provisional task record" "$state" || failed=1
+  if [ -n "$gen" ]; then
+    "$busy_script" retire "$state" "$id" --gen "$gen" >/dev/null 2>&1 || failed=1
+    if [ -e "$state/$id.busy-state" ] || [ -L "$state/$id.busy-state" ] \
+       || [ -e "$state/$id.busy-gen" ] || [ -L "$state/$id.busy-gen" ]; then
+      failed=1
+    fi
+  fi
+  if [ "$failed" -ne 0 ]; then
+    XO_BACKLOG_TRANSITION_ERROR="failed-dispatch cleanup did not remove both task and busy records for $id"
+    return 1
+  fi
+  return 0
+}
+
+xo_backlog_close_transition() {
+  local meta=$1 marker=$2 data=$3 id=$4 state=$5
+  shift 5
+  [ -z "$meta" ] || xo_backlog_record_remove "$meta" "task record" "$state" || return 1
+  xo_backlog_done "$data" "$id" "$@" || return 1
+  xo_backlog_record_remove "$marker" "pending-close record" "$state"
+}
+
+# The captain-held twin of the close transition: same record, same ordering,
+# `reopen` with the deliverable recorded instead of `done`.
+xo_backlog_retain_transition() {
+  local meta=$1 marker=$2 data=$3 id=$4 state=$5
+  shift 5
+  [ -z "$meta" ] || xo_backlog_record_remove "$meta" "task record" "$state" || return 1
+  xo_backlog_retain "$data" "$id" "$@" || return 1
+  xo_backlog_record_remove "$marker" "pending-close record" "$state"
+}
+
+xo_backlog_atomic_transition() {
+  local operation=$1
+  shift
+  case "$operation" in
+    publish) xo_backlog_record_publish "$@" ;;
+    remove) xo_backlog_record_remove "$@" ;;
+    dispatch) xo_backlog_dispatch_transition "$@" ;;
+    rollback) xo_backlog_dispatch_rollback "$@" ;;
+    close) xo_backlog_close_transition "$@" ;;
+    retain) xo_backlog_retain_transition "$@" ;;
+    *) XO_BACKLOG_TRANSITION_ERROR="unknown backlog atomic transition $operation"; return 2 ;;
+  esac
+}
+
+xo_backlog_close_marker_path() {  # <state-dir> <id>
+  printf '%s/%s.backlog-close\n' "$1" "$2"
+}
+
+xo_backlog_close_marker_validate() {  # <marker-path> <authorized-data-dir> <expected-id> <state-dir>
+  local marker=$1 authorized_data data_resolved expected_id=$3 state=$4
+  local id='' data='' marker_spawn_gen='' cleanup_incomplete=0 mode=close line raw_bytes arg_value
+  local url_tail url_authority url_path url_host url_port host_rest host_label host_valid
+  local percent_tail percent_valid
+  local id_count=0 data_count=0 spawn_gen_count=0 cleanup_incomplete_count=0 mode_count=0
+  local args=()
+  XO_BACKLOG_CLOSE_VALIDATED_ID=
+  XO_BACKLOG_CLOSE_VALIDATED_DATA=
+  XO_BACKLOG_CLOSE_VALIDATED_SPAWN_GEN=
+  XO_BACKLOG_CLOSE_VALIDATED_CLEANUP_INCOMPLETE=0
+  XO_BACKLOG_CLOSE_VALIDATED_MODE=close
+  XO_BACKLOG_CLOSE_VALIDATED_ARGS=()
+  xo_backlog_record_present "$marker" "pending-close record" "$state" || return 1
+  raw_bytes=$(xo_backlog_bytes_of_file "$marker" 2>/dev/null) || {
+    XO_BACKLOG_TRANSITION_ERROR="unreadable pending-close record $marker"
+    return 1
+  }
+  if ! xo_backlog_control_bytes_valid 1 "$raw_bytes"; then
+    XO_BACKLOG_TRANSITION_ERROR="invalid control byte in pending-close record $marker"
+    return 1
+  fi
+  while IFS= read -r line || [ -n "$line" ]; do
+    case "$line" in
+      id=*) id=${line#id=}; id_count=$((id_count + 1)) ;;
+      data=*) data=${line#data=}; data_count=$((data_count + 1)) ;;
+      spawn_gen=*) marker_spawn_gen=${line#spawn_gen=}; spawn_gen_count=$((spawn_gen_count + 1)) ;;
+      cleanup_incomplete=*) cleanup_incomplete=${line#cleanup_incomplete=}; cleanup_incomplete_count=$((cleanup_incomplete_count + 1)) ;;
+      mode=*) mode=${line#mode=}; mode_count=$((mode_count + 1)) ;;
+      arg=*) args+=("${line#arg=}") ;;
+      *) XO_BACKLOG_TRANSITION_ERROR="unreadable pending-close record $marker"; return 1 ;;
+    esac
+  done < "$marker"
+  if [ "$mode_count" -gt 1 ]; then
+    XO_BACKLOG_TRANSITION_ERROR="unreadable pending-close record $marker"
+    return 1
+  fi
+  case "$mode" in
+    close|retain) ;;
+    *)
+      XO_BACKLOG_TRANSITION_ERROR="invalid transition mode in pending-close record $marker"
+      return 1
+      ;;
+  esac
+  case "$id" in
+    ''|.*|*[!A-Za-z0-9._-]*)
+      XO_BACKLOG_TRANSITION_ERROR="invalid task identity in pending-close record $marker"
+      return 1
+      ;;
+  esac
+  if [ "$id_count" -ne 1 ] || [ "$id" != "$expected_id" ] \
+     || [ "$data_count" -ne 1 ] || [ -z "$data" ] \
+     || [ "$spawn_gen_count" -ne 1 ]; then
+    XO_BACKLOG_TRANSITION_ERROR="unreadable pending-close record $marker"
+    return 1
+  fi
+  case "$marker_spawn_gen" in
+    ''|.*|*[!A-Za-z0-9._-]*)
+      XO_BACKLOG_TRANSITION_ERROR="invalid spawn generation in pending-close record $marker"
+      return 1
+      ;;
+  esac
+  if [ "$cleanup_incomplete_count" -gt 1 ]; then
+    XO_BACKLOG_TRANSITION_ERROR="unreadable pending-close record $marker"
+    return 1
+  fi
+  case "$cleanup_incomplete" in
+    0|1) ;;
+    *)
+      XO_BACKLOG_TRANSITION_ERROR="invalid cleanup state in pending-close record $marker"
+      return 1
+      ;;
+  esac
+  case "$data" in
+    /*) ;;
+    *) XO_BACKLOG_TRANSITION_ERROR="invalid data directory in pending-close record $marker"; return 1 ;;
+  esac
+  case "$data" in
+    */../*|*/..)
+      XO_BACKLOG_TRANSITION_ERROR="invalid data directory in pending-close record $marker"
+      return 1
+      ;;
+  esac
+  authorized_data=$(xo_backlog_data_absolute "$2") || {
+    XO_BACKLOG_TRANSITION_ERROR="authorized data directory cannot be resolved: $2"
+    return 1
+  }
+  data_resolved=$(xo_backlog_data_absolute "$data") || {
+    XO_BACKLOG_TRANSITION_ERROR="data directory in pending-close record cannot be resolved: $data"
+    return 1
+  }
+  if [ "$data_resolved" != "$authorized_data" ]; then
+    XO_BACKLOG_TRANSITION_ERROR="foreign data directory in pending-close record $marker"
+    return 1
+  fi
+  case "${#args[@]}" in
+    0) ;;
+    2)
+      case "${args[0]}" in
+        --note) [ "${args[1]}" = "local%20main" ] ;;
+        --pr)
+          arg_value=${args[1]}
+          [ "${#arg_value}" -le 2048 ] \
+            && case "$arg_value" in https://*) true ;; *) false ;; esac \
+            && case "$arg_value" in
+              *[[:space:]]*|*[!A-Za-z0-9:/?\&=._#%+~@-]*) false ;;
+              *) true ;;
+            esac \
+            && {
+              url_tail=${arg_value#https://}
+              url_authority=${url_tail%%/*}
+              url_path=${url_tail#*/}
+              url_host=$url_authority
+              url_port=
+              case "$url_authority" in
+                *:*) url_host=${url_authority%%:*}; url_port=${url_authority#*:} ;;
+              esac
+              [ "$url_path" != "$url_tail" ] \
+                && case "$url_host" in
+                  ''|[-.]*|*[-.]|*..*|*[!A-Za-z0-9.-]*) false ;;
+                  *[A-Za-z0-9]*) true ;;
+                  *) false ;;
+                esac \
+                && {
+                  host_rest=$url_host
+                  host_valid=1
+                  while :; do
+                    host_label=${host_rest%%.*}
+                    case "$host_label" in ''|-*|*-) host_valid=0; break ;; esac
+                    [ "$host_rest" = "$host_label" ] && break
+                    host_rest=${host_rest#*.}
+                  done
+                  [ "$host_valid" = 1 ]
+                } \
+                && case "$url_authority" in
+                  *:*) case "$url_port" in ''|*[!0-9]*|??????*) false ;; *) true ;; esac ;;
+                  *) true ;;
+                esac \
+                && case "$url_path" in *[A-Za-z0-9]*) true ;; *) false ;; esac \
+                && {
+                  percent_tail=$url_path
+                  percent_valid=1
+                  while case "$percent_tail" in *%*) true ;; *) false ;; esac; do
+                    percent_tail=${percent_tail#*%}
+                    case "$percent_tail" in
+                      [0-9A-Fa-f][0-9A-Fa-f]*) percent_tail=${percent_tail#??} ;;
+                      *) percent_valid=0; break ;;
+                    esac
+                  done
+                  [ "$percent_valid" = 1 ]
+                }
+            }
+          ;;
+        --report)
+          arg_value=${args[1]}
+          [ "${#arg_value}" -le 4096 ] \
+            && [ -n "${arg_value// /}" ] \
+            && case "$arg_value" in .|..|-*|/*|../*|*/../*|*/..) false ;; *) true ;; esac
+          ;;
+        *) false ;;
+      esac || { XO_BACKLOG_TRANSITION_ERROR="invalid pending-close arguments in $marker"; return 1; }
+      ;;
+    *) XO_BACKLOG_TRANSITION_ERROR="invalid pending-close arguments in $marker"; return 1 ;;
+  esac
+  XO_BACKLOG_CLOSE_VALIDATED_ID=$id
+  XO_BACKLOG_CLOSE_VALIDATED_DATA=$data_resolved
+  XO_BACKLOG_CLOSE_VALIDATED_SPAWN_GEN=$marker_spawn_gen
+  XO_BACKLOG_CLOSE_VALIDATED_CLEANUP_INCOMPLETE=$cleanup_incomplete
+  XO_BACKLOG_CLOSE_VALIDATED_MODE=$mode
+  XO_BACKLOG_CLOSE_VALIDATED_ARGS=("${args[@]+"${args[@]}"}")
+}
+
+# A leading `--retain` flag records the captain-held transition (`mode=retain`)
+# instead of a close; the remaining flags are the same completion links either
+# transition records.
+xo_backlog_close_marker_stage() {  # <temporary-path> <id> <data-dir> <spawn-gen> <state-dir> <cleanup-incomplete: 0|1> [--retain] [flag...]
+  local tmp=$1 id=$2 data spawn_gen=$4 state=$5 cleanup_incomplete=$6 arg previous_arg=''
+  local mode=close serialized_args=()
+  data=$(xo_backlog_data_absolute "$3") || {
+    XO_BACKLOG_TRANSITION_ERROR="data directory cannot be resolved: $3"
+    return 1
+  }
+  xo_backlog_record_parent_authorized "$tmp" "pending-close staging path" "$state" || return 1
+  if [ -e "$tmp" ] || [ -L "$tmp" ]; then
+    XO_BACKLOG_TRANSITION_ERROR="unsafe pending-close staging path $tmp"
+    return 1
+  fi
+  case "$cleanup_incomplete" in
+    0|1) ;;
+    *) XO_BACKLOG_TRANSITION_ERROR="invalid pending-close cleanup state"; return 1 ;;
+  esac
+  shift 6
+  if [ "${1:-}" = --retain ]; then
+    mode=retain
+    shift
+  fi
+  for arg in "$@"; do
+    if [ "$previous_arg" = --note ] && [ "$arg" = "local main" ]; then
+      serialized_args+=("local%20main")
+    else
+      serialized_args+=("$arg")
+    fi
+    previous_arg=$arg
+  done
+  {
+    printf 'id=%s\n' "$id"
+    printf 'data=%s\n' "$data"
+    printf 'spawn_gen=%s\n' "$spawn_gen"
+    printf 'cleanup_incomplete=%s\n' "$cleanup_incomplete"
+    [ "$mode" = close ] || printf 'mode=%s\n' "$mode"
+    for arg in "${serialized_args[@]+"${serialized_args[@]}"}"; do
+      printf 'arg=%s\n' "$arg"
+    done
+  } > "$tmp" || { rm -f "$tmp"; return 1; }
+  xo_backlog_close_marker_validate "$tmp" "$data" "$id" "$state" \
+    || { rm -f "$tmp"; return 1; }
+}
+
+# Record the exact close a teardown is about to perform.
+xo_backlog_close_marker_write() {  # <state-dir> <id> <data-dir> <spawn-gen> [flag...]
+  local state=$1 id=$2 data=$3 spawn_gen=$4 marker tmp
+  xo_backlog_directory_present "$state" "state directory" || return 1
+  shift 4
+  marker=$(xo_backlog_close_marker_path "$state" "$id") || return 1
+  tmp="$state/.$id.backlog-close.${BASHPID:-$$}"
+  xo_backlog_close_marker_stage "$tmp" "$id" "$data" "$spawn_gen" "$state" 0 "$@" || return 1
+  xo_backlog_atomic_transition publish "$tmp" "$marker" "pending-close record" "$state" \
+    || { rm -f "$tmp"; return 1; }
+}
+
+xo_backlog_close_marker_mark_cleanup_incomplete() {  # <state-dir> <marker-path> <id> <data-dir> <spawn-gen> [flag...]
+  local state=$1 marker=$2 id=$3 data=$4 spawn_gen=$5 tmp
+  shift 5
+  tmp="$state/.$id.backlog-close.${BASHPID:-$$}"
+  xo_backlog_close_marker_stage "$tmp" "$id" "$data" "$spawn_gen" "$state" 1 "$@" || return 1
+  xo_backlog_atomic_transition publish "$tmp" "$marker" "pending-close record" "$state" \
+    || { rm -f "$tmp"; return 1; }
+}
+
+xo_backlog_close_marker_remove() {  # <marker-path> <state-dir>
+  xo_backlog_atomic_transition remove "$1" "pending-close record" "$2"
+}
+
+xo_backlog_close_marker_clear() {  # <state-dir> <id>
+  local marker
+  marker=$(xo_backlog_close_marker_path "$1" "$2") || return 1
+  xo_backlog_close_marker_remove "$marker" "$1"
+}
+
+# Replay one recorded close or retention. Returns 0 when the row is closed (or
+# retained), the marker is stale, or an answer already closed a retained row,
+# and 1 when marker validation or recovery fails. Validation completes before
+# any meta or backlog mutation.
+xo_backlog_close_marker_replay() {  # <state-dir> <marker-path> <authorized-data-dir>
+  local state=$1 marker=$2 marker_name expected_id
+  local id data marker_spawn_gen meta meta_spawn_gen row_state cleanup_incomplete mode
+  local args=() mode_flags=()
+  XO_BACKLOG_CLOSE_REPLAY_RESULT=noop
+  xo_backlog_directory_present "$state" "state directory" || return 1
+  [ -e "$marker" ] || [ -L "$marker" ] || return 0
+  marker_name=${marker##*/}
+  case "$marker_name" in
+    *.backlog-close) expected_id=${marker_name%.backlog-close} ;;
+    *) XO_BACKLOG_TRANSITION_ERROR="invalid pending-close record name $marker"; return 1 ;;
+  esac
+  xo_backlog_close_marker_validate "$marker" "$3" "$expected_id" "$state" || return 1
+  id=$XO_BACKLOG_CLOSE_VALIDATED_ID
+  data=$XO_BACKLOG_CLOSE_VALIDATED_DATA
+  marker_spawn_gen=$XO_BACKLOG_CLOSE_VALIDATED_SPAWN_GEN
+  cleanup_incomplete=$XO_BACKLOG_CLOSE_VALIDATED_CLEANUP_INCOMPLETE
+  mode=$XO_BACKLOG_CLOSE_VALIDATED_MODE
+  [ "$mode" = close ] || mode_flags=(--retain)
+  args=("${XO_BACKLOG_CLOSE_VALIDATED_ARGS[@]+"${XO_BACKLOG_CLOSE_VALIDATED_ARGS[@]}"}")
+  if [ "${args[0]-}" = --note ]; then
+    args[1]="local main"
+  fi
+  meta="$state/$id.meta"
+  if [ -e "$meta" ] || [ -L "$meta" ]; then
+    if ! xo_backlog_record_present "$meta" "task record" "$state"; then
+      XO_BACKLOG_TRANSITION_ERROR="unsafe interrupted task record at $meta"
+      return 1
+    fi
+    xo_backlog_meta_spawn_gen "$meta" "$state" || return 1
+    meta_spawn_gen=$XO_BACKLOG_META_SPAWN_GEN
+    if [ "$meta_spawn_gen" != "$marker_spawn_gen" ]; then
+      xo_backlog_close_marker_remove "$marker" "$state" || return 1
+      XO_BACKLOG_CLOSE_REPLAY_RESULT=stale
+      return 0
+    fi
+    xo_backlog_close_marker_mark_cleanup_incomplete "$state" "$marker" "$id" "$data" \
+      "$marker_spawn_gen" "${mode_flags[@]+"${mode_flags[@]}"}" "${args[@]+"${args[@]}"}" \
+      || return 1
+    cleanup_incomplete=1
+    xo_backlog_atomic_transition remove "$meta" "the interrupted task record" "$state" \
+      || return 1
+  fi
+  if xo_backlog_row_probe "$data" "$id"; then
+    row_state=$XO_BACKLOG_ROW_STATE
+    if [ "${row_state%% *}" != "done" ] && [ "$XO_BACKLOG_ROW_HOLD_KIND" = captain ]; then
+      mode=retain
+    fi
+  else
+    if [ "$XO_BACKLOG_ROW_RESULT" != not_found ]; then
+      XO_BACKLOG_TRANSITION_ERROR=$XO_BACKLOG_ROW_ERROR
+      return 1
+    fi
+    row_state=
+  fi
+  case "$row_state" in
+    done\ *)
+      if [ "$mode" = retain ]; then
+        # The captain's answer closed the row before this replay; the retained
+        # transition owes it nothing more than retiring the record.
+        xo_backlog_close_marker_remove "$marker" "$state" || return 1
+        XO_BACKLOG_CLOSE_REPLAY_RESULT=answered
+        return 0
+      fi
+      if xo_backlog_atomic_transition close '' "$marker" "$data" "$id" "$state" \
+          "${args[@]+"${args[@]}"}"; then
+        if [ "$cleanup_incomplete" = 1 ]; then
+          XO_BACKLOG_CLOSE_REPLAY_RESULT=closed_incomplete
+        else
+          XO_BACKLOG_CLOSE_REPLAY_RESULT=closed
+        fi
+        return 0
+      fi
+      return 1
+      ;;
+    '')
+      xo_backlog_close_marker_remove "$marker" "$state" || return 1
+      XO_BACKLOG_CLOSE_REPLAY_RESULT=stale
+      return 0
+      ;;
+  esac
+  if xo_backlog_atomic_transition "$mode" '' "$marker" "$data" "$id" "$state" \
+      "${args[@]+"${args[@]}"}"; then
+    if [ "$mode" = retain ]; then
+      if [ "$cleanup_incomplete" = 1 ]; then
+        XO_BACKLOG_CLOSE_REPLAY_RESULT=retained_incomplete
+      else
+        XO_BACKLOG_CLOSE_REPLAY_RESULT=retained
+      fi
+    elif [ "$cleanup_incomplete" = 1 ]; then
+      XO_BACKLOG_CLOSE_REPLAY_RESULT=closed_incomplete
+    else
+      XO_BACKLOG_CLOSE_REPLAY_RESULT=closed
+    fi
+    return 0
+  fi
+  return 1
+}

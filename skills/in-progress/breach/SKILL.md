@@ -1,6 +1,6 @@
 ---
 name: breach
-description: Implement a selected ticket through a claimed Firstmate operative, adapting Matt Pocock's implement workflow to isolated worktrees and supervised PR delivery.
+description: Implement a selected ticket through a claimed XO operative, adapting Matt Pocock's implement workflow to isolated worktrees and supervised PR delivery.
 metadata:
   internal: true
 ---
@@ -26,7 +26,7 @@ Read the ticket and its acceptance criteria; the claim itself verifies the readi
 If already claimed by this executor, reconcile and resume its existing task/PR rather than start another; another executor's claim is not available work.
 Record request ID before claim and reuse it after interruption.
 A successful claim is the only entry to creating the local task and isolated worktree.
-Use the existing Firstmate backlog, brief, harness/profile and spawn procedures; Control does not implement the project directly.
+Use the existing XO backlog, brief, harness/profile and spawn procedures; Control does not implement the project directly.
 Include the following engineering contract in the operative's brief.
 
 ## Operative engineering contract
@@ -43,7 +43,7 @@ This replaces upstream's assumption that the user's current branch is the implem
 If no-mistakes owns commits or branch delivery during an active run, preserve that custody and follow its procedure.
 Missing engineering skills must be reported; use available project guidance without silently downloading or replacing skills.
 Material scope questions return to Control; routine implementation decisions stay with the operative.
-Return commit, validation and review evidence plus remaining blockers through Firstmate's supervisor protocol.
+Return commit, validation and review evidence plus remaining blockers through XO's supervisor protocol.
 
 ## Delivery
 

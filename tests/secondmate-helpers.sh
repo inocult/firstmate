@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # tests/secondmate-helpers.sh - shared fixtures and mocks for the secondmate
-# suites (fm-secondmate-lifecycle-e2e and fm-secondmate-safety).
+# suites (xo-secondmate-lifecycle-e2e and xo-secondmate-safety).
 #
 # These mocks encode secondmate-lifecycle behavior (fake tmux that logs window
 # ops, fake treehouse that leases/returns homes, fake no-mistakes that records
@@ -10,14 +10,14 @@
 # shellcheck source=tests/lib.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
-# A fake tmux (window ops are logged to FM_FAKE_TMUX_LOG, list-windows returns
-# FM_FAKE_TMUX_WINDOW, capture-pane echoes FM_FAKE_TMUX_CAPTURE) plus a fake
-# treehouse (durable lease of FM_FAKE_TREEHOUSE_HOME, recording the lease holder
-# to FM_FAKE_TREEHOUSE_LEASE_FILE; `return` removes the target and lease unless
-# FM_FAKE_TREEHOUSE_RETURN_FAIL is set). Echoes the fakebin dir.
+# A fake tmux (window ops are logged to XO_FAKE_TMUX_LOG, list-windows returns
+# XO_FAKE_TMUX_WINDOW, capture-pane echoes XO_FAKE_TMUX_CAPTURE) plus a fake
+# treehouse (durable lease of XO_FAKE_TREEHOUSE_HOME, recording the lease holder
+# to XO_FAKE_TREEHOUSE_LEASE_FILE; `return` removes the target and lease unless
+# XO_FAKE_TREEHOUSE_RETURN_FAIL is set). Echoes the fakebin dir.
 make_fake_tmux() {
   local dir=$1 fakebin capture
-  fakebin=$(fm_fakebin "$dir")
+  fakebin=$(xo_fakebin "$dir")
   capture="$dir/pane.txt"
   # A real, positively identified empty agent composer. A blank capture is
   # deliberately unknown under the fleet-wide strict blank-row posture.
@@ -27,7 +27,7 @@ make_fake_tmux() {
 set -u
 case "${1:-}" in
   has-session|new-session|new-window|send-keys|kill-window)
-    printf '%s\n' "$*" >> "$FM_FAKE_TMUX_LOG"
+    printf '%s\n' "$*" >> "$XO_FAKE_TMUX_LOG"
     exit 0
     ;;
   list-windows)
@@ -49,20 +49,20 @@ case "${1:-}" in
         *) printf '%s\n' "$recorded" ;;
       esac
     done <<EOF
-${FM_FAKE_TMUX_WINDOW:-}
+${XO_FAKE_TMUX_WINDOW:-}
 EOF
     exit 0
     ;;
   display-message)
     case "$*" in
       *'#{cursor_y}'*) printf '0\n' ;;
-      *) printf 'firstmate\n' ;;
+      *) printf 'xo\n' ;;
     esac
     exit 0
     ;;
   capture-pane)
-    printf '%s\n' "$*" >> "$FM_FAKE_TMUX_LOG"
-    cat "$FM_FAKE_TMUX_CAPTURE"
+    printf '%s\n' "$*" >> "$XO_FAKE_TMUX_LOG"
+    cat "$XO_FAKE_TMUX_CAPTURE"
     exit 0
     ;;
 esac
@@ -71,7 +71,7 @@ SH
   cat > "$fakebin/treehouse" <<'SH'
 #!/usr/bin/env bash
 set -u
-printf 'treehouse %s\n' "$*" >> "${FM_FAKE_TMUX_LOG:-/dev/null}"
+printf 'treehouse %s\n' "$*" >> "${XO_FAKE_TMUX_LOG:-/dev/null}"
 case "${1:-}" in
   get)
     # Durable lease: print only the worktree path to stdout (banners to stderr),
@@ -86,11 +86,11 @@ case "${1:-}" in
       esac
       shift
     done
-    if [ -n "${FM_FAKE_TREEHOUSE_HOME:-}" ]; then
-      mkdir -p "$FM_FAKE_TREEHOUSE_HOME"
-      [ -n "${FM_FAKE_TREEHOUSE_LEASE_FILE:-}" ] && printf '%s\n' "$holder" > "$FM_FAKE_TREEHOUSE_LEASE_FILE"
+    if [ -n "${XO_FAKE_TREEHOUSE_HOME:-}" ]; then
+      mkdir -p "$XO_FAKE_TREEHOUSE_HOME"
+      [ -n "${XO_FAKE_TREEHOUSE_LEASE_FILE:-}" ] && printf '%s\n' "$holder" > "$XO_FAKE_TREEHOUSE_LEASE_FILE"
       printf 'leased worktree for %s\n' "${holder:-unknown}" >&2
-      printf '%s\n' "$FM_FAKE_TREEHOUSE_HOME"
+      printf '%s\n' "$XO_FAKE_TREEHOUSE_HOME"
     fi
     exit 0
     ;;
@@ -104,8 +104,8 @@ case "${1:-}" in
       esac
       shift
     done
-    [ -z "${FM_FAKE_TREEHOUSE_RETURN_FAIL:-}" ] || exit 17
-    [ -n "${FM_FAKE_TREEHOUSE_LEASE_FILE:-}" ] && rm -f "$FM_FAKE_TREEHOUSE_LEASE_FILE"
+    [ -z "${XO_FAKE_TREEHOUSE_RETURN_FAIL:-}" ] || exit 17
+    [ -n "${XO_FAKE_TREEHOUSE_LEASE_FILE:-}" ] && rm -f "$XO_FAKE_TREEHOUSE_LEASE_FILE"
     [ -n "$target" ] && rm -rf -- "$target"
     exit 0
     ;;
@@ -121,7 +121,7 @@ SH
 # A fake no-mistakes that touches .no-mistakes-init / .no-mistakes-doctor markers.
 make_fake_no_mistakes() {
   local dir=$1 fakebin
-  fakebin=$(fm_fakebin "$dir")
+  fakebin=$(xo_fakebin "$dir")
   cat > "$fakebin/no-mistakes" <<'SH'
 #!/usr/bin/env bash
 set -eu
@@ -136,15 +136,15 @@ SH
 }
 
 # A fake no-mistakes that records each "<pwd>\t<verb>" call to
-# FM_FAKE_NO_MISTAKES_LOG and fails for the project named FM_FAKE_NO_MISTAKES_FAIL_PROJECT.
+# XO_FAKE_NO_MISTAKES_LOG and fails for the project named XO_FAKE_NO_MISTAKES_FAIL_PROJECT.
 make_recording_no_mistakes() {
   local dir=$1 fakebin
-  fakebin=$(fm_fakebin "$dir")
+  fakebin=$(xo_fakebin "$dir")
   cat > "$fakebin/no-mistakes" <<'SH'
 #!/usr/bin/env bash
 set -eu
-printf '%s\t%s\n' "$PWD" "${1:-}" >> "$FM_FAKE_NO_MISTAKES_LOG"
-if [ "$(basename "$PWD")" = "${FM_FAKE_NO_MISTAKES_FAIL_PROJECT:-}" ]; then
+printf '%s\t%s\n' "$PWD" "${1:-}" >> "$XO_FAKE_NO_MISTAKES_LOG"
+if [ "$(basename "$PWD")" = "${XO_FAKE_NO_MISTAKES_FAIL_PROJECT:-}" ]; then
   exit 1
 fi
 case "${1:-}" in
@@ -157,27 +157,27 @@ SH
   printf '%s\n' "$fakebin"
 }
 
-# Make a directory look like a minimal firstmate home (AGENTS.md + bin/).
-mark_firstmate_home() {
+# Make a directory look like a minimal xo home (AGENTS.md + bin/).
+mark_xo_home() {
   local home=$1
   mkdir -p "$home/bin"
-  printf '# Firstmate\n' > "$home/AGENTS.md"
+  printf '# XO\n' > "$home/AGENTS.md"
 }
 
-# A firstmate home that is also a real git repo (so it can host detached
+# An xo home that is also a real git repo (so it can host detached
 # worktrees for teardown/lease tests).
-make_firstmate_git_root() {
+make_xo_git_root() {
   local home=$1
   mkdir -p "$home/bin"
-  printf '# Firstmate\n' > "$home/AGENTS.md"
-  cat > "$home/bin/fm-guard.sh" <<'SH'
+  printf '# XO\n' > "$home/AGENTS.md"
+  cat > "$home/bin/xo-guard.sh" <<'SH'
 #!/usr/bin/env bash
 exit 0
 SH
-  chmod +x "$home/bin/fm-guard.sh"
+  chmod +x "$home/bin/xo-guard.sh"
   git -C "$home" init -q
-  git -C "$home" add AGENTS.md bin/fm-guard.sh
-  git -C "$home" -c user.name='Firstmate Tests' -c user.email='tests@example.invalid' commit -qm initial
+  git -C "$home" add AGENTS.md bin/xo-guard.sh
+  git -C "$home" -c user.name='XO Tests' -c user.email='tests@example.invalid' commit -qm initial
 }
 
 # Scaffold a filled secondmate charter brief under <home>/data/<id>/brief.md.
@@ -185,15 +185,15 @@ SH
 scaffold_secondmate_charter() {
   local home=$1 id=$2 charter=$3
   shift 3
-  FM_HOME="$home" FM_SECONDMATE_CHARTER="$charter" "$ROOT/bin/fm-brief.sh" "$id" --secondmate "$@" >/dev/null
+  XO_HOME="$home" XO_SECONDMATE_CHARTER="$charter" "$ROOT/bin/xo-brief.sh" "$id" --secondmate "$@" >/dev/null
 }
 
 # Make a directory look like a genuine seeded secondmate home (for handoff tests).
 seed_secondmate_home_marker() {
   local home=$1 id=$2
-  mark_firstmate_home "$home"
+  mark_xo_home "$home"
   mkdir -p "$home/data"
-  printf '%s\n' "$id" > "$home/.fm-secondmate-home"
+  printf '%s\n' "$id" > "$home/.xo-secondmate-home"
 }
 
 # Wait up to <limit> 0.1s ticks while <pid> stays alive. Returns 1 if it dies.

@@ -24,7 +24,7 @@ These names and meanings are fixed here: never rename a role, never add a sixth,
 Every other label the project carries is none of this skill's business; leave it untouched.
 The only genuine question this skill asks the captain about the repository is whether it is single-context or multi-context.
 
-`docs/plane-missions.md` owns the configuration schema and its limits, and `bin/fm-plane.py --help` owns command syntax.
+`docs/plane-missions.md` owns the configuration schema and its limits, and `bin/xo-plane.py --help` owns command syntax.
 Read them rather than restating their contents here.
 
 ## Home half
@@ -32,10 +32,10 @@ Read them rather than restating their contents here.
 Control performs these steps directly and reports the verified result.
 
 1. Confirm Python 3.10+ and create the adapter's virtual environment from `bin/requirements-plane.txt`.
-   `docs/plane-missions.md` owns where that interpreter belongs: `FM_PLANE_PYTHON` is read from the environment firstmate is launched with, so exporting it only in this session's shell loses it at the next launch and every later adapter command fails on the missing SDK.
+   `docs/plane-missions.md` owns where that interpreter belongs: `XO_PLANE_PYTHON` is read from the environment XO is launched with, so exporting it only in this session's shell loses it at the next launch and every later adapter command fails on the missing SDK.
 2. Collect the connection facts from the captain: the tracker URL, workspace slug, project UUID, implementation repository URL, coordination remote, the tracker transport the configuration schema names, and this instance's executor name.
    Credentials are named in the configuration and sourced from the captain's existing secrets system, never stored in it.
-3. Write the connection half of `FM_HOME/config/plane.json` from those facts, then run `doctor`.
+3. Write the connection half of `XO_HOME/config/plane.json` from those facts, then run `doctor`.
    `doctor` reads that file and fails without it, but the commands that load the setup-stage configuration, which skips the identifier checks so they run before the label, pickup and lifecycle identifiers exist, are named in the binding document.
 4. Provision the vocabulary, then complete the configuration.
    Compare all five canonical names against every label the latest `doctor` run returned, and settle that whole comparison before writing anything.
@@ -56,7 +56,7 @@ Control performs these steps directly and reports the verified result.
    If the captain declines or does not answer, create nothing and take the same course as having no write surface at all; a prep that writes to the tracker only on an explicit yes, and otherwise creates nothing, is the intended outcome rather than a failure.
    Without a write surface that performs the create - the binding document names none for this home, the named one refuses, or it cannot be confirmed - create nothing, and neither guess nor silently skip: halt the home half and report just the roles that are missing, with the meanings fixed above, for the captain to create in the tracker by hand.
    Re-entry re-runs `doctor` and compares again, which needs no write surface; the roles the captain just created are then present and prepping continues, so a home on any harness can reach a prepped state this way.
-   Then confirm the identifiers with the captain and complete `FM_HOME/config/plane.json` with the eligible pickup states, the implementing, review and done lifecycle states, and the readiness label identifier taken from the `ready-for-agent` role.
+   Then confirm the identifiers with the captain and complete `XO_HOME/config/plane.json` with the eligible pickup states, the implementing, review and done lifecycle states, and the readiness label identifier taken from the `ready-for-agent` role.
    That readiness label identifier is the only label identifier the home stores; the other four roles are provisioned by name and need no stored ID.
 5. Verify, then report exactly how far that verification reaches.
    First confirm all five canonical names appear exactly in the `labels` array of the most recent `doctor` run, whoever created the labels.
@@ -65,7 +65,7 @@ Control performs these steps directly and reports the verified result.
    What that cannot catch is narrower: a state whose name the captain confirmed but whose behaviour does not match the lifecycle position it was configured for, and any change made in the tracker after prep completes.
    Then run `list`, not `doctor`: the binding document records that `doctor` runs on the setup-stage configuration that skips the identifier checks step 4 satisfied, while `list` loads the completed configuration under full validation and reads one page of tickets without writing.
    Both of those reach the tracker only.
-   Neither touches `coordination_remote`, which no adapter command opens until the first `claim` builds its registry, so check it read-only with `GIT_TERMINAL_PROMPT=0 timeout 45 git ls-remote <coordination_remote> 'refs/heads/fm-plane/*'`, the same way the registry bounds its own Git calls.
+   Neither touches `coordination_remote`, which no adapter command opens until the first `claim` builds its registry, so check it read-only with `GIT_TERMINAL_PROMPT=0 timeout 45 git ls-remote <coordination_remote> 'refs/heads/xo-plane/*'`, the same way the registry bounds its own Git calls.
    Without both guards an HTTPS remote with no credential helper prompts for a username and hangs the session instead of failing.
    No matching refs is the normal answer on a remote no mission has used yet.
    Report the home half as verified only to that extent: the tracker reachable with the configured identifiers real, and the coordination remote reachable and readable.
@@ -97,10 +97,10 @@ The worker creates:
   `CONTEXT.md` records the project's domain vocabulary and the terms agents must use; `docs/adr/` records dated decisions, each as context, decision and consequences.
 - `docs/agents/issue-tracker.md`, recording which tracker the issues live in as the binding document names it, that Control's surfaces own every read and write, that selection requires the `ready-for-agent` label together with an eligible pickup state, and that GitHub holds pull requests only.
 - `docs/agents/triage-labels.md`, recording the five canonical role names and this skill's meaning for each, as written above.
-- A pointer to those files from the project's own `AGENTS.md`, created through `bin/fm-ensure-agents-md.sh`.
+- A pointer to those files from the project's own `AGENTS.md`, created through `bin/xo-ensure-agents-md.sh`.
 
 Repo-local engineering skills stay project-owned; this skill installs none and replaces none.
-Never write firstmate's own `AGENTS.md` from this skill, because `firstmate-coding-guidelines` owns that file's placement and size discipline.
+Never write XO's own `AGENTS.md` from this skill, because `xo-coding-guidelines` owns that file's placement and size discipline.
 
 ## Completion
 

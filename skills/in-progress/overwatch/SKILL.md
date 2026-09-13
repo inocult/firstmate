@@ -1,6 +1,6 @@
 ---
 name: overwatch
-description: Enable, pause or inspect automatic pickup of tickets carrying the readiness label in a configured Firstmate home, and handle its registered watcher events.
+description: Enable, pause or inspect automatic pickup of tickets carrying the readiness label in a configured XO home, and handle its registered watcher events.
 metadata:
   internal: true
 ---
@@ -8,8 +8,8 @@ metadata:
 # Overwatch
 
 Control watches the agreed queue and dispatches Breach when capacity is available.
-This skill is a new Firstmate orchestration layer; Breach is the adaptation of Pocock's implement workflow.
-Load `plane-missions` for the shared-claim and delivery contract and read `bin/fm-overwatch.py --help` for the local control commands.
+This skill is a new XO orchestration layer; Breach is the adaptation of Pocock's implement workflow.
+Load `plane-missions` for the shared-claim and delivery contract and read `bin/xo-overwatch.py --help` for the local control commands.
 [`docs/tracker-binding.md`](../../../docs/tracker-binding.md) owns which surface performs each ticket operation named here and which operations no surface performs.
 
 ## Enable, pause and status
@@ -28,7 +28,7 @@ The check interval is a minimum: actual wakes follow the existing watcher's chec
 
 ## Wake and pickup
 
-The helper registers `overwatch.check.sh` through Firstmate's hash-validated custom-check mechanism.
+The helper registers `overwatch.check.sh` through XO's hash-validated custom-check mechanism.
 Maintain exactly one existing supervision cycle while it is enabled, even with no operatives; registration alone does not start a watcher.
 After session start, inspect a persisted enabled policy, verify its check is registered and the ordinary watcher is live, and resume the same scope.
 Never create a separate daemon or treat an idle terminal as spare capacity.

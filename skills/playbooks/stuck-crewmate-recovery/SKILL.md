@@ -1,7 +1,7 @@
 ---
 name: stuck-crewmate-recovery
 description: >-
-  Agent-only playbook for stuck or missing ordinary Firstmate direct reports.
+  Agent-only playbook for stuck or missing ordinary XO direct reports.
   Use when the session-start digest reports an ordinary direct report's endpoint dead or its metadata has no window, or after a stale wake, looping pane, repeated confusion, an answered-by-brief question, an unresponsive crewmate, or a failed steer.
   Also use on the inverse case: a live crewmate reporting the no-mistakes pipeline dead, unreachable, or timed out.
   Reconciles recorded work before escalating from targeted inspection through safe relaunch or failure.
@@ -14,7 +14,7 @@ metadata:
 
 Use this playbook when the session-start digest reports an ordinary direct report's endpoint dead or its metadata has no window, or when a direct report is stale, looping, repeatedly confused, asking a question its brief already answers, unresponsive, or when a steer failed to land.
 
-Interrupt, stop, and relaunch a worker through `bin/fm-control.sh <task-id> interrupt|exit|relaunch`, which resolves the recorded runtime itself, verifies each action, and never tears down or discards anything ([`docs/agent-control.md`](../../../docs/agent-control.md)).
+Interrupt, stop, and relaunch a worker through `bin/xo-control.sh <task-id> interrupt|exit|relaunch`, which resolves the recorded runtime itself, verifies each action, and never tears down or discards anything ([`docs/agent-control.md`](../../../docs/agent-control.md)).
 That plane covers workers running in this home; a remotely placed secondmate is refused by name and reconciled through `secondmate-provisioning` instead.
 Load `harness-adapters` before a resume command or a harness-specific skill invocation, and whenever the adapter's own quirks matter.
 The target window's harness is recorded as `harness=` in `state/<id>.meta`.
@@ -24,11 +24,11 @@ The target window's harness is recorded as `harness=` in `state/<id>.meta`.
 This procedure covers ordinary `kind=ship` and `kind=scout` direct reports.
 Load `secondmate-provisioning` instead for `kind=secondmate` recovery.
 
-For a REMOTE secondmate, `fm-crew-state` and `fm-peek` read the actual remote endpoint over `fm-on.sh`, and `fm-send` reports a delivered-with-pending-confirmation steer as delivered (their headers own the contracts); an `unknown-remote` read or unreachable-host failure means the remote state could not be read, never that the mate is dead or the send failed.
-Recover a genuinely stuck remote mate only through `bin/fm-spawn.sh <id> --secondmate`, never raw herdr pane close/kill surgery, which strands the endpoint binding.
+For a REMOTE secondmate, `xo-crew-state` and `xo-peek` read the actual remote endpoint over `xo-on.sh`, and `xo-send` reports a delivered-with-pending-confirmation steer as delivered (their headers own the contracts); an `unknown-remote` read or unreachable-host failure means the remote state could not be read, never that the mate is dead or the send failed.
+Recover a genuinely stuck remote mate only through `bin/xo-spawn.sh <id> --secondmate`, never raw herdr pane close/kill surgery, which strands the endpoint binding.
 
 Treat the digest's endpoint result as a presence signal, not proof that the task's work or validation run is gone.
-Read the targeted current state with `bin/fm-crew-state.sh <id>` before deciding to relaunch.
+Read the targeted current state with `bin/xo-crew-state.sh <id>` before deciding to relaunch.
 A no-mistakes run matched to the crew's branch and current code remains authoritative when the endpoint is dead: handle a terminal or parked run through the normal lifecycle, and keep supervising an active run instead of creating a duplicate worker.
 
 When no authoritative run accounts for the task, inspect only its recorded backend and worktree inventory.
@@ -49,7 +49,7 @@ So a crewmate's timed-out, killed, or errored drive call leaves it waiting on a 
 Read the two authoritative sources yourself before believing the claim:
 
 1. `no-mistakes daemon status` for the socket.
-2. `no-mistakes axi status --run <id>` for the run, or `bin/fm-crew-state.sh <id>`, which already folds this contradiction in and reports a non-socket daemon-or-timeout `blocked:` line over a running or fixing run with fresh activity as superseded because the run is alive.
+2. `no-mistakes axi status --run <id>` for the run, or `bin/xo-crew-state.sh <id>`, which already folds this contradiction in and reports a non-socket daemon-or-timeout `blocked:` line over a running or fixing run with fresh activity as superseded because the run is alive.
 
 A refused connection or missing socket from `daemon status` is positive daemon-down evidence and must be escalated even if the persisted run record still says running or fixing; that record can be stale after the daemon exits.
 Otherwise, if the run is still running or fixing with recent activity, the claim is wrong: steer the crewmate to reattach with `no-mistakes axi run` from its own worktree, which is safe and idempotent while the run still matches its `HEAD`, and tell it a timeout is not daemon death.
@@ -63,10 +63,10 @@ Only positive socket refusal or absence is a daemon-down finding; escalate that 
 
 Escalate in order:
 
-1. Peek the pane, and check the task's steering inbox (`state/<id>.inbox/`) for unhandled `*.msg` records - a stale wake naming an unread firstmate instruction means the worker never acknowledged a durable steer, and the record itself shows exactly what was intended.
-2. If the crewmate is waiting on a question its brief already answers, answer in one line via `FM_HOME=<this-firstmate-home> bin/fm-send.sh` from an active firstmate session unless `FM_HOME` is already set to the active firstmate home.
-3. If the crewmate is confused or looping, interrupt with `FM_HOME=<this-firstmate-home> bin/fm-control.sh <task-id> interrupt`, then redirect with one corrective line through `fm-send`.
-4. If the crewmate is genuinely wedged after redirection, relaunch it with `FM_HOME=<this-firstmate-home> bin/fm-control.sh <task-id> relaunch --note '<progress so far>'`, which stops the agent, carries the brief plus that note into a replacement in the same local copy, and restores the prior record if the replacement cannot start.
+1. Peek the pane, and check the task's steering inbox (`state/<id>.inbox/`) for unhandled `*.msg` records - a stale wake naming an unread XO instruction means the worker never acknowledged a durable steer, and the record itself shows exactly what was intended.
+2. If the crewmate is waiting on a question its brief already answers, answer in one line via `XO_HOME=<this-xo-home> bin/xo-send.sh` from an active XO session unless `XO_HOME` is already set to the active XO home.
+3. If the crewmate is confused or looping, interrupt with `XO_HOME=<this-xo-home> bin/xo-control.sh <task-id> interrupt`, then redirect with one corrective line through `xo-send`.
+4. If the crewmate is genuinely wedged after redirection, relaunch it with `XO_HOME=<this-xo-home> bin/xo-control.sh <task-id> relaunch --note '<progress so far>'`, which stops the agent, carries the brief plus that note into a replacement in the same local copy, and restores the prior record if the replacement cannot start.
    Pass `--harness`, `--model`, or `--effort` on that same command when the worker should come back on a different runtime.
    Genuine wedging means looping, unresponsive, repeating the same obstacle, or truly dead.
    A low context reading is not wedging; modern harnesses auto-compact and keep going.

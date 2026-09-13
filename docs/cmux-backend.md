@@ -2,12 +2,12 @@
 
 cmux is an experimental macOS GUI terminal backend.
 It provides task workspaces and surfaces while Treehouse continues to provide git worktrees.
-[`configuration.md`](configuration.md#runtime-backend-configbackend--fm_backend) owns shared selection and metadata semantics.
+[`configuration.md`](configuration.md#runtime-backend-configbackend--xo_backend) owns shared selection and metadata semantics.
 
 ## Setup
 
 Pick cmux when you already use the app as your terminal and want task workspaces in its sidebar.
-cmux is macOS-only, GUI-first, and unsuitable for a headless or SSH-only Firstmate session.
+cmux is macOS-only, GUI-first, and unsuitable for a headless or SSH-only XO session.
 
 Prerequisites:
 
@@ -20,10 +20,10 @@ The adapter prefers `command -v cmux` and otherwise uses `/Applications/cmux.app
 
 ### Required socket access
 
-cmux defaults to a control mode that rejects external shells, while Firstmate always controls it from an external process.
+cmux defaults to a control mode that rejects external shells, while XO always controls it from an external process.
 Open Settings > Automation and choose a viable Socket Control Mode before the first cmux-backed spawn.
 
-| Setting | Value | Firstmate support | Security boundary |
+| Setting | Value | XO support | Security boundary |
 | --- | --- | --- | --- |
 | Off | `off` | No | The socket listener is disabled. |
 | cmux processes only | `cmuxOnly` | No | Only descendants of the cmux app can connect. |
@@ -34,16 +34,16 @@ Open Settings > Automation and choose a viable Socket Control Mode before the fi
 Automation mode is the recommended same-user boundary.
 `allowAll` can execute commands through a world-writable control socket and should be selected only as an explicit security tradeoff.
 
-For Password mode, store the password as the first line of local gitignored `config/cmux-socket-password` or provide `CMUX_SOCKET_PASSWORD` in Firstmate's environment.
+For Password mode, store the password as the first line of local gitignored `config/cmux-socket-password` or provide `CMUX_SOCKET_PASSWORD` in XO's environment.
 The adapter reads the file fresh from the effective config directory and does not overwrite an ambient password when the file is absent.
 Configure the mode and password through the cmux UI rather than editing `cmux.json`; the app does not retain a hand-added password key, and socket-based reload cannot fix a socket that is rejecting the caller.
 
-Select cmux with local `config/backend` containing `cmux`, `FM_BACKEND=cmux` for one launch, or an explicit request to Firstmate.
-It can also be runtime auto-detected when Firstmate itself runs inside cmux.
+Select cmux with local `config/backend` containing `cmux`, `XO_BACKEND=cmux` for one launch, or an explicit request to XO.
+It can also be runtime auto-detected when XO itself runs inside cmux.
 A spawn stops with an actionable setup message when the app, minimum version, `jq`, socket access, or password is unavailable.
 The adapter may launch the app with `open -a cmux` only when the socket is down; it does not relaunch the app for access-denied or authentication errors.
 
-Routine supervision uses `bin/fm-peek.sh <id>` and `FM_HOME=<home> bin/fm-send.sh <id> '<text>'` without bringing the cmux window forward.
+Routine supervision uses `bin/xo-peek.sh <id>` and `XO_HOME=<home> bin/xo-send.sh <id> '<text>'` without bringing the cmux window forward.
 Task workspace and surface creation use `focus=false`.
 
 Verify setup by spawning a small task and confirming metadata contains `backend=cmux`, `cmux_workspace_id=`, and `cmux_surface_id=`.
@@ -66,10 +66,10 @@ The spawn refusal explains how to finish cmux setup or opt back into tmux.
 ## Task shape and metadata
 
 Each task owns one cmux workspace with one surface.
-The caller-facing label remains `fm-<id>`, while the visible workspace title is `fm-<home-label>-<id>`.
-The home label is `firstmate` or `2ndmate-<id>` plus a stable short hash of the resolved Firstmate root.
+The caller-facing label remains `xo-<id>`, while the visible workspace title is `xo-<home-label>-<id>`.
+The home label is `xo` or `2ndmate-<id>` plus a stable short hash of the resolved XO root.
 cmux does not enforce title uniqueness, so create, recovery, list, and cleanup paths all validate this scoped title.
-Relocating the Firstmate installation changes the hash and leaves old titles unmatched, consistent with recorded worktree paths also becoming stale.
+Relocating the XO installation changes the hash and leaves old titles unmatched, consistent with recorded worktree paths also becoming stale.
 
 ```text
 backend=cmux
@@ -90,10 +90,10 @@ Capture remains bounded and locally trimmed after `read-screen` becomes availabl
 `current_directory` follows a top-level shell `cd` but not the foreground subshell opened by `treehouse get`.
 Spawn-time worktree discovery sends begin and end markers around `pwd`, captures the marked block, and joins wrapped path lines.
 
-An ordinary metadata-routed `fm-send.sh` text steer becomes a durable steering-inbox record, and only its best-effort constant doorbell passes through cmux's submit machinery.
+An ordinary metadata-routed `xo-send.sh` text steer becomes a durable steering-inbox record, and only its best-effort constant doorbell passes through cmux's submit machinery.
 On the typed plane, literal send and Enter are separate calls.
 Enter, Escape, and Ctrl-C are supported.
-The composer verifier is a thin adapter: it captures a bounded plain-text tail and hands it with cmux's capability facts to the fleet-wide classifier in `bin/fm-composer-lib.sh`, which owns every shape, including Claude's borderless `❯` row with its U+00A0 separator.
+The composer verifier is a thin adapter: it captures a bounded plain-text tail and hands it with cmux's capability facts to the fleet-wide classifier in `bin/xo-composer-lib.sh`, which owns every shape, including Claude's borderless `❯` row with its U+00A0 separator.
 `read-screen` is plain text with no cursor primitive, so the shared classifier degrades a glyph row carrying trailing text to `unknown` rather than misreading a harness's own idle suggestion as unsent input.
 An unstructured bare prompt is `unknown`, and a slash-popup placeholder remains `pending`, so only Enter is retried and text is never retyped.
 cmux exposes no native generic agent busy signal, so supervision uses capture/hash polling for screen changes and each harness adapter's semantic lifecycle for worker state.
@@ -102,15 +102,15 @@ Grok alone retains its isolated rendered-tail fallback.
 A task workspace's last surface cannot be closed directly.
 Cleanup owns the whole workspace and uses `close-workspace`.
 cmux also refuses to remove the only workspace in a macOS window while returning a misleading success response.
-When the task is last in its window, Firstmate creates one unfocused unnamed sibling workspace in that same window, closes the task workspace, and leaves the window with cmux's fresh default workspace.
-The sibling never carries an `fm-` title and is ignored by recovery.
+When the task is last in its window, XO creates one unfocused unnamed sibling workspace in that same window, closes the task workspace, and leaves the window with cmux's fresh default workspace.
+The sibling never carries an `xo-` title and is ignored by recovery.
 
 The exact window membership is re-read before this operation.
 A selected workspace that is not last closes normally; selection itself is not the trigger.
-Firstmate does not attempt to close the macOS window because cmux's socket cannot close a window holding a live terminal.
+XO does not attempt to close the macOS window because cmux's socket cannot close a window holding a live terminal.
 
 Real tests share the captain's running app rather than creating an isolated cmux session.
-`tests/cmux-test-safety.sh` permits cleanup only for an exact currently listed `fm-test-` workspace and never enumerates and closes unrelated workspaces or relaunches the app.
+`tests/cmux-test-safety.sh` permits cleanup only for an exact currently listed `xo-test-` workspace and never enumerates and closes unrelated workspaces or relaunches the app.
 
 ## Active limits
 
@@ -126,8 +126,8 @@ Real tests share the captain's running app rather than creating an isolated cmux
 ## Regression entry points
 
 ```sh
-tests/fm-backend-cmux.test.sh
-tests/fm-backend-cmux-smoke.test.sh
+tests/xo-backend-cmux.test.sh
+tests/xo-backend-cmux-smoke.test.sh
 ```
 
 [`verification/runtime-backends.md`](verification/runtime-backends.md#cmux) records the active source and live evidence, including socket modes and last-in-window cleanup.

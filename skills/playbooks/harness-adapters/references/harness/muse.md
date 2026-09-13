@@ -10,7 +10,7 @@ The router owns Muse's task-kind boundary.
 | Binary | Absolute `muse` from `PATH`, refused if absent; launcher `~/.local/bin/muse` execs versioned `muse-bin-<version>`, so live process name changes on update. |
 | Launch | Positional instructions, like Grok or Pi. |
 | Models | `--model <model>`; only provider `meta`. |
-| Busy | Durable session event log folded by `../../../bin/fm-busy-lib.sh`; no hook or plugin writer, arming, or seeded busy record. |
+| Busy | Durable session event log folded by `../../../bin/xo-busy-lib.sh`; no hook or plugin writer, arming, or seeded busy record. |
 | Exit | `/exit`, one Enter; prints `To continue this session, run muse resume <session-uuid>`. |
 | Interrupt | Single Escape records `terminal: cancelled` and restores bright prompt text, so control follows with `Ctrl+U`; the legacy typed key path uses the same clear table. |
 | Skill | `/<skill>`, the Claude or Grok form. |
@@ -58,13 +58,13 @@ An open run is trusted busy and settled log trusted idle; missing binding or mat
 ## Native sub-agents and worktrees
 
 Native children use per-child worktrees only with opt-in `--subagent-worktree-isolation`; capability says default-on while omission stays shared, and verified labs produced no nested copy.
-`../../../bin/fm-teardown.sh` excludes no Muse path.
-It excludes `.claude/settings.local.json` because Firstmate writes it, but Muse scratch is worker output and must refuse cleanup when uncommitted.
+`../../../bin/xo-teardown.sh` excludes no Muse path.
+It excludes `.claude/settings.local.json` because XO writes it, but Muse scratch is worker output and must refuse cleanup when uncommitted.
 Inspect, never force past, that refusal.
 
 ## Maturity and primary limit
 
 Muse 0.1.0 is day-zero beta; its hourly channel poll can replace the binary and process name.
-The captain accepted this, so Firstmate does not set `MUSE_NO_AUTO_UPDATE=1`; a fleet may set it without adapter change.
+The captain accepted this, so XO does not set `MUSE_NO_AUTO_UPDATE=1`; a fleet may set it without adapter change.
 Plugins report unavailable unless `MUSE_EXPERIMENTAL_PLUGINS=on`, so busy state uses logs.
 The compatibility dialect explicitly lacks `asyncRewake` and model reawakening; the router owns the resulting primary boundary.

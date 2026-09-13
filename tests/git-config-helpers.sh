@@ -17,9 +17,9 @@
 # fixtures keep their configuration and signing.
 #
 # tests/lib.sh and tests/herdr-test-safety.sh source this for every suite that
-# uses them, bin/fm-test-run.sh sources it per suite in run_script_bounded, and a
+# uses them, bin/xo-test-run.sh sources it per suite in run_script_bounded, and a
 # suite reaching none of those sources it directly so a hand-run invocation is
-# isolated too. tests/fm-test-fixtures.test.sh is the regression - it drives the
+# isolated too. tests/xo-test-fixtures.test.sh is the regression - it drives the
 # shared helpers, the runner, and the standalone entry points that run without a
 # live vendor - and the changed-file map selects it for a change to this file.
 

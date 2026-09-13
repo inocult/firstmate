@@ -82,7 +82,7 @@ There is no new coordinator `/implement` alias to collide with the upstream skil
 
 Overwatch calls Breach with a selected ticket; it does not perform implementation itself.
 Breach can also be invoked directly without enabling Overwatch.
-The planning skills remain project-owned, while these two orchestration skills live in the Firstmate fork.
+The planning skills remain project-owned, while these two orchestration skills live in the XO fork.
 
 ## How automatic pickup works
 
@@ -90,12 +90,12 @@ Overwatch is disabled until explicitly enabled for a configured scope.
 The initial defaults are two open executions, a five-minute check interval and ten successful claims per activation; these bounds can be changed when enabling.
 Open executions include reservations, blocked/held work and PRs awaiting review, so implementation does not produce an unlimited review backlog.
 
-Firstmate's watcher can suppress unchanged heartbeats.
+XO's watcher can suppress unchanged heartbeats.
 Overwatch therefore registers a lightweight custom check through the existing hash-validated check mechanism.
 The check emits a pickup-due event; Control reads Plane and reasons about selection when woken.
 The helper itself neither claims tickets nor starts workers.
 
-A live supported Firstmate agent and its single existing supervision cycle are required, even while the execution queue is empty.
+A live supported XO agent and its single existing supervision cycle are required, even while the execution queue is empty.
 A registered timer is not proof that a supervisor is running.
 Wake timing follows the watcher's check cadence, so the configured interval is a minimum rather than an exact schedule.
 
@@ -182,7 +182,7 @@ Completion requires accepted criteria, required validation and review under the 
 The adapter checks GitHub's merged result and requires an explicit acceptance-verification flag before changing Plane to Done.
 It does not independently implement every GitHub review rule and does not merge the PR itself; branch protection and the configured delivery process enforce those requirements.
 
-After completion, Control reconciles the execution ledger and shared claim, preserves delivery evidence, tears down only landed work through normal Firstmate procedures, and lets enabled Overwatch evaluate newly unblocked tickets.
+After completion, Control reconciles the execution ledger and shared claim, preserves delivery evidence, tears down only landed work through normal XO procedures, and lets enabled Overwatch evaluate newly unblocked tickets.
 If deployment is part of acceptance, its authorization and verification must be handled explicitly before acceptance is declared.
 A merge alone is not proof of deployment.
 
@@ -198,7 +198,7 @@ A merge alone is not proof of deployment.
 | Documentation and tests | Setup guide, this workflow and offline adapter/timer behavior tests. |
 
 This patch has not been published or merged on GitHub.
-Offline adapter/timer tests and skill/schema checks have passed; live automatic pickup, actual model routing, end-to-end operative dispatch and the full no-mistakes gate still require validation in the configured Firstmate runtime.
+Offline adapter/timer tests and skill/schema checks have passed; live automatic pickup, actual model routing, end-to-end operative dispatch and the full no-mistakes gate still require validation in the configured XO runtime.
 The patch adds capabilities; it does not activate automatic work in your live Plane project.
 
 ## Upstream references

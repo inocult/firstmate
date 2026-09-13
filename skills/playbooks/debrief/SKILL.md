@@ -1,6 +1,6 @@
 ---
 name: debrief
-description: Capture mission learnings and handoff context through Firstmate's existing knowledge sweep.
+description: Capture mission learnings and handoff context through XO's existing knowledge sweep.
 metadata:
   internal: true
 ---

@@ -6,13 +6,13 @@ metadata:
   internal: true
 ---
 
-<!-- maintainers: this is the firstmate-internal skill. The public, installer-facing counterpart lives at skills/fieldcraft/stow/SKILL.md - deliberately a separate file with no shared code or environment branching. Keep them independent. -->
+<!-- maintainers: this is the XO-internal skill. The public, installer-facing counterpart lives at skills/fieldcraft/stow/SKILL.md - deliberately a separate file with no shared code or environment branching. Keep them independent. -->
 
 # stow
 
 Sweep this session for durable knowledge and open-work record state that exist only in conversation, then leave the next session with a compact current operating map rather than an accumulating journal.
 Memory entries are tiered and decay between passes, and stale material retires to a cold archive instead of being deleted.
-This skill writes only through the existing Firstmate ownership and write boundaries.
+This skill writes only through the existing XO ownership and write boundaries.
 
 ## Memory tiers and entry markers
 
@@ -77,7 +77,7 @@ While the flag is present:
 
 Every `/stow` invocation performs this complete pass, even when the session contains no new finding:
 
-1. Run `bin/fm-startup-memory-budget.sh report` before considering a write.
+1. Run `bin/xo-startup-memory-budget.sh report` before considering a write.
    Record its effective budget and each file's estimated-token total.
    The budget is per home: this home's three files against this home's own allowance, never a fleet total.
    The helper's stable estimate is the documented conservative local approximation, not provider-exact accounting.
@@ -115,7 +115,7 @@ Every `/stow` invocation performs this complete pass, even when the session cont
    Convergence precondition: before evicting anything, total the eligible pool and check that archiving all of it would reach the budget; when even that cannot, skip the eviction rung entirely, archive nothing for budget reasons, and carry the concrete inability to the final step, naming the exempt pinned floor that crowds out the budget.
    Automatic processes never move a `pinned` entry: decay clocks, legacy grace cycles, oldest-first budget eviction, immediate budget archiving, and autonomous offload do not apply to it.
    The sole exception is relocation to a JIT owner after explicit, per-item captain approval under the offload flow below, and that entry remains in memory until its destination is live.
-8. Run `bin/fm-startup-memory-budget.sh report` again after the complete pass.
+8. Run `bin/xo-startup-memory-budget.sh report` again after the complete pass.
    Finish at or below the effective budget, or open a concrete captain decision before ending the pass.
    A secondmate must explicitly report `primary-owned-shared-file-alone-exceeds-budget` when the inherited shared file alone exceeds its allowance, because local curation cannot resolve it.
    Route that constraint to the primary owner and open one concrete captain decision at the primary owning level that names the shortfall, with exactly these options: raise the affected home's effective budget, or explicitly approve the primary owner trimming or offloading each named shared-file entry.
@@ -168,22 +168,22 @@ Every test must hold for a candidate:
 
 ### Destinations
 
-**Hard rule: the stow process never creates or writes a firstmate-repo-tracked skill.**
-**Every skill stow's offload produces for a Firstmate home is user-owned and local, excluded through that active home's repository-local exclude file resolved with `git -C "$home_root" rev-parse --git-path info/exclude`; contributing a lesson to the shared tracked template is a separate deliberate captain action, never automatic.**
+**Hard rule: the stow process never creates or writes an XO-repo-tracked skill.**
+**Every skill stow's offload produces for an XO home is user-owned and local, excluded through that active home's repository-local exclude file resolved with `git -C "$home_root" rev-parse --git-path info/exclude`; contributing a lesson to the shared tracked template is a separate deliberate captain action, never automatic.**
 Approved project-level destinations are not produced by stow: they ship normally through that project's own registered delivery path.
 
 - A user-owned local skill: a directory under `.agents/skills/<freeform-name>/` whose path is appended to the active home clone's repository-local exclude file, never to a `.gitignore`.
-  Resolve `home_root` to `$FM_HOME` when it is set and otherwise to the Firstmate code root, and anchor every destination index check, exclude-path lookup, and ignore verification to that root with `git -C "$home_root"`.
+  Resolve `home_root` to `$XO_HOME` when it is set and otherwise to the XO code root, and anchor every destination index check, exclude-path lookup, and ignore verification to that root with `git -C "$home_root"`.
   Before approval and again before migration, validate that the chosen freeform destination under `home_root` is absent from that home's git index and collides with no existing file or directory, and reject the destination if either check fails.
-  The name is freeform with no user-vs-firstmate naming convention, the skill stays per-home and untracked, and the harness still lists and JIT-loads it because skill discovery scans the filesystem and ignores git status (verified in `docs/verification/stow-memory.md`).
+  The name is freeform with no user-vs-XO naming convention, the skill stays per-home and untracked, and the harness still lists and JIT-loads it because skill discovery scans the filesystem and ignores git status (verified in `docs/verification/stow-memory.md`).
   Its precise, condition-stated description line is its entire trigger; it gets no `AGENTS.md` declaration because `AGENTS.md` is shared tracked material.
   Because this destination is local and untracked, it is also the JIT home for private conditional knowledge that no committed surface may hold.
 - An already-existing user-owned local on-demand note with an established trigger, after confirming it is untracked, private, and able to hold the quoted entry.
   The pass may add the entry to that existing owner but never creates a new note, skill, or trigger for this purpose.
-- A project's existing committed `AGENTS.md`, for project-intrinsic knowledge useful to nearly every session of that project, through a normal crewmate ship task using `bin/fm-ensure-agents-md.sh` and the project's registered delivery mode.
+- A project's existing committed `AGENTS.md`, for project-intrinsic knowledge useful to nearly every session of that project, through a normal crewmate ship task using `bin/xo-ensure-agents-md.sh` and the project's registered delivery mode.
 - A project-level skill in the project's own repository, for situation-conditional knowledge within one project, through the same ship-task path.
 
-Forbidden destinations: any firstmate-repo-tracked skill per the hard rule; firstmate's own `AGENTS.md`, which is always-loaded for every fleet session; `docs/` alone, which is never agent-loaded on demand, though a skill body may point into docs for depth; and any committed surface for private content.
+Forbidden destinations: any XO-repo-tracked skill per the hard rule; XO's own `AGENTS.md`, which is always-loaded for every fleet session; `docs/` alone, which is never agent-loaded on demand, though a skill body may point into docs for depth; and any committed surface for private content.
 A local skill exists only in this home, so offloading an entry out of `data/captain-shared.md` removes it from every inheriting home's always-injected memory: the proposal must say so, and the default for shared entries is keep.
 
 ### Flow: reduce, approve, migrate, remove
@@ -193,11 +193,11 @@ A local skill exists only in this home, so offloading an entry out of `data/capt
    Autonomously relocate it only by adding it to an already-existing allowed JIT note, or by routing it through a project's established delivery path to its existing owning `AGENTS.md`, then confirming that destination holds the quoted entry before removing the memory entry.
    A destination that needs creation, uncompleted project delivery, or any other future work is not live and cannot count as relief, so continue with the next archival or eviction rung instead of leaving an over-budget proposal pending.
 2. Propose pinned relocation only.
-   For a pinned candidate, append a `proposed-offload` section with the same fields to the completion receipt, create or refresh one durable backlog item with `tasks-axi add`, `tasks-axi show <id> --full`, and `tasks-axi update <id> --body-file <path>` as appropriate, then hold it through `bin/fm-captain-hold.sh hold`.
+   For a pinned candidate, append a `proposed-offload` section with the same fields to the completion receipt, create or refresh one durable backlog item with `tasks-axi add`, `tasks-axi show <id> --full`, and `tasks-axi update <id> --body-file <path>` as appropriate, then hold it through `bin/xo-captain-hold.sh hold`.
    Preserve each candidate's approval state in that item, and require explicit plain-chat approval for that named item before any migration.
    If the captain never answers, nothing migrates and the held item persists, but it is never treated as budget relief.
 3. Migrate an approved pinned candidate outside this pass.
-   Resolve `home_root` to `$FM_HOME` when it is set and otherwise to the Firstmate code root, then re-validate the approved local-skill destination under that root for both index absence with `git -C "$home_root"` and filesystem collision absence.
+   Resolve `home_root` to `$XO_HOME` when it is set and otherwise to the XO code root, then re-validate the approved local-skill destination under that root for both index absence with `git -C "$home_root"` and filesystem collision absence.
    Before creating the destination or writing any private content, resolve the exclude file with `git -C "$home_root" rev-parse --git-path info/exclude`, append the destination directory path to it, and verify the future `SKILL.md` path is ignored with `git -C "$home_root" check-ignore`.
    Only after that verification succeeds, create the destination and write the `SKILL.md` with its precise description trigger, then confirm the skill appears in a fresh session's skill index.
    If any migration step fails, remove the destination content and the exclude rule written by this attempt, leaving neither partial private content nor a partial rule behind.
@@ -219,10 +219,10 @@ A local skill exists only in this home, so offloading an entry out of `data/capt
    - Captain preferences and fleet-local operational facts belong in the destination selected by AGENTS.md after the required whole-file curation pass.
      Create `data/learnings.md` only for a genuinely new local learning with no stronger owner.
    - In a primary home, curate shared captain preferences only under the existing primary-authoritative shared-preference contract.
-     In a secondmate home, route a newly discovered shared preference to the main firstmate through marked status or a document pointer instead of editing the inherited file.
+     In a secondmate home, route a newly discovered shared preference to the main XO through marked status or a document pointer instead of editing the inherited file.
    - Project-intrinsic knowledge never goes directly into a project's `AGENTS.md`.
-     Route it through a normal ship task so a crewmate records it with `bin/fm-ensure-agents-md.sh` and the project's delivery path.
-   - Knowledge general to every Firstmate user belongs in this repo's shared tracked material through the normal branch, no-mistakes, PR, and captain-merge path.
+     Route it through a normal ship task so a crewmate records it with `bin/xo-ensure-agents-md.sh` and the project's delivery path.
+   - Knowledge general to every XO user belongs in this repo's shared tracked material through the normal branch, no-mistakes, PR, and captain-merge path.
    - For task-scoped notes, inspect the item with `tasks-axi show <id> --full`, classify the change as new, duplicate, superseding, or obsolete, then use a considered replacement body through `tasks-axi update <id> --body-file <path>`.
      Use `--archive-body` when recoverability matters.
      Never append.
@@ -278,13 +278,13 @@ In a primary home, every `/stow` cascades to every registered secondmate after t
 In a secondmate home, `/stow` curates that home only and never cascades further.
 The cascade changes nothing until `/stow` is invoked: it adds no notification, no digest section, and no background work.
 
-Run `bin/fm-stow-cascade.sh` once the primary's own pass is done.
+Run `bin/xo-stow-cascade.sh` once the primary's own pass is done.
 It enumerates each registered secondmate exactly once, reports that home's own budget accounting, and resolves how the sweep reaches it; its header owns the stanza fields, the bound, and the exit codes.
 Every home is judged against its own `config/startup-memory-budget` allowance, so never add homes together or treat one home's excess as another's.
 
 Act on each home by its reported `transport`:
 
-- `agent` - send the marked request with `bin/fm-send.sh fm-<id> "<request>"` so the live secondmate performs its own `/stow`, including the uncaptured knowledge that exists only in its session.
+- `agent` - send the marked request with `bin/xo-send.sh xo-<id> "<request>"` so the live secondmate performs its own `/stow`, including the uncaptured knowledge that exists only in its session.
   Ask it for the same completion receipt this skill defines, and read its reply from its status file or the document it points to, never from its chat.
 - `direct` - curate that local home's editable memory files yourself under the same retention plan, then re-run the cascade to confirm the after totals.
   `data/captain-shared.md` stays a read-only counted input there, exactly as it is in any secondmate home.
@@ -304,6 +304,6 @@ The session is reset-safe only when every home is within its own budget with no 
 
 The stow pass itself must never store, create, or edit a skill as a destination for any finding.
 The exclusion binds the pass as a writer: proposing an offload and letting the migration step execute a captain-approved candidate later is not the pass storing a skill.
-Every Firstmate-home skill that migration produces is user-owned and local under the destinations hard rule, while an approved project-level destination is produced and shipped through that project's registered delivery path, never by stow.
-Changing firstmate's tracked `skills/` tree or its `.agents/skills/` activation links remains a deliberately scoped Firstmate repository task through its pipeline, never a stow product.
+Every XO-home skill that migration produces is user-owned and local under the destinations hard rule, while an approved project-level destination is produced and shipped through that project's registered delivery path, never by stow.
+Changing XO's tracked `skills/` tree or its `.agents/skills/` activation links remains a deliberately scoped XO repository task through its pipeline, never a stow product.
 Outside a captain-approved offload, generalizable knowledge still routes to shared tracked material through its pipeline and fleet-local knowledge to `data/`.

@@ -21,7 +21,7 @@ Deterministic shell owns only schema, configuration, and version validation plus
 
 ## Worker-side quota helper
 
-The canonical shell helper for a worker that has already performed its model-selection reasoning and now needs to pick the first viable candidate is `bin/fm-quota-choose.sh`.
+The canonical shell helper for a worker that has already performed its model-selection reasoning and now needs to pick the first viable candidate is `bin/xo-quota-choose.sh`.
 Pass it the intake's already-captured default TOON or permitted JSON fallback through stdin or `--snapshot`; it never takes another quota snapshot, so it selects from the same quota state as the intake.
 Pass each candidate as `harness:model`, with earlier candidates preferred.
 The helper maps each harness to its primary provider family and applies the provider-wide scopes plus the exact model or product scopes for the model.
@@ -32,12 +32,12 @@ omp has no primary family, so the helper keys an `omp:` candidate on its model p
 Authoritative multi-provider routing - including provider discovery from the harness catalog and quota matching by that explicit provider - stays owned by this skill's intake procedure above and AGENTS.md section 4, not by the helper.
 Use it only when the brief already fixed the candidate order and every candidate's provider is the harness's primary family.
 It does not replace the reasoning-class, runway-feasibility, or authentication gates above.
-Firstmate can optionally arm `bin/fm-procevent-quota.sh` for a recurring mid-task check that wakes when the tracked provider drops below its configured threshold or its runway becomes `exhausted_now`.
+XO can optionally arm `bin/xo-procevent-quota.sh` for a recurring mid-task check that wakes when the tracked provider drops below its configured threshold or its runway becomes `exhausted_now`.
 
 ## Read the default TOON
 
 Start each intake by running `quota-axi` once with no `--json`, and reuse that TOON for every candidate.
-Post-consolidation quota-axi (the floor owned by `bin/fm-quota-axi-lib.sh`) puts `spendPriority` in the default `quota[]` block beside `effectivePercentRemaining`, `runway`, `confidence`, `limitedBy`, and `resetsAt`.
+Post-consolidation quota-axi (the floor owned by `bin/xo-quota-axi-lib.sh`) puts `spendPriority` in the default `quota[]` block beside `effectivePercentRemaining`, `runway`, `confidence`, `limitedBy`, and `resetsAt`.
 Sparse `exhaustion[]` carries finite-runway seconds only for `projected_exhaustion` and `exhausted_now`.
 Sparse `attention[]` names auth, stale, and unmeasurable facts.
 `spendPriority` is THE quota-perspective ranker.
@@ -47,7 +47,7 @@ Do not read `--json` on the normal path, and do not reach for `--full` to rebuil
 After reading the TOON, fall back to one `quota-axi --json` call only when that TOON is genuinely ambiguous for the decision, or when the installed quota-axi is somehow below the floor so its TOON lacks `spendPriority`.
 Ambiguous means a candidate's `spendPriority` is the literal `unknown` or unmeasurable, a real tie still needs extra evidence, or a candidate's eligibility is unclear from `quota[]` plus `attention[]`.
 The fallback therefore has an explicit TOON-then-JSON call sequence; reuse its JSON result and do not take any further quota snapshots.
-Below-floor is rare: bootstrap enforces `FM_QUOTA_AXI_MIN` and normally reports `MISSING` before dispatch; if an intake somehow reaches an older build whose TOON lacks `spendPriority`, use the defensive `--json` fallback rather than treating the missing scalar as healthy.
+Below-floor is rare: bootstrap enforces `XO_QUOTA_AXI_MIN` and normally reports `MISSING` before dispatch; if an intake somehow reaches an older build whose TOON lacks `spendPriority`, use the defensive `--json` fallback rather than treating the missing scalar as healthy.
 `--json` is a defensive belt, not a habit; never reach for it because it feels more complete.
 Read `quota-axi auth --json` only when a candidate's credential surface is in question.
 
@@ -85,7 +85,7 @@ Uncertainty and ineligibility are different findings:
 - Reserve login wording for that proven-unusable case, and name the harness, model, surface, and evidence.
 
 When a credential's local classification is the only thing standing between a candidate and a block, get ground truth before blocking.
-`bin/fm-vendor-auth-probe.sh` is the only approved vendor-credential probe; its `--help` owns the registered probes and mechanics.
+`bin/xo-vendor-auth-probe.sh` is the only approved vendor-credential probe; its `--help` owns the registered probes and mechanics.
 It takes no harness, model, or provider and returns a fact, not a route: only `authenticated` and `unauthenticated` are ground truth, while `indeterminate`, `timeout`, and `unavailable` establish nothing and must never be read as either outcome.
 Never launch a vendor CLI yourself, and never probe a credential store the candidate does not use.
 Grok prepaid `credits` are unrelated to paid-window headroom; never read them as exhaustion.
@@ -115,7 +115,7 @@ Rank only from comparable known scalars.
 Never treat absent, `unknown`, or unmeasurable `spendPriority` as zero or as healthy; `0` means exact utilization, a different claim from unknown.
 An unknown `spendPriority` keeps the candidate eligible with disclosed uncertainty.
 Prefer known viable evidence when otherwise comparable.
-After the permitted TOON-to-JSON fallback, escalate to Firstmate instead of routing if no candidate can be ranked or runway uncertainty prevents proving the feasibility floor for any candidate that could be selected.
+After the permitted TOON-to-JSON fallback, escalate to XO instead of routing if no candidate can be ranked or runway uncertainty prevents proving the feasibility floor for any candidate that could be selected.
 Never resolve that terminal uncertainty by treating unknown as healthy or by choosing arbitrarily.
 Show the scalar or the literal `unknown` in the rationale; do not hide it in a score.
 

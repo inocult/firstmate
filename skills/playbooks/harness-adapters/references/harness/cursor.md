@@ -7,13 +7,13 @@ Cross-harness provider and credential identity is owned by `references/common/mo
 
 | Fact | Value |
 |---|---|
-| Binary | `fm_cursor_resolve_binary` in `../../../bin/fm-cursor-lib.sh` resolves stable launcher `cursor-agent` or legacy `agent`, never `cursor`; both symlink into `~/.local/share/cursor-agent/versions/<version>/cursor-agent`, whose target auto-update replaces. |
+| Binary | `xo_cursor_resolve_binary` in `../../../bin/xo-cursor-lib.sh` resolves stable launcher `cursor-agent` or legacy `agent`, never `cursor`; both symlink into `~/.local/share/cursor-agent/versions/<version>/cursor-agent`, whose target auto-update replaces. |
 | Launch | Positional instructions with `--trust`, `--yolo`, optional `--model <model>`, and `--workspace <absolute-task-worktree>`, after clearing foreign primary markers. |
 | Models | Use current-account `cursor-agent --list-models` or legacy `agent --list-models`; the drifting observed list had only `cursor-grok-4.5-high` and `cursor-grok-4.5-high-fast` for Grok plus several `xhigh` ids, so choose a returned reasoning id and never assume low or medium Grok. |
-| Busy state | `../../../bin/fm-busy-lib.sh` folds the per-conversation transcript as `cursor-transcript`: `role:user` opens and typed `turn_ended` closes success or abort, covering manual interrupt; nothing is armed or seeded, and this backend-agnostic source was identical on tmux and Herdr. |
+| Busy state | `../../../bin/xo-busy-lib.sh` folds the per-conversation transcript as `cursor-transcript`: `role:user` opens and typed `turn_ended` closes success or abort, covering manual interrupt; nothing is armed or seeded, and this backend-agnostic source was identical on tmux and Herdr. |
 | Exit command | `/exit`. |
 | Interrupt | Single Escape returns the placeholder with no clear key; control makes no cancellation claim because an aborted transcript close appeared within seconds in some runs and not within twenty in others. |
-| Skill invocation | `/<skill>`, for example `/no-mistakes`; Cursor discovers Firstmate's user skills. |
+| Skill invocation | `/<skill>`, for example `/no-mistakes`; Cursor discovers XO's user skills. |
 | Resume | No verified native pane resume; use deterministic relaunch. |
 | Autonomy | `--yolo`, documented alias for `--force`; footer `Run Everything`. |
 | Trust | `--trust` suppresses the dialog; `--yolo` does not, and every task has a fresh path. |
@@ -26,20 +26,20 @@ The slash popup consumes the first Enter; that Enter closes it and a genuine sec
 ## Detection
 
 Cursor does not clear inherited `CLAUDECODE`, so a Cursor worker under Claude carries both markers.
-`../../../bin/fm-harness.sh` tests Cursor first, and launch also clears foreign markers.
-Both remain necessary: sanitization covers Firstmate launches, ordering covers hand-started sessions.
+`../../../bin/xo-harness.sh` tests Cursor first, and launch also clears foreign markers.
+Both remain necessary: sanitization covers XO launches, ordering covers hand-started sessions.
 
 Cursor is a bundled Node script, so tmux can report bare `node` while `ps -o comm=` carries its install path.
-Bare `node` matches nothing; `../../../bin/fm-cursor-lib.sh` proves identity from Cursor's name or install tree in path or argv zero.
+Bare `node` matches nothing; `../../../bin/xo-cursor-lib.sh` proves identity from Cursor's name or install tree in path or argv zero.
 Unrelated `node` or `agent` remains `other`, folded to ambiguous rather than dead.
 Auto-update changes the target, not this rule.
 
 ## Composer and delivery
 
 Cursor parks its terminal cursor outside the composer: `#{cursor_y}` was below the footer idle and typed, with `#{cursor_flag}` zero, so cursor-anchored reads are always unknown.
-`../../../bin/fm-tmux-lib.sh` lets the bottom-most shape win only after structural Cursor proof.
+`../../../bin/xo-tmux-lib.sh` lets the bottom-most shape win only after structural Cursor proof.
 The composite then reads empty or pending, verified on 2026-08-13, while every other harness keeps strict blank-cursor behavior and a dead shell never reads empty.
-`../../../bin/fm-supervise-daemon.sh` can therefore require affirmatively empty before away-mode delivery without a Cursor-only branch.
+`../../../bin/xo-supervise-daemon.sh` can therefore require affirmatively empty before away-mode delivery without a Cursor-only branch.
 
 Submission also uses an idle-to-busy transition.
 Match stable token `ctrl+c to stop`, never spinner verbs that changed from `Working` to `Running` between turns.
@@ -53,16 +53,16 @@ A typed-plane native invocation or explicit backend send lands but reports uncon
 Treat this as confirmation failure, not loss, because text lands and busy state comes from the transcript.
 Teaching those backends is separate cross-harness work requiring live checks.
 
-Reverse-video placeholder remnants and Herdr half-block edges belong to `../../../bin/fm-composer-lib.sh`; without the edges a bare composer swallows the footer and idle reads pending.
+Reverse-video placeholder remnants and Herdr half-block edges belong to `../../../bin/xo-composer-lib.sh`; without the edges a bare composer swallows the footer and idle reads pending.
 `../../../docs/verification/runtime-backends.md` owns captures.
-Refresh with `FM_HARNESS_LIVENESS_DRIFT=1 ../../../bin/fm-test-run.sh ../../../tests/fm-harness-liveness-drift-live-e2e.test.sh`.
+Refresh with `XO_HARNESS_LIVENESS_DRIFT=1 ../../../bin/xo-test-run.sh ../../../tests/xo-harness-liveness-drift-live-e2e.test.sh`.
 
 ## Worktree boundary
 
-Firstmate enters its acquired worktree and passes the same absolute path through `--workspace`.
+XO enters its acquired worktree and passes the same absolute path through `--workspace`.
 Never pass Cursor `-w` or `--worktree`, which allocates a second copy under `~/.cursor/worktrees` and breaks isolation.
 The CLI supports repeatable `--add-dir`, but the adapter adds none; positional instructions need no grant to their private directory.
-Example: `../../../bin/fm-spawn.sh <task-id> <project> --scout --harness cursor --model cursor-grok-4.5-high`.
+Example: `../../../bin/xo-spawn.sh <task-id> <project> --scout --harness cursor --model cursor-grok-4.5-high`.
 
 ## Primary integration
 
@@ -70,6 +70,6 @@ Primary supervision is the stop-hook park in `../../../docs/supervision-protocol
 Cursor exposes 20 project events plus a Claude-Code compatibility map that loads `.claude/settings.json`.
 Tracked hooks register `stop`, `sessionStart`, and two `preToolUse` seatbelts through `$CURSOR_PROJECT_DIR`; Claude entries stand down on Cursor payloads under `../../../docs/turnend-guard.md`.
 
-`stop` cannot block because exit 2 is a silent no-op, so `../../../bin/fm-turnend-guard-cursor.sh` parks on supervision and returns one bounded `followup_message`.
+`stop` cannot block because exit 2 is a silent no-op, so `../../../bin/xo-turnend-guard-cursor.sh` parks on supervision and returns one bounded `followup_message`.
 It does not fire in headless `cursor-agent -p`.
 `preCompact` is unregistered because it cannot inject context, so digest re-emission after Cursor compaction remains deferred.

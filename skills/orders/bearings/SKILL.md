@@ -1,7 +1,7 @@
 ---
 name: bearings
 description: >-
-  Generate a "pick up where I left off" fleet digest from firstmate's live fleet state.
+  Generate a "pick up where I left off" fleet digest from XO's live fleet state.
   Use when the captain invokes /bearings or asks for a bearings report, morning brief, status report, catch-up, "where did I leave off", or "what's in the works".
   Plain /bearings is chat-only by default, /bearings file explicitly writes the dated data/status-report-<YYYY-MM-DD>.md artifact, and /bearings lavish additionally builds and arms the interactive fleet board; live PR enrichment remains opt-in and composes with the other modes.
   Also load this skill's board-wake handling when a procevent lavish wake's source id matches the canonical source id of the stable bearings board path.
@@ -15,8 +15,8 @@ metadata:
 Generate a complete current snapshot from the fleet's current state, so the captain can resume in one read after a break, a night, or a context reset.
 Plain `/bearings` returns only the concise four-section chat digest.
 Only `/bearings file` writes the dated markdown report artifact and then returns the concise four-section chat digest linked to that report.
-Only `/bearings lavish` builds the interactive fleet board beside that digest, through `bin/fm-bearings-board.sh` (its header owns every board mechanic and the fm-bearings-board.v1 payload contract).
-A digest/build invocation is operationally read-only apart from observational remote-ledger cache refreshes, durable per-target reconcile-notify requests when the captured state needs them, plus the explicit per-mode artifacts: the dated report in file mode, and in lavish mode the board file plus the answer binding and source registration that `bin/fm-bearings-board.sh build` records through their own owners.
+Only `/bearings lavish` builds the interactive fleet board beside that digest, through `bin/xo-bearings-board.sh` (its header owns every board mechanic and the xo-bearings-board.v1 payload contract).
+A digest/build invocation is operationally read-only apart from observational remote-ledger cache refreshes, durable per-target reconcile-notify requests when the captured state needs them, plus the explicit per-mode artifacts: the dated report in file mode, and in lavish mode the board file plus the answer binding and source registration that `bin/xo-bearings-board.sh build` records through their own owners.
 During that invocation it never tears down a task, merges a PR, dispatches new work, steers a worker, answers a decision, cleans up work, or mutates backlog or task state.
 Board answers are acted on later under the normal authority rules; this skill's board-wake section explicitly owns the guarded routing at that time.
 
@@ -34,7 +34,7 @@ Board answers are acted on later under the normal authority rules; this skill's 
 ## What it does
 
 1. **Gather live fleet state with one deterministic command.**
-   Run `snapshot=$(bin/fm-bearings-snapshot.sh --json)` at invocation time and read that compact output.
+   Run `snapshot=$(bin/xo-bearings-snapshot.sh --json)` at invocation time and read that compact output.
    It is the single bounded, deterministic fleet-state source for Bearings.
    Do not create or consult a second fleet-state reader, parser contract, status-event-tail interpretation, visible-session recap, ad-hoc project probe, or ad-hoc `gh-axi`/`gh` query.
    The command's header and `--help` output own its exact fields, bounds, opt-ins, and output contract.
@@ -57,7 +57,7 @@ Board answers are acted on later under the normal authority rules; this skill's 
 
 2. **Record a later reconcile notification for any home whose own books disagree.**
    When the snapshot reports a secondmate home whose `invalidity` is `orphan_in_flight`, `unowned_current`, or `terminal_in_flight`, that home's backlog and its own task metadata disagree and only that home may fix it.
-   Run `printf '%s\n' "$snapshot" | bin/fm-secondmate-reconcile.sh request --snapshot -` immediately after gathering the snapshot.
+   Run `printf '%s\n' "$snapshot" | bin/xo-secondmate-reconcile.sh request --snapshot -` immediately after gathering the snapshot.
    This atomically records one local one-shot request per mismatched target and returns without sending, taking a mate lifecycle lock, or waiting behind a local or remote delivery queue.
    The supervision loop later claims the requests and runs the cooldown-limited fire-and-forget deliveries; the script header owns per-target coalescing, request durability, retries, cooldown, identity checks, and retirement.
    Continue composing the digest from the captured snapshot as soon as the local requests are recorded.
@@ -88,7 +88,7 @@ Board answers are acted on later under the normal authority rules; this skill's 
 ## Lavish board mode
 
 `/bearings lavish` adds one deliverable beside the unchanged chat digest: the interactive fleet board, a myfirstmate-styled Lavish page where the captain answers Captain's Call items directly instead of replying in chat.
-`bin/fm-bearings-board.sh` owns every board mechanic - the stable board path, fm-bearings-board.v1 payload validation, template injection, live Lavish session verification and ended-session reopening, the any-origin answer binding, and listener registration - so the per-invocation work is composing the payload and running its `build`.
+`bin/xo-bearings-board.sh` owns every board mechanic - the stable board path, xo-bearings-board.v1 payload validation, template injection, live Lavish session verification and ended-session reopening, the any-origin answer binding, and listener registration - so the per-invocation work is composing the payload and running its `build`.
 
 Compose the payload from the same snapshot with the same ranking judgment as the chat digest, plus these board rules:
 
@@ -110,12 +110,12 @@ Never run `lavish-axi poll` for the board yourself: the armed source's supervise
 
 ### Handling a board wake
 
-A board answer arrives as an ordinary `procevent lavish <source-id> <sequence>` check wake. Identify it by comparing the wake source id with `bin/fm-procevent-lavish.sh source-id "$(bin/fm-bearings-board.sh path)"`, regardless of which answer kinds the result contains; then load `process-event-sources` and follow its contract for the result read, adapter classification, and the handled acknowledgement.
-Decision answers need no routing from you: the runner feeds the board's binding into `bin/fm-captain-hold.sh`'s one keyed-answer intake, which closes or releases each answered captain-held task at answer time; reconcile any `skipped:` key yourself with a direct `answer`, and when the captain's answer is "later", record it as a deferral with `bin/fm-captain-hold.sh hold <id> --reason "<reason>" --until <date>` instead of a closure.
+A board answer arrives as an ordinary `procevent lavish <source-id> <sequence>` check wake. Identify it by comparing the wake source id with `bin/xo-procevent-lavish.sh source-id "$(bin/xo-bearings-board.sh path)"`, regardless of which answer kinds the result contains; then load `process-event-sources` and follow its contract for the result read, adapter classification, and the handled acknowledgement.
+Decision answers need no routing from you: the runner feeds the board's binding into `bin/xo-captain-hold.sh`'s one keyed-answer intake, which closes or releases each answered captain-held task at answer time; reconcile any `skipped:` key yourself with a direct `answer`, and when the captain's answer is "later", record it as a deferral with `bin/xo-captain-hold.sh hold <id> --reason "<reason>" --until <date>` instead of a closure.
 A current structured Reconcile selection closes nothing: the versioned board context carries its exact selected option separately from any typed note, and the adapter routes that selection only into a durable re-check request while preserving the note as provenance.
 The rollout-compatible old context still feeds ordinary non-reconcile answers, but its bare or separator-annotated reconcile values and every structurally uncertain choice feed neither intake and remain announced for deliberate handling.
-Verify the call's latest state, then retire the request through `bin/fm-captain-hold.sh reconcile close <id> --evidence-file <path>` when it turns out to be moot, or `reconcile note <id> --note-file <path>` when it is genuinely still open.
-Both outcomes refuse without that pending board-created request, and `bin/fm-captain-hold.sh reconcile list` names every request still outstanding.
+Verify the call's latest state, then retire the request through `bin/xo-captain-hold.sh reconcile close <id> --evidence-file <path>` when it turns out to be moot, or `reconcile note <id> --note-file <path>` when it is genuinely still open.
+Both outcomes refuse without that pending board-created request, and `bin/xo-captain-hold.sh reconcile list` names every request still outstanding.
 A remote-secondmate card whose task is absent from the main backlog remains on the board unchanged, but its reconcile request is refused in the main home until the separately tracked owner-aware routing follow-up can query and mutate the authoritative secondmate home; handle the announced capture without claiming that a request or reconciliation succeeded.
 `captain-hold-lifecycle` owns why a reconcile may never be recorded as the captain's answer.
 Route the non-decision keys yourself:
@@ -128,7 +128,7 @@ After handling, rebuild the board from a fresh snapshot so acted-on items leave 
 ### The merge-click ruling (captain-decided)
 
 A board "Merge now" answer IS the captain's explicit merge word for that one exact PR; ask no second confirmation.
-The safeguards are mandatory, not optional: resolve the PR from the task's own `state/<task-id>.meta` `pr=` record, never from board bytes; re-verify at wake time that the PR is still open and CI-green; refuse and report a red or changed PR rather than merging it; record the exact `merge` answer through `bin/fm-captain-hold.sh answer <task-id> --decision-file <file> --release` before invoking the merge; proceed only when that release succeeds; merge only through `bin/fm-pr-merge.sh`; and echo every merge in chat with the full PR URL.
+The safeguards are mandatory, not optional: resolve the PR from the task's own `state/<task-id>.meta` `pr=` record, never from board bytes; re-verify at wake time that the PR is still open and CI-green; refuse and report a red or changed PR rather than merging it; record the exact `merge` answer through `bin/xo-captain-hold.sh answer <task-id> --decision-file <file> --release` before invoking the merge; proceed only when that release succeeds; merge only through `bin/xo-pr-merge.sh`; and echo every merge in chat with the full PR URL.
 Only the exact answer value `merge` authorizes a merge; an answer carrying a freeform note is the captain's instruction text to read and act on with judgment, never an auto-merge.
 
 ## Chat-response contract

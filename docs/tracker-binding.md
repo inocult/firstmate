@@ -2,13 +2,13 @@
 
 This document is the single owner of which tracker holds this home's tickets, how that tracker is reached, which project the tickets belong to, which surface performs each ticket operation, and which operations no surface in this repository performs.
 Skills speak only in the neutral vocabulary defined here and point here instead of asserting what a surface can do, so each capability is stated once and never assumed separately in a skill.
-[`plane-missions.md`](plane-missions.md) owns the configuration schema, its limits, the shared claim mechanics and recovery, `bin/fm-plane.py --help` owns command syntax, and this document owns only the binding.
+[`plane-missions.md`](plane-missions.md) owns the configuration schema, its limits, the shared claim mechanics and recovery, `bin/xo-plane.py --help` owns command syntax, and this document owns only the binding.
 
 ## This home's tracker
 
 For this home, tickets live in Plane.
 They are reached through the Plane MCP.
-They belong to one configured project: the project whose identifier the home's private tracker configuration at `FM_HOME/config/plane.json` records, in the workspace and at the URL that same file names.
+They belong to one configured project: the project whose identifier the home's private tracker configuration at `XO_HOME/config/plane.json` records, in the workspace and at the URL that same file names.
 Every ticket operation in this repository acts on that project alone, and a blocking edge into another project is refused rather than followed.
 
 ## Surfaces
@@ -16,7 +16,7 @@ Every ticket operation in this repository acts on that project alone, and a bloc
 Two surfaces exist.
 A skill names the operation, and this document names the surface.
 
-The adapter is `bin/fm-plane.py`, invoked with the interpreter `FM_PLANE_PYTHON` names.
+The adapter is `bin/xo-plane.py`, invoked with the interpreter `XO_PLANE_PYTHON` names.
 It reaches the tracker through its own MCP client, which the tracker configuration points either at a stdio server the adapter starts for each command or at a remote streamable HTTP server.
 That client lives inside the adapter's process: the session cannot call its tools, and no skill may describe the adapter's server as a surface the session reaches.
 Every adapter command except `check` opens that connection before dispatching, so a command that changes nothing in the tracker still fails when the tracker is unreachable; only `check` runs without it.
@@ -36,7 +36,7 @@ Apart from the captain acting by hand in the tracker, it is the only surface thr
 | the configured project | the one project every operation acts on | `project_id` |
 | readiness label | the project label named exactly `ready-for-agent`, the planning team's promise that the ticket is specified well enough for an agent | `ready_label_id`, the only label identifier any surface reads |
 | pickup states | the states a ticket may be claimed from, drawn from the tracker's backlog and unstarted groups | `pickup_state_ids` |
-| claim | the shared record at `refs/heads/fm-plane/<hash>` on the coordination remote that gives one executor the ticket, together with the move to implementing | `coordination_remote` and `executor` |
+| claim | the shared record at `refs/heads/xo-plane/<hash>` on the coordination remote that gives one executor the ticket, together with the move to implementing | `coordination_remote` and `executor` |
 | lifecycle states (implementing, review, done) | the three project states a ticket moves through, whether claimed through the adapter or moved by Control through the session connector | `states.implementing`, `states.review` and `states.done` |
 | the Blocked state | the project state named `Blocked`, whose own definition is waiting on an external dependency, decision or resource, where Control files commissioned work it must queue behind a dependency or time gate | no stored identifier; it is never among `pickup_state_ids` |
 | parent and child | the parent work-item link that makes one ticket a slice of another | the `parent` field the tracker returns on a ticket, which the adapter passes through and never interprets |
@@ -56,7 +56,7 @@ The five canonical triage labels, of which the readiness label is one, are owned
 | Inspect a claim | adapter `status` | reads the claim record and changes nothing in the tracker, but still requires the adapter's tracker connection to open |
 | Repair the tracker projection | adapter `sync` | re-applies the claimed phase's lifecycle state and PR link after an interrupted update |
 | Bind a local task | adapter `bind` | scaffolds the brief and writes the private execution receipt `data/<id>/plane.json` |
-| Validate ownership at dispatch | adapter `check` | run by `bin/fm-spawn.sh` whenever that receipt exists; reads the claim record only and never the tracker |
+| Validate ownership at dispatch | adapter `check` | run by `bin/xo-spawn.sh` whenever that receipt exists; reads the claim record only and never the tracker |
 | Record the PR on the ticket | adapter `pr` | adds one work-item link, but shares its dispatch with `review` and `resume`, so it also rewrites the claim phase to implementing and writes the implementing lifecycle state to the ticket; re-registering a PR URL on an execution already in review moves the ticket backwards, so the call is not idempotent and must run before `review`, and `sync` is the surface that repairs a missing link without changing phase |
 | Move to review, return to implementing | adapter `review` and adapter `resume` | sets the lifecycle state while preserving the claim |
 | Complete | adapter `complete` | confirms the linked PR merged through the GitHub API and then sets done; never merges |
