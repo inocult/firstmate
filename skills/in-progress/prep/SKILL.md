@@ -36,7 +36,7 @@ Control performs these steps directly and reports the verified result.
 2. Collect the connection facts from the captain: the tracker URL, workspace slug, project UUID, implementation repository URL, coordination remote, the tracker transport the configuration schema names, and this instance's executor name.
    Credentials are named in the configuration and sourced from the captain's existing secrets system, never stored in it.
 3. Write the connection half of `FM_HOME/config/plane.json` from those facts, then run `doctor`.
-   `doctor` reads that file and fails without it, but setup-mode commands load the configuration before the label, pickup and lifecycle identifiers exist, and the binding document owns which commands those are.
+   `doctor` reads that file and fails without it, but the commands that load the setup-stage configuration, which skips the identifier checks so they run before the label, pickup and lifecycle identifiers exist, are named in the binding document.
 4. Provision the vocabulary, then complete the configuration.
    Compare all five canonical names against every label the latest `doctor` run returned, and settle that whole comparison before writing anything.
    Entering this step always compares against a current `doctor`, never against output from before someone changed the project's labels.
