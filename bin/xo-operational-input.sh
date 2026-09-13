@@ -120,8 +120,8 @@ xo_operational_input_body() {  # <current-message> <result-var>
 # project keep their old spelling. Every current producer wraps its payload in
 # the typed header, so these must never be used by current producers or
 # current-path tests.
-# shellcheck disable=SC2016 # Backticks are literal historical prompt markup.
 XO_LEGACY_OPERATIONAL_PREFIX="${XO_OPERATIONAL_MARK}FIRSTMATE_OP: "
+# shellcheck disable=SC2016 # Backticks are literal historical prompt markup.
 XO_LEGACY_SESSIONSTART='Run `bin/fm-session-start.sh` now, exactly once, before executing any other instructions.'
 XO_LEGACY_WATCHER_PREFIX='FIRSTMATE WATCHER WAKE: '
 XO_LEGACY_WATCHER_SUFFIX=$'\n\nRun bin/fm-wake-drain.sh first and handle the queued wake. Watcher continuity is extension-owned.'
