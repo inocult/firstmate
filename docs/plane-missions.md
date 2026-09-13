@@ -9,7 +9,7 @@ The bundled `breach` skill adapts Pocock's small `implement` entrypoint with att
 | Surface | Responsibility |
 | --- | --- |
 | Plane | Requirements, readiness, dependencies and final ticket status |
-| Control | Ticket selection, worker dispatch, supervision and delivery reconciliation |
+| Control | Ticket selection, filing the work it discovers or commissions as `needs-triage` tickets, worker dispatch, supervision and delivery reconciliation |
 | Project skills | Design, TDD, debugging and review practices |
 | GitHub PR | Implementation, checks, review and merge evidence |
 | Shared Git claim | One active implementation across participating Control instances |
@@ -89,6 +89,7 @@ Every identifier written here must be the id of the state or label whose name it
 The label is the planning team's promise that the ticket has sufficient scope and acceptance criteria.
 Pickup requires both this label and an eligible Backlog/Todo state, plus the existing dependency and shared-claim checks.
 In Progress, In Review, Done and cancelled states must never be configured as pickup states.
+The Blocked state must never be among `pickup_state_ids` either, even when `doctor` suggests it from the unstarted group, because it is the state Control files queued commissioned work in.
 The adapter preserves labels and assignees throughout delivery; the shared claim and lifecycle state prevent duplicate pickup even while the label remains.
 Old configurations using `states.ready` must migrate to these two fields; the label is not a workflow state.
 

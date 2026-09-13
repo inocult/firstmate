@@ -53,7 +53,7 @@ The project's existing Plane tracker configuration remains essential.
 Your Platform project already has the `ready-for-agent` label.
 Its description means the work is specified well enough for an agent to execute without further clarification.
 Plane states continue to represent progress: Backlog/Todo → In Progress → In Review → Done.
-Blocked work is reconciled explicitly and remains claimed until a deliberate release or handoff.
+Claimed work that becomes blocked is reconciled explicitly and remains claimed until a deliberate release or handoff; the Blocked state itself is outside that progression, and [`docs/tracker-binding.md`](tracker-binding.md) records its role.
 
 Both upstream `/to-spec` and `/to-tickets` apply the readiness label.
 Therefore automatic pickup must distinguish a parent specification from its implementation slices.
