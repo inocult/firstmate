@@ -1,6 +1,6 @@
 ---
 name: sitrep
-description: Give the mission lead a concise situation report using Firstmate's existing status workflow, with the operative persona.
+description: Give the mission lead a concise situation report using XO's existing status workflow, with the operative persona.
 metadata:
   internal: true
 ---

@@ -1,92 +1,92 @@
 #!/usr/bin/env bash
 # bin/backends/tmux.sh - the tmux session-provider adapter.
 #
-# Reference backend (AGENTS.md section 8; data/fm-backend-design-d7). P1 moves
-# the tmux command sequences that fm-send.sh, fm-peek.sh, fm-watch.sh,
-# fm-spawn.sh, and fm-teardown.sh already ran inline into named functions
+# Reference backend (AGENTS.md section 8; data/xo-backend-design-d7). P1 moves
+# the tmux command sequences that xo-send.sh, xo-peek.sh, xo-watch.sh,
+# xo-spawn.sh, and xo-teardown.sh already ran inline into named functions
 # here, running the EXACT same commands in the EXACT same order, so the
 # default (tmux, `backend=` absent) path stays byte-identical. Sourced only
-# through bin/fm-backend.sh's fm_backend_source, never directly.
+# through bin/xo-backend.sh's xo_backend_source, never directly.
 #
 # Worktree acquisition (running `treehouse get` inside the pane, and polling
 # its cwd) is unchanged by this extraction: P1 scopes only the session
-# provider, not the worktree provider, so fm-spawn.sh still drives that part
+# provider, not the worktree provider, so xo-spawn.sh still drives that part
 # inline with these same send/current-path primitives.
 #
 # The verified composer/busy-detection and verify-and-retry-submit primitives
-# already live in bin/fm-tmux-lib.sh, shared with the away-mode daemon
-# (bin/fm-supervise-daemon.sh); this adapter sources that file and re-exports
+# already live in bin/xo-tmux-lib.sh, shared with the away-mode daemon
+# (bin/xo-supervise-daemon.sh); this adapter sources that file and re-exports
 # its submit core under the backend's naming convention rather than
 # duplicating it, so the two consumers cannot drift apart.
-# shellcheck source=bin/fm-tmux-lib.sh
-. "$FM_BACKEND_LIB_DIR/fm-tmux-lib.sh"
-# shellcheck source=bin/fm-session-lock-lib.sh
-. "$FM_BACKEND_LIB_DIR/fm-session-lock-lib.sh"
-# shellcheck source=bin/fm-agent-process-lib.sh
-. "$FM_BACKEND_LIB_DIR/fm-agent-process-lib.sh"
+# shellcheck source=bin/xo-tmux-lib.sh
+. "$XO_BACKEND_LIB_DIR/xo-tmux-lib.sh"
+# shellcheck source=bin/xo-session-lock-lib.sh
+. "$XO_BACKEND_LIB_DIR/xo-session-lock-lib.sh"
+# shellcheck source=bin/xo-agent-process-lib.sh
+. "$XO_BACKEND_LIB_DIR/xo-agent-process-lib.sh"
 
-# fm_backend_tmux_resolve_bare_selector: the live-window-listing fallback for a
+# xo_backend_tmux_resolve_bare_selector: the live-window-listing fallback for a
 # selector that is neither an explicit target nor a task selector routed
 # through meta - an ad hoc window name with no recorded task. Mirrors the
 # `tmux list-windows -a ... | grep` pipeline that used to live inline in
-# fm-send.sh's and fm-peek.sh's own (until now duplicated) resolve().
-fm_backend_tmux_resolve_bare_selector() {  # <name>
+# xo-send.sh's and xo-peek.sh's own (until now duplicated) resolve().
+xo_backend_tmux_resolve_bare_selector() {  # <name>
   local name=$1
   tmux list-windows -a -F '#{session_name}:#{window_name}' | grep -m1 ":$name\$" \
     || { echo "error: no window named $name" >&2; return 1; }
 }
 
-# fm_backend_tmux_capture: bounded plain-text pane capture. Mirrors
-# fm-peek.sh's and fm-watch.sh's `tmux capture-pane -p -t "$T" -S -"$N"`.
-fm_backend_tmux_capture() {  # <target> <lines>
+# xo_backend_tmux_capture: bounded plain-text pane capture. Mirrors
+# xo-peek.sh's and xo-watch.sh's `tmux capture-pane -p -t "$T" -S -"$N"`.
+xo_backend_tmux_capture() {  # <target> <lines>
   tmux capture-pane -p -t "$1" -S -"$2"
 }
 
-# fm_backend_tmux_send_key: one named key. Mirrors fm-send.sh's --key path:
+# xo_backend_tmux_send_key: one named key. Mirrors xo-send.sh's --key path:
 # `tmux display-message -p -t "$T" '#{pane_id}' >/dev/null`, then
 # `tmux send-keys -t "$T" "$2"`.
-fm_backend_tmux_send_key() {  # <target> <key>
+xo_backend_tmux_send_key() {  # <target> <key>
   tmux display-message -p -t "$1" '#{pane_id}' >/dev/null
   tmux send-keys -t "$1" "$2"
 }
 
-# fm_backend_tmux_send_text_submit: type <text> into <target> once, then
+# xo_backend_tmux_send_text_submit: type <text> into <target> once, then
 # submit with Enter, retried (Enter only, never retyped) until the composer
-# clears. Re-exports fm_tmux_submit_core (bin/fm-tmux-lib.sh) verbatim; see
+# clears. Re-exports xo_tmux_submit_core (bin/xo-tmux-lib.sh) verbatim; see
 # that file for the composer-verification contract and echoed verdicts.
-fm_backend_tmux_send_text_submit() {  # <target> <text> <retries> <enter-sleep> <settle>
-  fm_tmux_submit_core "$@"
+xo_backend_tmux_send_text_submit() {  # <target> <text> <retries> <enter-sleep> <settle>
+  xo_tmux_submit_core "$@"
 }
 
-# fm_backend_tmux_container_ensure: reuse the current tmux session when
-# firstmate itself runs inside tmux, else ensure a dedicated detached
-# "firstmate" session exists. Mirrors fm-spawn.sh's container-ensure block;
+# xo_backend_tmux_container_ensure: reuse the current tmux session when
+# xo itself runs inside tmux, else ensure a dedicated detached
+# "xo" session exists. Mirrors xo-spawn.sh's container-ensure block;
 # prints the resolved session name.
-fm_backend_tmux_container_ensure() {
+xo_backend_tmux_container_ensure() {
   if [ -n "${TMUX:-}" ]; then
     tmux display-message -p '#S'
   else
-    tmux has-session -t firstmate 2>/dev/null || tmux new-session -d -s firstmate
-    printf 'firstmate'
+    tmux has-session -t xo 2>/dev/null || tmux new-session -d -s xo
+    printf 'xo'
   fi
 }
 
-# fm_backend_tmux_create_task: create the task's window in <proj-abs>,
-# refusing an existing <window-name> in <session>. Mirrors fm-spawn.sh's
+# xo_backend_tmux_create_task: create the task's window in <proj-abs>,
+# refusing an existing <window-name> in <session>. Mirrors xo-spawn.sh's
 # duplicate-check-then-new-window sequence, including the exact error text
-# (session:window, matching how fm-spawn.sh composed its own $T). Prints the
+# (session:window, matching how xo-spawn.sh composed its own $T). Prints the
 # created window's stable window id on stdout for the caller to target.
 #
-# Robustness (fm-spawn tmux window handling under a non-default captain config):
+# Robustness (xo-spawn tmux window handling under a non-default captain config):
 #   - Capture a STABLE window id with -P -F '#{window_id}', and let tmux append
 #     at the next free index by targeting the session with a trailing colon
 #     ("$ses:"), so a non-default base-index (e.g. base-index 1) cannot collide.
 #   - PIN the window name by disabling automatic-rename and allow-rename on the
-#     new window: the captain's tmux may rename the window away from fm-<id> once
+#     new window: the captain's tmux may rename the window away from xo-<id> once
 #     treehouse cd's into the worktree, which would break name-based targeting.
 # The returned window id lets callers target the window even if its name is ever
 # lost, so worktree discovery cannot fall back to the active client's window.
-fm_backend_tmux_create_task() {  # <session> <window-name> <proj-abs> -> prints window id
+xo_backend_tmux_create_task() {  # <session> <window-name> <proj-abs> -> prints window id
   local ses=$1 wname=$2 proj_abs=$3 wid
   if tmux list-windows -t "$ses" -F '#{window_name}' | grep -qx "$wname"; then
     echo "error: window $ses:$wname already exists" >&2
@@ -98,33 +98,33 @@ fm_backend_tmux_create_task() {  # <session> <window-name> <proj-abs> -> prints 
   printf '%s\n' "$wid"
 }
 
-# fm_backend_tmux_current_path: the live pane's current working directory, or
-# empty on any tmux error. Mirrors fm-spawn.sh's worktree-discovery poll:
+# xo_backend_tmux_current_path: the live pane's current working directory, or
+# empty on any tmux error. Mirrors xo-spawn.sh's worktree-discovery poll:
 # `tmux display-message -p -t "$T" '#{pane_current_path}'`.
-fm_backend_tmux_current_path() {  # <target>
+xo_backend_tmux_current_path() {  # <target>
   tmux display-message -p -t "$1" '#{pane_current_path}' 2>/dev/null
 }
 
-# fm_backend_tmux_send_text_line: send one line of TEXT then Enter, with no
+# xo_backend_tmux_send_text_line: send one line of TEXT then Enter, with no
 # composer verification - used for the fixed spawn-time commands
 # (`treehouse get`, the GOTMPDIR export) that already ran this exact sequence
-# inline in fm-spawn.sh. Mirrors `tmux send-keys -t "$T" "<text>" Enter`.
-fm_backend_tmux_send_text_line() {  # <target> <text>
+# inline in xo-spawn.sh. Mirrors `tmux send-keys -t "$T" "<text>" Enter`.
+xo_backend_tmux_send_text_line() {  # <target> <text>
   tmux send-keys -t "$1" "$2" Enter
 }
 
-# fm_backend_tmux_send_literal: send TEXT as literal bytes with no
-# submission - the caller sends Enter separately (fm-spawn.sh's launch-command
+# xo_backend_tmux_send_literal: send TEXT as literal bytes with no
+# submission - the caller sends Enter separately (xo-spawn.sh's launch-command
 # send pauses between the literal send and Enter for the harness to settle).
 # Mirrors `tmux send-keys -t "$T" -l "<text>"`.
-fm_backend_tmux_send_literal() {  # <target> <text>
+xo_backend_tmux_send_literal() {  # <target> <text>
   tmux send-keys -t "$1" -l "$2"
 }
 
-# fm_backend_tmux_kill: remove one explicitly named task window, best-effort.
+# xo_backend_tmux_kill: remove one explicitly named task window, best-effort.
 # Empty, omitted, and malformed targets return nonzero before invoking tmux so
 # tmux can never interpret an empty target as the caller's current window.
-fm_backend_tmux_kill() {  # <target>
+xo_backend_tmux_kill() {  # <target>
   local target=${1:-} session window
   case "$target" in
     *:*)
@@ -139,7 +139,7 @@ fm_backend_tmux_kill() {  # <target>
   tmux kill-window -t "=$session:=$window" 2>/dev/null || true
 }
 
-# fm_backend_tmux_current_command: <target>'s live foreground process name -
+# xo_backend_tmux_current_command: <target>'s live foreground process name -
 # tmux's own `#{pane_current_command}`, already resolved from the pty's
 # foreground process group (verified empirically with real tmux 3.6a: a
 # harness invoked interactively stays the reported command even while it
@@ -148,16 +148,16 @@ fm_backend_tmux_kill() {  # <target>
 # a persisting parent script running `sleep` as a child reports the PARENT's
 # own name throughout; the value reverts to the shell's own name only once
 # the foreground command actually exits). Empty on any tmux error.
-fm_backend_tmux_current_command() {  # <target>
+xo_backend_tmux_current_command() {  # <target>
   tmux display-message -p -t "$1" '#{pane_current_command}' 2>/dev/null
 }
 
 # The process-name classifier every liveness signal below feeds
-# (fm_agent_process_classify_name) is owned by bin/fm-agent-process-lib.sh,
+# (xo_agent_process_classify_name) is owned by bin/xo-agent-process-lib.sh,
 # shared with the Herdr adapter so both backends mean the same thing by
 # `agent`, `shell`, and `other`.
 
-# fm_backend_tmux_foreground_comms: the kernel-side names of every process in
+# xo_backend_tmux_foreground_comms: the kernel-side names of every process in
 # <target>'s pane tty foreground process group, one full value per line.
 # Empty on any failure.
 #
@@ -178,11 +178,11 @@ fm_backend_tmux_current_command() {  # <target>
 # `pi-signed` wrapper and a `pi` engine in one group), so no launcher needs its
 # own special case here.
 #
-# Like fm_backend_tmux_current_command this is a RAW pane read: tmux answers an
+# Like xo_backend_tmux_current_command this is a RAW pane read: tmux answers an
 # absent target from the client's active window rather than failing, so callers
 # must confirm exact window membership first, exactly as the classifier below
 # does, or they will describe some other pane entirely.
-fm_backend_tmux_foreground_comms() {  # <target>
+xo_backend_tmux_foreground_comms() {  # <target>
   local target=$1 tty pid pgid tpgid comm
   tty=$(tmux display-message -p -t "$target" '#{pane_tty}' 2>/dev/null) || return 0
   [ -n "$tty" ] || return 0
@@ -196,8 +196,8 @@ fm_backend_tmux_foreground_comms() {  # <target>
 
 # The foreground group's full command lines. Needed because a node-bundle
 # harness carries its identity in argv[1] rather than in its command name or
-# argv[0]; bin/fm-gemini-lib.sh owns what counts as evidence inside one.
-fm_backend_tmux_foreground_args() {  # <target>
+# argv[0]; bin/xo-gemini-lib.sh owns what counts as evidence inside one.
+xo_backend_tmux_foreground_args() {  # <target>
   local target=$1 tty pid pgid tpgid comm args
   tty=$(tmux display-message -p -t "$target" '#{pane_tty}' 2>/dev/null) || return 0
   [ -n "$tty" ] || return 0
@@ -210,7 +210,7 @@ fm_backend_tmux_foreground_args() {  # <target>
       done
 }
 
-fm_backend_tmux_foreground_pids() {  # <target>
+xo_backend_tmux_foreground_pids() {  # <target>
   local target=$1 tty pid pgid tpgid comm
   tty=$(tmux display-message -p -t "$target" '#{pane_tty}' 2>/dev/null) || return 0
   [ -n "$tty" ] || return 0
@@ -222,7 +222,7 @@ fm_backend_tmux_foreground_pids() {  # <target>
       done
 }
 
-fm_backend_tmux_foreground_argv0s() {  # <target>
+xo_backend_tmux_foreground_argv0s() {  # <target>
   local target=$1 tty pid pgid tpgid comm args argv0
   tty=$(tmux display-message -p -t "$target" '#{pane_tty}' 2>/dev/null) || return 0
   [ -n "$tty" ] || return 0
@@ -237,8 +237,8 @@ fm_backend_tmux_foreground_argv0s() {  # <target>
       done
 }
 
-# fm_backend_tmux_agent_state: recovery-grade harness-agent state for one
-# recorded target. See bin/fm-backend.sh's fm_backend_agent_state for the
+# xo_backend_tmux_agent_state: recovery-grade harness-agent state for one
+# recorded target. See bin/xo-backend.sh's xo_backend_agent_state for the
 # shared state vocabulary and docs/tmux-backend.md "Agent liveness probe" for
 # the empirical basis. Tmux silently falls back to the active window when a
 # named target is absent, so the exact recorded window must appear in a
@@ -253,7 +253,7 @@ fm_backend_tmux_foreground_argv0s() {  # <target>
 # live worktree, while the foreground process group - when it is readable - is
 # authoritative for the negative verdicts, since it is the only source that can
 # distinguish a truly idle pane from a rewritten process title.
-fm_backend_tmux_agent_state() {  # <target>
+xo_backend_tmux_agent_state() {  # <target>
   local target=$1 comm session window windows inventory_status
   local foreground argv0s name pid fg_seen=0 fg_shell=0 fg_other=0
   case "$target" in
@@ -284,11 +284,11 @@ fm_backend_tmux_agent_state() {  # <target>
     return 0
   fi
 
-  foreground=$(fm_backend_tmux_foreground_comms "$target")
+  foreground=$(xo_backend_tmux_foreground_comms "$target")
   while IFS= read -r name; do
     [ -n "$name" ] || continue
     fg_seen=1
-    case "$(fm_agent_process_classify_name "$name")" in
+    case "$(xo_agent_process_classify_name "$name")" in
       agent) printf 'alive'; return 0 ;;
       shell) fg_shell=1 ;;
       *) fg_other=1 ;;
@@ -297,10 +297,10 @@ fm_backend_tmux_agent_state() {  # <target>
 $foreground
 EOF
 
-  argv0s=$(fm_backend_tmux_foreground_argv0s "$target")
+  argv0s=$(xo_backend_tmux_foreground_argv0s "$target")
   while IFS= read -r name; do
     [ -n "$name" ] || continue
-    if [ "$(fm_agent_process_classify_name '' "$name")" = agent ]; then
+    if [ "$(xo_agent_process_classify_name '' "$name")" = agent ]; then
       printf 'alive'
       return 0
     fi
@@ -313,31 +313,31 @@ EOF
   # cannot represent unambiguously.
   while IFS= read -r pid; do
     [ -n "$pid" ] || continue
-    if fm_gemini_pid_is_gemini "$pid"; then
+    if xo_gemini_pid_is_gemini "$pid"; then
       printf 'alive'
       return 0
     fi
   done <<EOF
-$(fm_backend_tmux_foreground_pids "$target")
+$(xo_backend_tmux_foreground_pids "$target")
 EOF
 
   # Fall back to flattened arguments on platforms without /proc. Positive
   # evidence only - a bare interpreter still reaches the negative verdicts.
   while IFS= read -r name; do
     [ -n "$name" ] || continue
-    if fm_gemini_args_are_gemini "$name"; then
+    if xo_gemini_args_are_gemini "$name"; then
       printf 'alive'
       return 0
     fi
   done <<EOF
-$(fm_backend_tmux_foreground_args "$target")
+$(xo_backend_tmux_foreground_args "$target")
 EOF
 
-  comm=$(fm_backend_tmux_current_command "$target") || {
+  comm=$(xo_backend_tmux_current_command "$target") || {
     printf 'unreadable'
     return 0
   }
-  if [ "$(fm_agent_process_classify_name "$comm")" = agent ]; then
+  if [ "$(xo_agent_process_classify_name "$comm")" = agent ]; then
     printf 'alive'
     return 0
   fi
@@ -356,16 +356,16 @@ EOF
   case "$comm" in
     '') printf 'unreadable'; return 0 ;;
   esac
-  case "$(fm_agent_process_classify_name "$comm")" in
+  case "$(xo_agent_process_classify_name "$comm")" in
     shell) printf 'dead' ;;
     *) printf 'ambiguous' ;;
   esac
 }
 
 # Backward-compatible three-state view for callers that only need a yes/no
-# agent verdict. The detailed state contract is owned by fm_backend_agent_state.
-fm_backend_tmux_agent_alive() {  # <target>
-  case "$(fm_backend_tmux_agent_state "$1")" in
+# agent verdict. The detailed state contract is owned by xo_backend_agent_state.
+xo_backend_tmux_agent_alive() {  # <target>
+  case "$(xo_backend_tmux_agent_state "$1")" in
     alive) printf 'alive' ;;
     dead|missing) printf 'dead' ;;
     *) printf 'unknown' ;;

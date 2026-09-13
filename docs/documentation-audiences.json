@@ -36,7 +36,7 @@
   ],
   "requiredOwnerPointers": [
     {
-      "source": "skills/playbooks/firstmate-coding-guidelines/SKILL.md",
+      "source": "skills/playbooks/xo-coding-guidelines/SKILL.md",
       "target": "docs/documentation-audiences.md"
     },
     {
@@ -166,15 +166,15 @@
       "audience": "agent-runtime"
     },
     {
-      "path": "skills/in-progress/firstmate-codexapp/SKILL.md",
+      "path": "skills/in-progress/xo-codexapp/SKILL.md",
       "audience": "agent-runtime"
     },
     {
-      "path": "skills/playbooks/firstmate-coding-guidelines/SKILL.md",
+      "path": "skills/playbooks/xo-coding-guidelines/SKILL.md",
       "audience": "agent-runtime"
     },
     {
-      "path": "skills/in-progress/firstmate-orca/SKILL.md",
+      "path": "skills/in-progress/xo-orca/SKILL.md",
       "audience": "agent-runtime"
     },
     {
@@ -270,7 +270,7 @@
       "audience": "agent-runtime"
     },
     {
-      "path": "skills/orders/updatefirstmate/SKILL.md",
+      "path": "skills/orders/updatexo/SKILL.md",
       "audience": "agent-runtime"
     },
     {
@@ -358,7 +358,7 @@
       "audience": "operator-example"
     },
     {
-      "path": "docs/examples/process-event-extension/firstmate-extension.json",
+      "path": "docs/examples/process-event-extension/xo-extension.json",
       "audience": "operator-example"
     },
     {
@@ -370,11 +370,11 @@
       "audience": "operator-example"
     },
     {
-      "path": "docs/fm-test-isolation-proof.md",
+      "path": "docs/xo-test-isolation-proof.md",
       "audience": "maintainer-verification"
     },
     {
-      "path": "docs/fm-test-portable-shards.md",
+      "path": "docs/xo-test-portable-shards.md",
       "audience": "maintainer-verification"
     },
     {

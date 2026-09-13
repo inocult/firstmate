@@ -1,7 +1,7 @@
 # The spoken interface
 
-Talk to a voice agent that sits in front of the first mate. It answers questions
-about what is happening from the first mate's own records, and when you ask for
+Talk to a voice agent that sits in front of the XO. It answers questions
+about what is happening from the XO's own records, and when you ask for
 real work it says so out loud and queues the request rather than pretending to
 do it.
 
@@ -19,19 +19,19 @@ laptop, which is the whole reason for this shape.
 ```
 laptop                          this desktop                      AWS
 ------                          ------------                      ---
-microphone --> fm-voice-client.py --(ssh)--> fm-voice-relay.py --> Nova Sonic 2
+microphone --> xo-voice-client.py --(ssh)--> xo-voice-relay.py --> Nova Sonic 2
 speaker    <-------------------------------------------------      (your region)
                                         |
-                                        +--> the first mate's records (read)
-                                        +--> fm-inbox.sh note (queue real work)
+                                        +--> the XO's records (read)
+                                        +--> xo-inbox.sh note (queue real work)
 ```
 
 The two ends share one bidirectional byte stream over an SSH exec channel, so
-audio and control travel together and need framing. `bin/fm_voice_frame.py` is
+audio and control travel together and need framing. `bin/xo_voice_frame.py` is
 the owner of that format and is the only file both machines run.
 
 The relay reads records and queues work. It never changes a project, and the
-queueing half is `bin/fm-inbox.sh note`, the same surface the captain's own
+queueing half is `bin/xo-inbox.sh note`, the same surface the captain's own
 out-of-band capture already uses, rather than a second queue.
 
 ## What it costs in time
@@ -57,7 +57,7 @@ The first pass, on the relay as first written, put it 0.22 seconds behind the co
 It was none of them, and the difference is worth keeping, because a wrong number invites a re-measurement while a wrong cause invites a fix to the wrong part of the relay.
 Each relay run is six turns in one session, so a per-turn defect shows up as a step: that pass stepped from 1.229 on turn one to a 1.447 median across turns two to six, and the same step appeared independently on the talk-end-to-tool-request mark, 0.599 rising to 0.730.
 The re-measured passes are flat, stepping 0.009 and 0.021.
-The 0.22 seconds was the relay resolving AWS credentials again for every turn's session, which review found and fixed: `Credentials` in `bin/fm-voice-relay.py` resolves once, and every later session reuses that answer, so a reconnect costs a reconnect.
+The 0.22 seconds was the relay resolving AWS credentials again for every turn's session, which review found and fixed: `Credentials` in `bin/xo-voice-relay.py` resolves once, and every later session reuses that answer, so a reconnect costs a reconnect.
 This is the second time credential resolution has dominated a voice path's latency on a host like this one, because earlier prototype work measured the local credential helper at about a second per call and found that fixed per-call overhead exceeded the model's own cost.
 So it is the first thing to suspect when a spoken path is slower than the model, and it is worth checking that anything new doing per-turn work resolves credentials once rather than once per session.
 
@@ -85,8 +85,8 @@ CLI cannot drive and `boto3` cannot either. It needs the experimental SDK, in a
 virtual environment of its own:
 
 ```
-python3 -m venv ~/.fm-voice-venv
-~/.fm-voice-venv/bin/pip install aws-sdk-bedrock-runtime
+python3 -m venv ~/.xo-voice-venv
+~/.xo-voice-venv/bin/pip install aws-sdk-bedrock-runtime
 ```
 
 Then tell this home which account and model to use.
@@ -95,10 +95,10 @@ Each value is one line in your gitignored `config/` directory, and each has an e
 
 | File | Environment | Holds |
 | --- | --- | --- |
-| `config/voice-region` | `FM_VOICE_REGION` | The Bedrock region to open the session in, required. |
-| `config/voice-model` | `FM_VOICE_MODEL` | The Nova Sonic model id, required. |
-| `config/voice-profile` | `FM_VOICE_PROFILE` | The AWS profile to export credentials from, optional: with no profile the relay uses only credentials that are already in its environment. |
-| `config/voice-id` | `FM_VOICE_ID` | The output voice, optional and `matthew` when unset. |
+| `config/voice-region` | `XO_VOICE_REGION` | The Bedrock region to open the session in, required. |
+| `config/voice-model` | `XO_VOICE_MODEL` | The Nova Sonic model id, required. |
+| `config/voice-profile` | `XO_VOICE_PROFILE` | The AWS profile to export credentials from, optional: with no profile the relay uses only credentials that are already in its environment. |
+| `config/voice-id` | `XO_VOICE_ID` | The output voice, optional and `matthew` when unset. |
 
 A missing required value refuses with the path to write, so an unconfigured home cannot start the relay by accident, and that configuration is the whole opt-in.
 `docs/configuration.md` is the registry for these files.
@@ -106,8 +106,8 @@ A missing required value refuses with the path to write, so an unconfigured home
 Check it end to end without a microphone, using a recorded question:
 
 ```
-cd <your firstmate home>
-~/.fm-voice-venv/bin/python bin/fm-voice-relay.py --self-test <clip.pcm>
+cd <your xo home>
+~/.xo-voice-venv/bin/python bin/xo-voice-relay.py --self-test <clip.pcm>
 ```
 
 The clip is headerless 16000 Hz mono signed 16-bit little-endian PCM and must end
@@ -129,8 +129,8 @@ Covering that arithmetic says nothing about how a real output device behaves.
 Copy the two files the laptop needs, and install the one dependency:
 
 ```
-scp <desktop>:<firstmate home>/bin/fm-voice-client.py .
-scp <desktop>:<firstmate home>/bin/fm_voice_frame.py .
+scp <desktop>:<xo home>/bin/xo-voice-client.py .
+scp <desktop>:<xo home>/bin/xo_voice_frame.py .
 python3 -m pip install sounddevice
 ```
 
@@ -140,12 +140,12 @@ will ask for microphone permission for whichever terminal you run this from, onc
 Then talk:
 
 ```
-python3 fm-voice-client.py --host <desktop> \
-  --relay <firstmate home>/bin/fm-voice-relay.py \
-  --relay-python ~/.fm-voice-venv/bin/python
+python3 xo-voice-client.py --host <desktop> \
+  --relay <xo home>/bin/xo-voice-relay.py \
+  --relay-python ~/.xo-voice-venv/bin/python
 ```
 
-The client has no built-in idea of where the relay lives on your desktop, so `--relay` is required and `FM_VOICE_RELAY` sets it once for a shell.
+The client has no built-in idea of where the relay lives on your desktop, so `--relay` is required and `XO_VOICE_RELAY` sets it once for a shell.
 
 Press Enter to start talking, press Enter again when you have finished. It prints
 the timings for each turn as JSON on stdout and everything human on stderr, so
@@ -183,7 +183,7 @@ number and a state word, never anything written in a record.
 Verified against the captain's live records on 2026-08-21: every occurrence of
 the one customer identifier those records contain sits in finished work or a note
 body, so nothing a status answer can say names a customer.
-`tests/fm-voice-relay.test.sh` holds that boundary as an executable check, so
+`tests/xo-voice-relay.test.sh` holds that boundary as an executable check, so
 widening the reader later fails a test instead of quietly widening what is sent.
 
 Two settings control it, both optional and both in `config/`:
@@ -269,7 +269,7 @@ these are the shapes.
   second question in a session is treated as an interruption, and an interrupted
   turn that reads the records produces no answer at all.
 - **Remembering the last question.** See above.
-- **Doing any project work.** Real work is queued for the first mate and the
+- **Doing any project work.** Real work is queued for the XO and the
   agent says so out loud. It has no tool that changes a project.
 
 ## Cost
@@ -287,9 +287,9 @@ sending every row.
 
 | Concern | Owner |
 | --- | --- |
-| Wire format between the two machines | `bin/fm_voice_frame.py` |
-| The relay, the model session, the tools | `bin/fm-voice-relay.py` |
-| The laptop end, capture and playback | `bin/fm-voice-client.py` |
-| What may be read, and queueing real work | `bin/fm_voice_records.py` |
-| The queue the handover writes to | `bin/fm-inbox.sh` |
-| The boundary as an executable check | `tests/fm-voice-relay.test.sh` |
+| Wire format between the two machines | `bin/xo_voice_frame.py` |
+| The relay, the model session, the tools | `bin/xo-voice-relay.py` |
+| The laptop end, capture and playback | `bin/xo-voice-client.py` |
+| What may be read, and queueing real work | `bin/xo_voice_records.py` |
+| The queue the handover writes to | `bin/xo-inbox.sh` |
+| The boundary as an executable check | `tests/xo-voice-relay.test.sh` |

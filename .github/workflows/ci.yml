@@ -19,9 +19,9 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install -r bin/requirements-plane.txt
-      - run: bin/fm-test-run.sh tests/fm-plane.test.sh
+      - run: bin/xo-test-run.sh tests/xo-plane.test.sh
         env:
-          FM_PLANE_PYTHON: python
+          XO_PLANE_PYTHON: python
 
   lint:
     name: Lint
@@ -31,18 +31,18 @@ jobs:
       - name: Install pinned ShellCheck
         run: |
           set -eu
-          bin/fm-install-shellcheck.sh "$RUNNER_TEMP/bin"
+          bin/xo-install-shellcheck.sh "$RUNNER_TEMP/bin"
           echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
       - name: Install pinned actionlint
         run: |
           set -eu
-          bin/fm-install-actionlint.sh "$RUNNER_TEMP/bin"
+          bin/xo-install-actionlint.sh "$RUNNER_TEMP/bin"
           echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
       # Single owner of the lint definition (shell file set, config, version,
       # and GitHub workflow lint). Do not re-spell the checks here; keep CI
       # and the pre-push gate on this script so a self-broken ci.yml still
       # fails locally before merge.
-      - run: bin/fm-lint.sh
+      - run: bin/xo-lint.sh
 
   # Deterministic proof that portable parallel shards + portable serial + Herdr
   # equal the complete tests/*.test.sh inventory with no missing or duplicates,
@@ -53,19 +53,19 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Prove complete regression partition
-        run: bin/fm-test-run.sh --check-coverage
+        run: bin/xo-test-run.sh --check-coverage
 
   # Two duration-balanced portable parallel shards of the Phase 2 proven-isolated
-  # set only. Composition owner: bin/fm-test-run.sh (docs/fm-test-portable-shards.md).
+  # set only. Composition owner: bin/xo-test-run.sh (docs/xo-test-portable-shards.md).
   tests-portable-parallel-1:
     name: Behavior portable parallel 1
     runs-on: ubuntu-latest
     # This cap is intended as a hang tripwire, but the previous lane 1 reached
     # it; the former "~1 min of serial sum" estimate no longer applies.
-    # Compare it with the derived hints from fm-test-run.sh --check-coverage
+    # Compare it with the derived hints from xo-test-run.sh --check-coverage
     # and completed job timings, allowing for setup and runner-speed spread.
     # A packed hint sum is not a measured job wall time or proof of headroom.
-    # Evidence and refresh procedure: docs/fm-test-portable-shards.md.
+    # Evidence and refresh procedure: docs/xo-test-portable-shards.md.
     # Changes to this cap or the lane count require a separate scope decision.
     timeout-minutes: 10
     steps:
@@ -75,12 +75,12 @@ jobs:
       - name: Install pinned ShellCheck
         run: |
           set -eu
-          bin/fm-install-shellcheck.sh "$RUNNER_TEMP/bin"
+          bin/xo-install-shellcheck.sh "$RUNNER_TEMP/bin"
           echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
       - name: Install pinned actionlint
         run: |
           set -eu
-          bin/fm-install-actionlint.sh "$RUNNER_TEMP/bin"
+          bin/xo-install-actionlint.sh "$RUNNER_TEMP/bin"
           echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
       - name: Install tasks-axi
         run: |
@@ -95,16 +95,16 @@ jobs:
       - name: Run portable parallel shard 1
         run: |
           set -eu
-          mkdir -p "$RUNNER_TEMP/fm-test"
-          bin/fm-test-run.sh --lane portable-parallel-1 \
+          mkdir -p "$RUNNER_TEMP/xo-test"
+          bin/xo-test-run.sh --lane portable-parallel-1 \
             --fail-on-gate-skip 'Pi extension typecheck prerequisite not found' \
-            --json "$RUNNER_TEMP/fm-test/fm-test-timing-portable-parallel-1.json"
+            --json "$RUNNER_TEMP/xo-test/xo-test-timing-portable-parallel-1.json"
       - name: Upload shard 1 timing artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: fm-test-timing-portable-parallel-1
-          path: ${{ runner.temp }}/fm-test/fm-test-timing-portable-parallel-1.json
+          name: xo-test-timing-portable-parallel-1
+          path: ${{ runner.temp }}/xo-test/xo-test-timing-portable-parallel-1.json
           if-no-files-found: warn
 
   tests-portable-parallel-2:
@@ -119,12 +119,12 @@ jobs:
       - name: Install pinned ShellCheck
         run: |
           set -eu
-          bin/fm-install-shellcheck.sh "$RUNNER_TEMP/bin"
+          bin/xo-install-shellcheck.sh "$RUNNER_TEMP/bin"
           echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
       - name: Install pinned actionlint
         run: |
           set -eu
-          bin/fm-install-actionlint.sh "$RUNNER_TEMP/bin"
+          bin/xo-install-actionlint.sh "$RUNNER_TEMP/bin"
           echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
       - name: Install tasks-axi
         run: |
@@ -134,23 +134,23 @@ jobs:
       - name: Run portable parallel shard 2
         run: |
           set -eu
-          mkdir -p "$RUNNER_TEMP/fm-test"
-          bin/fm-test-run.sh --lane portable-parallel-2 \
-            --json "$RUNNER_TEMP/fm-test/fm-test-timing-portable-parallel-2.json"
+          mkdir -p "$RUNNER_TEMP/xo-test"
+          bin/xo-test-run.sh --lane portable-parallel-2 \
+            --json "$RUNNER_TEMP/xo-test/xo-test-timing-portable-parallel-2.json"
       - name: Upload shard 2 timing artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: fm-test-timing-portable-parallel-2
-          path: ${{ runner.temp }}/fm-test/fm-test-timing-portable-parallel-2.json
+          name: xo-test-timing-portable-parallel-2
+          path: ${{ runner.temp }}/xo-test/xo-test-timing-portable-parallel-2.json
           if-no-files-found: warn
 
   # Required portable serial remainder: watcher, lock, AFK, tmux, daemon,
   # ambiguous, and other stateful tests. Real Herdr stays in tests-herdr.
   # Split across separate runners so no two of these stateful scripts ever share
   # a machine: each shard is still strictly serial in itself. Shard membership
-  # and the shard count both belong to bin/fm-test-run.sh, which refuses a lane
-  # whose "ofN" disagrees with it (docs/fm-test-portable-shards.md).
+  # and the shard count both belong to bin/xo-test-run.sh, which refuses a lane
+  # whose "ofN" disagrees with it (docs/xo-test-portable-shards.md).
   tests-portable-serial:
     name: Behavior portable serial ${{ matrix.shard }}
     runs-on: ubuntu-latest
@@ -170,12 +170,12 @@ jobs:
       - name: Install pinned ShellCheck
         run: |
           set -eu
-          bin/fm-install-shellcheck.sh "$RUNNER_TEMP/bin"
+          bin/xo-install-shellcheck.sh "$RUNNER_TEMP/bin"
           echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
       - name: Install pinned actionlint
         run: |
           set -eu
-          bin/fm-install-actionlint.sh "$RUNNER_TEMP/bin"
+          bin/xo-install-actionlint.sh "$RUNNER_TEMP/bin"
           echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
       - name: Require tmux for e2e tests
         run: |
@@ -201,24 +201,24 @@ jobs:
       - name: Run portable serial shard ${{ matrix.shard }}
         env:
           # job-total rather than a literal, so shrinking or growing the matrix
-          # without matching bin/fm-test-run.sh is refused instead of quietly
+          # without matching bin/xo-test-run.sh is refused instead of quietly
           # leaving a shard of the required lane unrun.
-          FM_SERIAL_LANE: portable-serial-${{ matrix.shard }}of${{ strategy.job-total }}
-          FM_SERIAL_SHARD: ${{ matrix.shard }}
+          XO_SERIAL_LANE: portable-serial-${{ matrix.shard }}of${{ strategy.job-total }}
+          XO_SERIAL_SHARD: ${{ matrix.shard }}
         run: |
           set -eu
-          mkdir -p "$RUNNER_TEMP/fm-test"
+          mkdir -p "$RUNNER_TEMP/xo-test"
           # The Pi package is installed above and CI provides npm and tsc, so
           # any missing typecheck prerequisite is a broken lane, not a valid skip.
-          bin/fm-test-run.sh --lane "$FM_SERIAL_LANE" \
+          bin/xo-test-run.sh --lane "$XO_SERIAL_LANE" \
             --fail-on-gate-skip 'Pi extension typecheck prerequisite not found' \
-            --json "$RUNNER_TEMP/fm-test/fm-test-timing-portable-serial-${FM_SERIAL_SHARD}.json"
+            --json "$RUNNER_TEMP/xo-test/xo-test-timing-portable-serial-${XO_SERIAL_SHARD}.json"
       - name: Upload portable serial shard ${{ matrix.shard }} timing artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: fm-test-timing-portable-serial-${{ matrix.shard }}
-          path: ${{ runner.temp }}/fm-test/fm-test-timing-portable-serial-${{ matrix.shard }}.json
+          name: xo-test-timing-portable-serial-${{ matrix.shard }}
+          path: ${{ runner.temp }}/xo-test/xo-test-timing-portable-serial-${{ matrix.shard }}.json
           if-no-files-found: warn
 
   # Required real-Herdr lane: pinned install, serial real-herdr-gated family,
@@ -231,7 +231,7 @@ jobs:
     # Healthy runs finish around 7 minutes. This job cap is a last-resort hang
     # tripwire, not the expected end of the lane. The family-run step owns the
     # tighter bound so a wedged suite fails fast with always() cleanup and
-    # timing artifacts still uploaded (docs/fm-test-portable-shards.md).
+    # timing artifacts still uploaded (docs/xo-test-portable-shards.md).
     timeout-minutes: 75
     steps:
       - uses: actions/checkout@v6
@@ -249,14 +249,14 @@ jobs:
       - name: Install pinned Herdr
         run: |
           set -eu
-          bin/fm-install-herdr.sh "$RUNNER_TEMP/bin"
+          bin/xo-install-herdr.sh "$RUNNER_TEMP/bin"
           echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
       - name: Install pinned Treehouse
         run: |
           set -eu
           # Several real-herdr-gated E2E scripts require treehouse for spawn
           # worktree acquisition (presentation, workspace-per-home, autodetect).
-          bin/fm-install-treehouse.sh "$RUNNER_TEMP/bin"
+          bin/xo-install-treehouse.sh "$RUNNER_TEMP/bin"
           echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
       - name: Assert Herdr pin and protocol floor
         run: |
@@ -285,10 +285,10 @@ jobs:
           set -eu
           # Lab provision requires exactly one running default session so the
           # default-session tripwire can arm. Start it headless; never use it
-          # for lab work (tests still refuse default and use fm-lab-* only).
-          mkdir -p "$RUNNER_TEMP/fm-herdr"
-          nohup herdr server >"$RUNNER_TEMP/fm-herdr/default-server.log" 2>&1 &
-          echo $! >"$RUNNER_TEMP/fm-herdr/default-server.pid"
+          # for lab work (tests still refuse default and use xo-lab-* only).
+          mkdir -p "$RUNNER_TEMP/xo-herdr"
+          nohup herdr server >"$RUNNER_TEMP/xo-herdr/default-server.log" 2>&1 &
+          echo $! >"$RUNNER_TEMP/xo-herdr/default-server.pid"
           attempt=0
           while [ "$attempt" -lt 150 ]; do
             running=$(herdr status --json 2>/dev/null | jq -r '.server.running // false' || echo false)
@@ -304,30 +304,30 @@ jobs:
             attempt=$((attempt + 1))
           done
           echo "::error::default Herdr server did not become ready"
-          cat "$RUNNER_TEMP/fm-herdr/default-server.log" || true
+          cat "$RUNNER_TEMP/xo-herdr/default-server.log" || true
           exit 1
       - name: Snapshot pre-suite Herdr sessions
         run: |
           set -eu
-          mkdir -p "$RUNNER_TEMP/fm-herdr"
-          bin/fm-herdr-ci-cleanup.sh snapshot "$RUNNER_TEMP/fm-herdr/sessions-before.json"
+          mkdir -p "$RUNNER_TEMP/xo-herdr"
+          bin/xo-herdr-ci-cleanup.sh snapshot "$RUNNER_TEMP/xo-herdr/sessions-before.json"
       - name: Run real-Herdr family (serial, required)
         # Comfortably above the ~7 min healthy wall and far below the 75 min
         # job backstop. A hang must fail this step so cleanup still runs.
         timeout-minutes: 20
         run: |
           set -eu
-          mkdir -p "$RUNNER_TEMP/fm-test"
+          mkdir -p "$RUNNER_TEMP/xo-test"
           # Serial only. Fail if any script reports herdr not found. Live
           # harness credential tests stay outside this family (opt-in env only).
-          bin/fm-test-run.sh --family real-herdr-gated \
+          bin/xo-test-run.sh --family real-herdr-gated \
             --fail-on-gate-skip 'herdr not found' \
-            --json "$RUNNER_TEMP/fm-test/fm-test-timing-herdr.json"
+            --json "$RUNNER_TEMP/xo-test/xo-test-timing-herdr.json"
       - name: Cleanup job-owned Herdr lab sessions
         if: always()
         run: |
           set -eu
-          bin/fm-herdr-ci-cleanup.sh teardown "$RUNNER_TEMP/fm-herdr/sessions-before.json" || {
+          bin/xo-herdr-ci-cleanup.sh teardown "$RUNNER_TEMP/xo-herdr/sessions-before.json" || {
             echo "::warning::lab session cleanup reported a problem; see logs"
             # Surface diagnostics without weakening the suite result above.
             herdr session list --json || true
@@ -337,11 +337,11 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: fm-test-timing-herdr
+          name: xo-test-timing-herdr
           path: |
-            ${{ runner.temp }}/fm-test/fm-test-timing-herdr.json
-            ${{ runner.temp }}/fm-herdr/sessions-before.json
-            ${{ runner.temp }}/fm-herdr/default-server.log
+            ${{ runner.temp }}/xo-test/xo-test-timing-herdr.json
+            ${{ runner.temp }}/xo-herdr/sessions-before.json
+            ${{ runner.temp }}/xo-herdr/default-server.log
           if-no-files-found: warn
 
   # Aggregate per-lane timing into one summary artifact for critical-path review.
@@ -359,28 +359,28 @@ jobs:
       - name: Download lane timing artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: fm-test-timing-*
-          path: ${{ runner.temp }}/fm-test-aggregate
+          pattern: xo-test-timing-*
+          path: ${{ runner.temp }}/xo-test-aggregate
           merge-multiple: true
       - name: Build aggregate timing summary
         run: |
           set -eu
-          mkdir -p "$RUNNER_TEMP/fm-test"
+          mkdir -p "$RUNNER_TEMP/xo-test"
           shopt -s nullglob
-          inputs=("$RUNNER_TEMP"/fm-test-aggregate/fm-test-timing-*.json)
+          inputs=("$RUNNER_TEMP"/xo-test-aggregate/xo-test-timing-*.json)
           if [ "${#inputs[@]}" -eq 0 ]; then
             echo "::warning::no per-lane timing JSON found to aggregate"
             exit 0
           fi
-          bin/fm-test-run.sh --aggregate-json \
-            "$RUNNER_TEMP/fm-test/fm-test-timing-aggregate.json" \
+          bin/xo-test-run.sh --aggregate-json \
+            "$RUNNER_TEMP/xo-test/xo-test-timing-aggregate.json" \
             "${inputs[@]}"
       - name: Upload aggregate timing artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: fm-test-timing-aggregate
-          path: ${{ runner.temp }}/fm-test/fm-test-timing-aggregate.json
+          name: xo-test-timing-aggregate
+          path: ${{ runner.temp }}/xo-test/xo-test-timing-aggregate.json
           if-no-files-found: warn
 
   macos-stock-bash:
@@ -402,8 +402,8 @@ jobs:
           /bin/bash --version | head -1
           command -v jq >/dev/null || { echo "::error::jq is required"; exit 1; }
 
-          shell_inventory="$RUNNER_TEMP/fm-shell-inventory"
-          bin/fm-lint.sh --list-files > "$shell_inventory"
+          shell_inventory="$RUNNER_TEMP/xo-shell-inventory"
+          bin/xo-lint.sh --list-files > "$shell_inventory"
           parse_fail=0
           while IFS= read -r f; do
             /bin/bash -n "$f" || { echo "::error::stock macOS Bash 3.2 failed to parse $f"; parse_fail=1; }
@@ -416,7 +416,7 @@ jobs:
           export PATH
           command -v tasks-axi >/dev/null || { echo "::error::tasks-axi is required for the stock Bash regressions"; exit 1; }
 
-          snapshot_output=$(/bin/bash tests/fm-fleet-snapshot-view.test.sh)
+          snapshot_output=$(/bin/bash tests/xo-fleet-snapshot-view.test.sh)
           printf '%s\n' "$snapshot_output"
           snapshot_count=$(printf '%s\n' "$snapshot_output" | grep -c '^ok - ')
           [ "$snapshot_count" -eq 18 ] || {
@@ -424,7 +424,7 @@ jobs:
             exit 1
           }
 
-          bearings_output=$(/bin/bash tests/fm-bearings-snapshot.test.sh)
+          bearings_output=$(/bin/bash tests/xo-bearings-snapshot.test.sh)
           printf '%s\n' "$bearings_output"
           bearings_count=$(printf '%s\n' "$bearings_output" | grep -c '^ok - ')
           [ "$bearings_count" -eq 56 ] || {
@@ -434,8 +434,8 @@ jobs:
 
           # The full public-followup suite is not a stock-bash snapshot; run only
           # the empty-lock register regression under real /bin/bash 3.2.
-          pf_output=$(FM_TEST_ONLY=test_first_register_succeeds_with_empty_lock_list_under_bash32 \
-            /bin/bash tests/fm-public-followup.test.sh)
+          pf_output=$(XO_TEST_ONLY=test_first_register_succeeds_with_empty_lock_list_under_bash32 \
+            /bin/bash tests/xo-public-followup.test.sh)
           printf '%s\n' "$pf_output"
           pf_count=$(printf '%s\n' "$pf_output" | grep -c '^ok - ')
           [ "$pf_count" -eq 1 ] || {

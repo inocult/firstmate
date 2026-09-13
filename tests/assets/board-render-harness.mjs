@@ -84,8 +84,8 @@ new Function(script)();
 
 const badgesOf = (row) =>
   row.children
-    .filter((c) => c.className.includes("fm-badge"))
-    .map((c) => ({ tone: c.className.replace(/.*fm-badge--/, "").trim(), text: c.textContent }));
+    .filter((c) => c.className.includes("xo-badge"))
+    .map((c) => ({ tone: c.className.replace(/.*xo-badge--/, "").trim(), text: c.textContent }));
 
 const strip = byId.get("bb-stats") || new Node("div");
 const stats = strip.children.map((t) => ({
