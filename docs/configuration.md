@@ -318,7 +318,7 @@ It names the old identifiers on purpose; the only other old-name mentions in the
 Migrate with no work under way, because live task records hold the old home path and the old hook paths and are not rewritten by this procedure.
 
 1. Stop the session, including every live secondmate session, so no watcher or hook is executing from the old paths while they move.
-2. Rename the home directory, for example `mv ~/firstmate ~/xo`, and rename each secondmate home the same way.
+2. Rename the home directory, for example `mv ~/firstmate ~/xo`, and rename each secondmate home the same way; for each remote secondmate whose code root or home moved, update its route record in the gitignored `data/secondmates.md` so the recorded `root:` and `home:` paths name the renamed locations before any remote command runs, because `bin/xo-on.sh` resolves every remote command through those recorded paths and the rename does not rewrite that private file.
 3. Replace every `FM_`-prefixed variable the launching shell or service exports with its `XO_` spelling, starting with `FM_HOME`, which becomes `XO_HOME`.
 4. In the home's gitignored `.env`, rename the Relay key `FMX_PAIRING_TOKEN` to `XOX_PAIRING_TOKEN`, and rename any other `FMX_`-prefixed key there or in the launching shell to its `XOX_` spelling, because bootstrap reads only the new key and treats a home without it as Relay off.
 5. In each secondmate home, rename the private `.fm-secondmate-home` and `.fm-secondmate-parent` markers to `.xo-secondmate-home` and `.xo-secondmate-parent`, because the runtime recognizes a secondmate home by the new marker names.
