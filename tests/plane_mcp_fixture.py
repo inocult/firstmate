@@ -4,24 +4,38 @@ from mcp.server.fastmcp import FastMCP
 server = FastMCP("plane-test")
 labels = [{"id": "other", "name": "other"}, {"id": "label-ready", "name": "ready-for-agent"}]
 ticket = {"id": "item-1", "name": "Add export", "description_stripped": "Export all rows", "state": "ready", "labels": ["label-ready"]}
+tickets = {ticket["id"]: ticket}
 
 
 @server.tool()
 def workitem(action: str, project_id: str = "", workitem_id: str = "", state: str = "",
+             name: str = "", description: str = "", labels: list[str] | None = None,
              cursor: str = "", per_page: int = 50) -> dict:
+    if action == "create":
+        # Models the session connector filing a ticket: state and labels are set at creation.
+        item = {"id": f"item-{len(tickets) + 1}", "sequence_id": len(tickets) + 1, "name": name,
+                "description_stripped": description, "state": state, "labels": list(labels or [])}
+        tickets[item["id"]] = item
+        return item
     if action == "retrieve":
-        return ticket
+        return tickets[workitem_id]
     if action == "update":
-        ticket["state"] = state
-        return ticket
+        item = tickets[workitem_id]
+        if state:
+            item["state"] = state
+        if labels is not None:
+            item["labels"] = list(labels)
+        return item
     if action == "list":
-        return {"results": [ticket], "next_cursor": "page-2", "next_page_results": True}
+        return {"results": list(tickets.values()), "next_cursor": "page-2", "next_page_results": True}
     raise ValueError("unsupported operation")
 
 
 @server.tool()
 def state(action: str, project_id: str = "") -> list[dict]:
-    return [{"id": "ready", "name": "Backlog", "group": "backlog"}]
+    return [{"id": "ready", "name": "Backlog", "group": "backlog"},
+            {"id": "active", "name": "In Progress", "group": "started"},
+            {"id": "blocked", "name": "Blocked", "group": "started"}]
 
 
 @server.tool()

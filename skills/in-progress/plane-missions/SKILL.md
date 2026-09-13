@@ -27,6 +27,7 @@ Control files three kinds of work, and the kind decides the state the ticket is 
 Work filed for the planning team to assess is the only kind filed in a pickup state; it keeps `needs-triage`, Control never dispatches it, and the planning team's readiness label is the only thing that makes it claimable, after which it is picked up under the next section like any other ticket.
 Work Control commissions and can dispatch now is filed directly in the implementing lifecycle state, as the shared record of that work and not as something for pickup.
 Work Control commissions but must queue behind a dependency or time gate is filed in the Blocked state the binding document records, then moved to implementing at dispatch.
+When filing in the Blocked state, Control leaves through the session connector the comment that state's own convention requires, naming the dependency or time gate the work waits on, so colleagues reading the project see why it is blocked.
 At landing Control moves its commissioned ticket to done; every such move goes through the surface the binding document records for moving a Control-filed ticket, and the ticket never carries the readiness label.
 The pickup predicate is false from filing onward on both the label and the state, so Overwatch never claims Control-commissioned work; a ticket that can be picked up twice is worse than no ticket.
 

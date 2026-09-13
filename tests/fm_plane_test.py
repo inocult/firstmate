@@ -12,6 +12,7 @@ import sys
 import tempfile
 import threading
 import unittest
+import uuid
 from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import patch
 from argparse import Namespace
@@ -20,7 +21,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "bin"))
 from fm_plane.registry import AdapterError, Registry
 from fm_plane.mcp_client import Plane, rows
-from fm_plane.cli import Missions, bind_task, check_task, ensure_label, key_for, load_config, main, run
+from fm_plane.cli import Missions, bind_task, check_task, ensure_label, key_for, load_config, main, run, state_id
 
 
 class FakePlane:
@@ -443,6 +444,121 @@ class AdapterTests(unittest.TestCase):
         doctor = asyncio.run(run(Namespace(command="doctor"), self.config))
         self.assertEqual(doctor["suggested_ready_label_id"], "label-ready")
         self.assertEqual(doctor["suggested_pickup_state_ids"], ["ready"])
+
+    def registry_for(self, item):
+        registry = Registry(self.remote, key_for(self.config, item))
+        self.addCleanup(registry.close)
+        return registry
+
+    async def file_ticket(self, plane, state, labels):
+        """Model Control filing a ticket through the session connector; the adapter never creates one."""
+        filed = await plane.call("workitem", "create", project_id="project-1", name="Filed by Control",
+                                 description="Acceptance: the filed work lands", state=state, labels=labels)
+        return filed["id"]
+
+    async def refused(self, service, item, request="filed-request"):
+        with self.assertRaises(AdapterError):
+            await service.claim(item, request)
+        self.assertIsNone(service.registry.read()[1])
+        return state_id(await service.retrieve(item))
+
+    @unittest.skipUnless(importlib.util.find_spec("mcp"), "optional MCP SDK missing; CI SDK lane is required")
+    def test_a_ticket_filed_for_the_planning_team_is_claimable_only_once_they_apply_the_readiness_label(self):
+        async def exercise():
+            async with Plane(self.config["mcp"]) as plane:
+                triage = (await ensure_label(plane, "project-1", "needs-triage"))["id"]
+                item = await self.file_ticket(plane, "ready", [triage])
+                listed = rows(await plane.call("workitem", "list", project_id="project-1"))
+                self.assertIn(item, [row["id"] for row in listed])
+                service = Missions(self.config, plane, self.registry_for(item))
+                self.assertEqual(await self.refused(service, item), "ready")
+                await plane.call("workitem", "update", project_id="project-1", workitem_id=item,
+                                 labels=[triage, "label-ready"])
+                claimed = await service.claim(item, "filed-request")
+                self.assertEqual(claimed["phase"], "implementing")
+                self.assertEqual(state_id(await service.retrieve(item)), "active")
+        asyncio.run(exercise())
+
+    @unittest.skipUnless(importlib.util.find_spec("mcp"), "optional MCP SDK missing; CI SDK lane is required")
+    def test_a_commissioned_ticket_filed_in_implementing_is_never_claimable_even_with_the_readiness_label(self):
+        async def exercise():
+            async with Plane(self.config["mcp"]) as plane:
+                triage = (await ensure_label(plane, "project-1", "needs-triage"))["id"]
+                item = await self.file_ticket(plane, "active", [triage])
+                service = Missions(self.config, plane, self.registry_for(item))
+                self.assertEqual(await self.refused(service, item), "active")
+                await plane.call("workitem", "update", project_id="project-1", workitem_id=item,
+                                 labels=[triage, "label-ready"])
+                self.assertEqual(await self.refused(service, item), "active")
+                await plane.call("workitem", "update", project_id="project-1", workitem_id=item, state="done")
+                self.assertEqual(await self.refused(service, item), "done")
+        asyncio.run(exercise())
+
+    @unittest.skipUnless(importlib.util.find_spec("mcp"), "optional MCP SDK missing; CI SDK lane is required")
+    def test_a_queued_commissioned_ticket_in_blocked_stays_unclaimable_after_the_readiness_label(self):
+        async def exercise():
+            async with Plane(self.config["mcp"]) as plane:
+                triage = (await ensure_label(plane, "project-1", "needs-triage"))["id"]
+                item = await self.file_ticket(plane, "blocked", [triage])
+                service = Missions(self.config, plane, self.registry_for(item))
+                self.assertEqual(await self.refused(service, item), "blocked")
+                # The planning team classifies the visible needs-triage ticket; the window stays closed.
+                await plane.call("workitem", "update", project_id="project-1", workitem_id=item,
+                                 labels=[triage, "label-ready"])
+                self.assertEqual(await self.refused(service, item), "blocked")
+                # Control dispatches and lands through the connector's state field; still no pickup.
+                await plane.call("workitem", "update", project_id="project-1", workitem_id=item, state="active")
+                self.assertEqual(await self.refused(service, item), "active")
+                await plane.call("workitem", "update", project_id="project-1", workitem_id=item, state="done")
+                self.assertEqual(await self.refused(service, item), "done")
+        asyncio.run(exercise())
+        doctor = asyncio.run(run(Namespace(command="doctor"), self.config))
+        self.assertIn("blocked", [state["id"] for state in doctor["states"]])
+        self.assertNotIn("blocked", doctor["suggested_pickup_state_ids"])
+
+    @unittest.skipUnless(importlib.util.find_spec("mcp"), "optional MCP SDK missing; CI SDK lane is required")
+    def test_blocked_becomes_claimable_only_when_wrongly_configured_as_a_pickup_state(self):
+        path = Path(self.tmp.name) / "misconfigured.json"
+        path.write_text(json.dumps(dict(self.config, pickup_state_ids=["ready", "blocked"])))
+        misconfigured = load_config(path)  # the validator alone does not stop this; the guide's rule does
+
+        async def exercise():
+            async with Plane(self.config["mcp"]) as plane:
+                triage = (await ensure_label(plane, "project-1", "needs-triage"))["id"]
+                item = await self.file_ticket(plane, "blocked", [triage, "label-ready"])
+                guarded = Missions(self.config, plane, self.registry_for(item))
+                self.assertEqual(await self.refused(guarded, item), "blocked")
+                unguarded = Missions(misconfigured, plane, self.registry_for(item))
+                claimed = await unguarded.claim(item, "double-pickup")
+                self.assertEqual((claimed["phase"], claimed["pickup_state"]), ("implementing", "blocked"))
+                self.assertEqual(state_id(await unguarded.retrieve(item)), "active")
+        asyncio.run(exercise())
+
+    @unittest.skipUnless(importlib.util.find_spec("mcp"), "optional MCP SDK missing; CI SDK lane is required")
+    def test_no_adapter_lifecycle_command_moves_a_ticket_without_a_claim_record(self):
+        execution = str(uuid.uuid4())
+
+        async def exercise():
+            async with Plane(self.config["mcp"]) as plane:
+                triage = (await ensure_label(plane, "project-1", "needs-triage"))["id"]
+                item = await self.file_ticket(plane, "blocked", [triage])
+                service = Missions(self.config, plane, self.registry_for(item))
+                for move in (service.sync(execution), service.transition(execution, "implementing"),
+                             service.transition(execution, "review", "https://github.com/example/product/pull/42")):
+                    with self.assertRaises(AdapterError):
+                        await move
+                self.assertEqual(state_id(await service.retrieve(item)), "blocked")
+                self.assertIsNone(service.registry.read()[1])
+        asyncio.run(exercise())
+        path = Path(self.tmp.name) / "config.json"
+        path.write_text(json.dumps(self.config))
+        err = io.StringIO()
+        argv = ["fm-plane.py", "--config", str(path), "complete", "--item", "item-1",
+                "--execution", execution, "--acceptance-verified"]
+        with patch("fm_plane.cli.merged_pr", return_value={"merged": True}), patch.object(sys, "argv", argv), \
+                contextlib.redirect_stderr(err), self.assertRaises(SystemExit):
+            main()
+        self.assertIn("ownership", json.loads(err.getvalue())["error"])
 
 
 if __name__ == "__main__":
