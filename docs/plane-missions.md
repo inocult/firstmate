@@ -9,7 +9,7 @@ The bundled `breach` skill adapts Pocock's small `implement` entrypoint with att
 | Surface | Responsibility |
 | --- | --- |
 | Plane | Requirements, readiness, dependencies and final ticket status |
-| Control | Ticket selection, worker dispatch, supervision and delivery reconciliation |
+| Control | Ticket selection, filing the work it discovers or commissions as `needs-triage` tickets, worker dispatch, supervision and delivery reconciliation |
 | Project skills | Design, TDD, debugging and review practices |
 | GitHub PR | Implementation, checks, review and merge evidence |
 | Shared Git claim | One active implementation across participating Control instances |
