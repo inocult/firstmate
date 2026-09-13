@@ -1040,7 +1040,7 @@ if [ -f "$XO_HOME/$SUB_HOME_MARKER" ]; then
     # export in the remote host's own login shell cannot trigger it the way
     # xo_pf_relay_active's environment-wins rule would.
     if [ -f "$XO_HOME/.env" ]; then
-      HOME_ENV_TOKEN=$(fmx_env_get FMX_PAIRING_TOKEN "$XO_HOME/.env")
+      HOME_ENV_TOKEN=$(xox_env_get XOX_PAIRING_TOKEN "$XO_HOME/.env")
       [ -z "$HOME_ENV_TOKEN" ] || PUBLIC_FOLLOWUP_PARENT_RELAY_ACTIVE=1
     fi
     if [ "$PUBLIC_FOLLOWUP_PARENT_RELAY_ACTIVE" = 1 ]; then

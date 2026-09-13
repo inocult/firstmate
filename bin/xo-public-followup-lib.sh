@@ -16,7 +16,7 @@
 #
 # GATE ORDER - the acceptance criterion for relay-disabled homes:
 #   1. xo_pf_relay_active <home>     the authoritative myxo activation
-#                                    contract, a non-empty FMX_PAIRING_TOKEN in
+#                                    contract, a non-empty XOX_PAIRING_TOKEN in
 #                                    <home>/.env. There is no second flag. When
 #                                    <home>/.env is absent this is a single
 #                                    [ -f ] test and nothing else runs.
@@ -92,17 +92,17 @@ XO_PF_EVENT_BYTES_MAX=${XO_PF_EVENT_BYTES_MAX:-8192}
 
 # xo_pf_relay_active <home>: 0 when this home has opted into the myxo
 # relay, 1 otherwise. Identical contract to bootstrap's X-mode activation - a
-# non-empty FMX_PAIRING_TOKEN in <home>/.env - so no second activation flag
-# exists to drift. FMX_PAIRING_TOKEN in the environment wins, matching
-# fmx_load_config, so a direct client call and this gate agree.
+# non-empty XOX_PAIRING_TOKEN in <home>/.env - so no second activation flag
+# exists to drift. XOX_PAIRING_TOKEN in the environment wins, matching
+# xox_load_config, so a direct client call and this gate agree.
 xo_pf_relay_active() {
   local home=$1 token
-  if [ -n "${FMX_PAIRING_TOKEN+x}" ]; then
-    [ -n "${FMX_PAIRING_TOKEN-}" ]
+  if [ -n "${XOX_PAIRING_TOKEN+x}" ]; then
+    [ -n "${XOX_PAIRING_TOKEN-}" ]
     return $?
   fi
   [ -f "$home/.env" ] || return 1
-  token=$(fmx_env_get FMX_PAIRING_TOKEN "$home/.env")
+  token=$(xox_env_get XOX_PAIRING_TOKEN "$home/.env")
   [ -n "$token" ]
 }
 
@@ -259,10 +259,10 @@ $(xo_pf_registry_ids "$state")
 EOF
 }
 
-# xo_pf_now_epoch: wall clock as epoch seconds. FMX_NOW_OVERRIDE pins it for
+# xo_pf_now_epoch: wall clock as epoch seconds. XOX_NOW_OVERRIDE pins it for
 # tests, matching bin/xo-x-lib.sh.
 xo_pf_now_epoch() {
-  printf '%s\n' "${FMX_NOW_OVERRIDE:-$(date +%s)}"
+  printf '%s\n' "${XOX_NOW_OVERRIDE:-$(date +%s)}"
 }
 
 # xo_pf_now_rfc3339: UTC timestamp for delivered_at and similar stamps.
@@ -350,7 +350,7 @@ xo_pf_registry_lock_path() {
 xo_pf_registry_lock_acquire() {
   local state=$1 id=$2
   xo_pf_slug_valid "$id" || return 1
-  fmx_private_artifact_dir_prepare "$(xo_pf_root "$state")" >/dev/null || return 1
+  xox_private_artifact_dir_prepare "$(xo_pf_root "$state")" >/dev/null || return 1
   if ! command -v xo_lock_acquire_wait >/dev/null 2>&1; then
     # shellcheck source=bin/xo-wake-lib.sh
     . "$_XO_PF_LIB_DIR/xo-wake-lib.sh"
@@ -375,7 +375,7 @@ xo_pf_registry_stamp_delivered() {
     rest=$(grep -v -E '^(state|delivered_at|delivered_obligation)=' "$file" 2>/dev/null || true)
     printf '%s\nstate=delivered\ndelivered_at=%s\ndelivered_obligation=%s\n' \
       "$rest" "$delivered_at" "$id" \
-      | fmx_private_artifact_publish_stdin "$(xo_pf_registry_dir "$state")" "$id" 600 \
+      | xox_private_artifact_publish_stdin "$(xo_pf_registry_dir "$state")" "$id" 600 \
       || rc=$?
   else
     rc=3

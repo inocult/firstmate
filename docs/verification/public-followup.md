@@ -76,7 +76,7 @@ ok - rechain refuses an unrelated existing destination
 ok - pending skips a registration retired during settlement
 ok - retire --reason closes the loop and drops the open-loop line
 ok - retention creates no false teardown refusal and pending no longer prunes
-ok - expiry escalation is pinned by FMX_NOW_OVERRIDE
+ok - expiry escalation is pinned by XOX_NOW_OVERRIDE
 ok - brief fails explicitly when typed deliverable keys are unavailable
 ok - pre-change registrations are open loops and un-rechainable, never a crash
 ok - teardown reports an unreconciled legacy Relay link

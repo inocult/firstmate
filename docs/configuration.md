@@ -320,12 +320,14 @@ Migrate with no work under way, because live task records hold the old home path
 1. Stop the session, including every live secondmate session, so no watcher or hook is executing from the old paths while they move.
 2. Rename the home directory, for example `mv ~/firstmate ~/xo`, and rename each secondmate home the same way.
 3. Replace every `FM_`-prefixed variable the launching shell or service exports with its `XO_` spelling, starting with `FM_HOME`, which becomes `XO_HOME`.
-4. In each secondmate home, rename the private `.fm-secondmate-home` and `.fm-secondmate-parent` markers to `.xo-secondmate-home` and `.xo-secondmate-parent`, because the runtime recognizes a secondmate home by the new marker names.
-5. Update the hook paths that name `bin/fm-*`: the merged `.claude/settings.json` already names `bin/xo-*`, so check any user-level hook file such as `~/.claude/settings.json` and any private `.claude/settings.local.json` in the home, and replace each `bin/fm-` path with `bin/xo-` under the renamed home directory.
-6. Re-run `no-mistakes init` in the renamed home, because the gate registration is keyed to the repository path and the old registration points at a directory that no longer exists.
-7. Rename the GitHub repository with `gh repo rename xo` from the renamed home, so the old `inocult/firstmate` URLs redirect to `inocult/xo`.
-8. Update the origin remote with `git remote set-url origin` to the renamed repository URL, in the primary home and in every secondmate home that clones from it.
-9. Restart the session and confirm that the session-start digest runs from `bin/xo-session-start.sh` and reports no missing tool or hook.
+4. In the home's gitignored `.env`, rename the Relay key `FMX_PAIRING_TOKEN` to `XOX_PAIRING_TOKEN`, and rename any other `FMX_`-prefixed key there or in the launching shell to its `XOX_` spelling, because bootstrap reads only the new key and treats a home without it as Relay off.
+5. In each secondmate home, rename the private `.fm-secondmate-home` and `.fm-secondmate-parent` markers to `.xo-secondmate-home` and `.xo-secondmate-parent`, because the runtime recognizes a secondmate home by the new marker names.
+6. Update the hook paths that name `bin/fm-*`: the merged `.claude/settings.json` already names `bin/xo-*`, so check any user-level hook file such as `~/.claude/settings.json` and any private `.claude/settings.local.json` in the home, and replace each `bin/fm-` path with `bin/xo-` under the renamed home directory.
+7. Re-run `no-mistakes init` in the renamed home, because the gate registration is keyed to the repository path and the old registration points at a directory that no longer exists.
+8. Rename the GitHub repository with `gh repo rename xo` from the renamed home, so the old `inocult/firstmate` URLs redirect to `inocult/xo`.
+9. Update the origin remote with `git remote set-url origin` to the renamed repository URL, in the primary home and in every secondmate home that clones from it.
+10. On every provisioned remote macOS host, boot out and delete the old-label launch agents and move the old remote job state root before the renamed home re-runs the remote doctor, because `xo-remote-doctor.sh --fix` boots out and rewrites only the new labels `dev.xo.herdr.xo-remote` and `dev.xo.remote-job`, so the old KeepAlive agents would otherwise stay loaded, keep relaunching against the moved paths, and run a duplicate worker that `xo-remote-herdr-owner-lib.sh` cannot detect; run `launchctl bootout gui/$(id -u)/dev.firstmate.herdr.fm-remote` and `launchctl bootout gui/$(id -u)/dev.firstmate.remote-job`, delete `~/Library/LaunchAgents/dev.firstmate.herdr.fm-remote.plist` and `~/Library/LaunchAgents/dev.firstmate.remote-job.plist`, then `mv ~/.firstmate/remote-job ~/.xo/remote-job` or remove it when no queued job matters.
+11. Restart the session and confirm that the session-start digest runs from `bin/xo-session-start.sh` and reports no missing tool or hook, then run `bin/xo-on.sh <secondmate-id> xo-remote-doctor.sh --fix` for each remote host so the doctor writes and loads the new-label agents.
 
 Generated private files such as `config/x-mode.env` and the `state/*.check.sh` poll shims are rewritten by the next locked bootstrap and need no hand edit.
 
@@ -619,19 +621,19 @@ A fail-closed poll that already queued a wake, and a timeout, always print so th
 Relay lets an XO instance answer public mentions and act on normal reversible mention requests through XO's normal lifecycle.
 It covers both public surfaces the relay supports: `@myxo` mentions on X, and mentions of the myxo bot in a Discord server where it is installed.
 Both surfaces are the same opt-in and the same machinery - one pairing token, one relay poll, and one reply path - so everything below applies to Discord mentions unless a line names a platform explicitly.
-It is off unless the XO home's gitignored `.env` contains a non-empty `FMX_PAIRING_TOKEN`.
+It is off unless the XO home's gitignored `.env` contains a non-empty `XOX_PAIRING_TOKEN`.
 The pairing token both identifies the relay tenant and records opt-in consent for autonomous public replies and eligible lifecycle actions.
 Destructive, irreversible, or security-sensitive asks are flagged for trusted-channel confirmation instead of being executed from a public mention.
 The relay uses owner-only routing: a mention delivered to a home is from that home's owner/captain, while its surrounding conversation context may still include other public accounts.
-`FMX_RELAY_URL` is optional and defaults to `https://myxo.io`, mainly for developers pointing at a local relay.
+`XOX_RELAY_URL` is optional and defaults to `https://myxo.io`, mainly for developers pointing at a local relay.
 For direct client invocations, environment values override `.env`; bootstrap activation still keys off `.env` presence so watcher artifacts are explicit local opt-in state.
-`FMX_ENV_FILE` can point direct poll/reply client invocations at another `.env`-style file, but it does not change bootstrap activation.
+`XOX_ENV_FILE` can point direct poll/reply client invocations at another `.env`-style file, but it does not change bootstrap activation.
 
 To turn it on:
 
 1. Sign in at [myxo.io](https://myxo.io) with X or Discord.
 2. For the Discord surface, use the dashboard's install link to add the myxo bot to a server you administer; the X surface needs no install step.
-3. Copy the pairing token from the dashboard into this XO home's gitignored `.env` as `FMX_PAIRING_TOKEN=<token>`.
+3. Copy the pairing token from the dashboard into this XO home's gitignored `.env` as `XOX_PAIRING_TOKEN=<token>`.
 4. Start a new XO session so bootstrap picks the token up, then mention `@myxo` on X or mention the bot in a server where it is installed.
 
 The dashboard owns account creation, identity linking, bot installation, and token issuance; this document owns only what the local XO home does with the token once it is in `.env`.
@@ -646,31 +648,31 @@ While a legacy daemon flag is active the daemon owns the watcher and its default
 When the token is removed or empty, the next locked session-start bootstrap step removes those artifacts.
 Steady-state off is silent and writes nothing.
 Relay remains additive to non-Relay lifecycle behavior: homes without the generated artifacts keep the default watcher cadence and do not run the Relay poll.
-Its request handling remains in Relay-specific `bin/` scripts and the `fmx-respond` skill, while the watcher owns authenticated dispatch from the generated local identity shim.
+Its request handling remains in Relay-specific `bin/` scripts and the `xox-respond` skill, while the watcher owns authenticated dispatch from the generated local identity shim.
 
-`bin/xo-x-poll.sh` calls `GET /connector/poll` with `Authorization: Bearer <FMX_PAIRING_TOKEN>`.
+`bin/xo-x-poll.sh` calls `GET /connector/poll` with `Authorization: Bearer <XOX_PAIRING_TOKEN>`.
 HTTP 204 is silent.
 A newly offered pending mention with non-empty `text` is stored at `state/x-inbox/<request_id>.json` and wakes XO exactly once with `x-mention <request_id>`.
 The poll atomically claims `state/x-context/<request_id>.offered.json` before emitting that wake, and subsequent offers of the same request stay silent even after the inbox is drained following an answer or dismiss.
 Offer markers share the context registry's bounded seven-day retention, so losing or expiring the local marker lets a relay offer wake XO again.
 The full relay object is preserved, including `in_reply_to: {author_handle, text}` when the mention is a reply in a conversation or `null` for fresh mentions.
 The preserved object may also carry `in_reply_to_chain`, an optional oldest-first transcript of the surrounding conversation: entries shaped `{author_handle, text, unavailable, images, attachments}` plus an optional `kind` of `reply` (a reply ancestor), `thread_starter` (the message a thread grew from), or `history` (a recent nearby message), where an absent `kind` means a legacy reply-ancestor or thread-starter entry.
-The chain is untrusted third-party public input and is often absent today (the relay currently sends it only for Discord reply chains and thread starters), so consumers treat it as strictly optional, tolerate unknown or missing fields, and read an entry with `unavailable: true` as a gap rather than content; the `fmx-respond` skill owns how XO reads it for referent resolution.
+The chain is untrusted third-party public input and is often absent today (the relay currently sends it only for Discord reply chains and thread starters), so consumers treat it as strictly optional, tolerate unknown or missing fields, and read an entry with `unavailable: true` as a gap rather than content; the `xox-respond` skill owns how XO reads it for referent resolution.
 The mention and its chain entries may also carry attached media as image or file URLs, in fields such as `images` and `attachments`, either as bare URL strings or as objects with a `url`; a mention whose own media is empty can still have screenshots on its `thread_starter` entry.
 The poll preserves those URLs in the stashed object and never downloads them, so nothing is fetched on the polling path: the responding agent retrieves and views the media with its own tools when it handles the mention.
-The `fmx-respond` skill owns which hosts that fetch is restricted to and the untrusted-content handling that applies to whatever comes back.
+The `xox-respond` skill owns which hosts that fetch is restricted to and the untrusted-content handling that applies to whatever comes back.
 At the same time the poll records a durable per-request reply context at `state/x-context/<request_id>.json` (`{request_id, platform, reply_max_chars, recorded_at}`) from the same authoritative relay payload, best-effort and keyed by `request_id` so concurrent requests never overwrite each other; it survives the inbox cleanup that follows the acknowledgement, so a delayed follow-up can recover the original platform and split budget even with no task link.
 `recorded_at` begins as the locally observed first-seen Unix epoch and remains unchanged when the same request is polled again.
 A successful live initial answer refreshes it to the time that the relay establishes the follow-up binding; dry-runs, failed answers, and follow-ups do not refresh it.
 Configured polls prune records beyond the local follow-up window, capped at the relay's seven-day window; legacy or malformed records fall back to their file modification time so they cannot remain indefinitely.
 The record is written only when a platform or explicit budget is actually known, so an unknown-platform mention leaves no useless entry.
-The `fmx-respond` skill decides whether the stashed mention is an actionable request, a question, or a pure acknowledgment.
+The `xox-respond` skill decides whether the stashed mention is an actionable request, a question, or a pure acknowledgment.
 Actionable reversible requests are run through intake, backlog, dispatch, investigation, or ship flow as appropriate.
 If the work completes in that turn, the public reply reports the outcome.
 If the request spawns a longer-running task, XO posts an acknowledgement through the normal answer endpoint, links the task to the mention with `bin/xo-x-link.sh`, and posts up to three completion follow-ups on genuine milestones, finishing with a `--final` one for ordinary Relay-linked work. When a typed promised-final commitment is registered, `bin/xo-public-followup.sh` owns the terminal reply and clears the legacy link after its receipt is validated.
 That link stores optional reply-platform context so Discord-originated follow-ups keep Discord's larger message budget after the inbox file has been drained.
-Platform/budget resolution is layered and independent of the task link: a per-axis `FMX_REPLY_PLATFORM` / `FMX_REPLY_MAX_CHARS` override (how `bin/xo-x-followup.sh` passes a recorded link's context) wins.
-For either axis without an override, `bin/xo-x-lib.sh:fmx_resolve_reply_context` owns the source order: the durable per-request registry is consulted first, then the still-present inbox payload, then - for a follow-up posted live by request_id - an authoritative relay lookup via `POST /connector/request-context` (`{request_id}` in, `{platform, reply_max_chars}` back).
+Platform/budget resolution is layered and independent of the task link: a per-axis `XOX_REPLY_PLATFORM` / `XOX_REPLY_MAX_CHARS` override (how `bin/xo-x-followup.sh` passes a recorded link's context) wins.
+For either axis without an override, `bin/xo-x-lib.sh:xox_resolve_reply_context` owns the source order: the durable per-request registry is consulted first, then the still-present inbox payload, then - for a follow-up posted live by request_id - an authoritative relay lookup via `POST /connector/request-context` (`{request_id}` in, `{platform, reply_max_chars}` back).
 This is what keeps a delayed request-id follow-up on the original platform's budget even after the inbox is drained and with no task link surviving; the relay step is confined to the live follow-up path so the answer path and every dry-run stay network-free.
 The link is home-local by construction, because it lives in that home's own `state/<task-id>.meta`: work routed to a secondmate has no record here, so `bin/xo-x-link.sh` refuses it, names the registered secondmate home the task was found in when it can, and points at the promised-final path (`bin/xo-public-followup.sh register ... --work-home secondmate:<id>`), which is the only follow-up mechanism that binds work in another home.
 `bin/xo-x-link.sh` follows the same ordering when recording a fresh link's context and requires `jq`; its request-context lookup is best-effort: no token or `curl`; a non-2xx response; an unresolved response; or a relay version without that endpoint leaves the context unknown.
@@ -693,17 +695,17 @@ Reply splitting is platform-aware: an explicit relay platform field (`reply_plat
 An explicit relay limit field (`reply_max_chars`, `reply_max_characters`, `message_max_chars`, `message_limit`, or `max_chars`) wins over the platform defaults.
 If the reply exceeds the selected budget, the client splits it into a numbered thread on fenced-code, paragraph, line, and word boundaries and sends `{request_id,text,texts}`, where `texts` is the ordered chunk list and `text` remains the first chunk for older relays.
 When `--image <path>` is present on a split reply, the image rides the first/opener message and later chunks stay text-only.
-`FMX_X_REPLY_MAX_CHARS` defaults to 280 and clamps to a minimum of 50; `FMX_DISCORD_REPLY_MAX_CHARS` defaults to 1900, clamps to a minimum of 50, and resets values above Discord's 2000-character limit back to 1900.
-`FMX_X_THREAD_MAX` defaults to 25 and caps oversized reply threads for every platform, marking the last retained message with an ellipsis when truncation is needed.
-`FMX_FOLLOWUP_MAX_AGE_SECS` defaults to 604800 (7 days) and controls the local completion follow-up window; `FMX_FOLLOWUP_MAX_COUNT` defaults to 3 and controls the local follow-up cap.
+`XOX_X_REPLY_MAX_CHARS` defaults to 280 and clamps to a minimum of 50; `XOX_DISCORD_REPLY_MAX_CHARS` defaults to 1900, clamps to a minimum of 50, and resets values above Discord's 2000-character limit back to 1900.
+`XOX_X_THREAD_MAX` defaults to 25 and caps oversized reply threads for every platform, marking the last retained message with an ellipsis when truncation is needed.
+`XOX_FOLLOWUP_MAX_AGE_SECS` defaults to 604800 (7 days) and controls the local completion follow-up window; `XOX_FOLLOWUP_MAX_COUNT` defaults to 3 and controls the local follow-up cap.
 
-Set `FMX_DRY_RUN` to preview replies and dismissals without posting.
+Set `XOX_DRY_RUN` to preview replies and dismissals without posting.
 Truthy means anything except unset, empty, `0`, `false`, `no`, or `off`; an explicit environment value wins over `.env`.
 In dry-run, `xo-x-reply.sh` records the would-be payload to `state/x-outbox/<request_id>.json`, including `texts` for a thread and an `endpoint` marker for follow-up previews, prints a `DRY RUN` summary to stderr, echoes the `request_id`, and exits 0.
 When an image is attached, the dry-run record uses compact `{media_type, bytes, source_path}` metadata instead of writing the base64 bytes.
 In dry-run, `xo-x-dismiss.sh` records `{request_id, endpoint:"dismiss"}` to the same outbox path, prints a `DRY RUN` summary, echoes the `request_id`, and exits 0.
 The live answer and follow-up bodies intentionally stay the same shape, including optional `image`; the relay distinguishes them by endpoint, and dismiss stays `{request_id}`.
-These paths need `jq` to build the JSON payload, but they run before token and network checks, so they need neither `FMX_PAIRING_TOKEN` nor `curl`.
+These paths need `jq` to build the JSON payload, but they run before token and network checks, so they need neither `XOX_PAIRING_TOKEN` nor `curl`.
 
 ### Promised public replies (state/public-followup)
 
@@ -729,7 +731,7 @@ Collection is non-destructive until the result is durably held, and the staged c
 For an open registration, a work home that cannot be reached is named in `consume`'s output and keeps the promise open; it is never reported as an empty inbox.
 Run `bin/xo-public-followup-collect.sh --help` for the staged-result commands the owning home runs over that route.
 
-Activation is the same `.env` `FMX_PAIRING_TOKEN` contract as the rest of Relay, with no second flag.
+Activation is the same `.env` `XOX_PAIRING_TOKEN` contract as the rest of Relay, with no second flag.
 A home without that token runs one file test and stops: no `tasks-axi` call, no backlog or request-context scan, and no `state/public-followup/` directory.
 Ordinary startup, polling, cleanup, and silent read-side subcommands also produce no output; commands that require an active relay report that configuration error after the same gate.
 A relay-enabled home with no registered commitment stops at an O(1) directory presence check, so the empty state costs no CLI call and adds no periodic scan.
@@ -1052,15 +1054,15 @@ XO_IMAP_HOST=      # mail-plane IMAP server hostname
 XO_IMAP_PORT=993   # mail-plane IMAP server port
 XO_SMTP_HOST=      # mail-plane SMTP server hostname
 XO_SMTP_PORT=465   # mail-plane SMTP server port
-FMX_PAIRING_TOKEN=      # Relay pairing token; .env opt-in authorizes replies and eligible lifecycle actions
-FMX_RELAY_URL=https://myxo.io   # optional Relay endpoint override, mainly for local relay development
-FMX_ENV_FILE=           # optional alternate .env file for direct Relay client invocations; bootstrap still checks $XO_HOME/.env
-FMX_DRY_RUN=            # truthy previews Relay replies and dismissals to state/x-outbox/ without posting or requiring a token
-FMX_X_REPLY_MAX_CHARS=280   # X reply per-message split budget; values below 50 clamp to 50
-FMX_DISCORD_REPLY_MAX_CHARS=1900   # Discord reply per-message split budget; values below 50 clamp to 50, values above 2000 reset to 1900
-FMX_X_THREAD_MAX=25     # maximum messages in one auto-split reply thread
-FMX_FOLLOWUP_MAX_AGE_SECS=604800   # local window for posting Relay completion follow-ups (7 days)
-FMX_FOLLOWUP_MAX_COUNT=3   # local cap on Relay completion follow-ups per linked mention
+XOX_PAIRING_TOKEN=      # Relay pairing token; .env opt-in authorizes replies and eligible lifecycle actions
+XOX_RELAY_URL=https://myxo.io   # optional Relay endpoint override, mainly for local relay development
+XOX_ENV_FILE=           # optional alternate .env file for direct Relay client invocations; bootstrap still checks $XO_HOME/.env
+XOX_DRY_RUN=            # truthy previews Relay replies and dismissals to state/x-outbox/ without posting or requiring a token
+XOX_X_REPLY_MAX_CHARS=280   # X reply per-message split budget; values below 50 clamp to 50
+XOX_DISCORD_REPLY_MAX_CHARS=1900   # Discord reply per-message split budget; values below 50 clamp to 50, values above 2000 reset to 1900
+XOX_X_THREAD_MAX=25     # maximum messages in one auto-split reply thread
+XOX_FOLLOWUP_MAX_AGE_SECS=604800   # local window for posting Relay completion follow-ups (7 days)
+XOX_FOLLOWUP_MAX_COUNT=3   # local cap on Relay completion follow-ups per linked mention
 XO_PF_RETRY_BACKOFF_SECS=900   # seconds before the next attempt after a retryable promised-public-reply delivery error
 XO_LOCK_STALE_AFTER=2   # grace seconds for missing or nonnumeric lock-owner PIDs (minimum 2s); dead numeric PIDs have no age grace
 XO_GUARD_GRACE=300      # beacon freshness threshold for guard verdicts, arm health checks, and the primary turn-end guard; see docs/turnend-guard.md for model-aware exceptions

@@ -243,8 +243,8 @@ promote_resolve_primary_home() {
   [ "$parent" != "$child" ] || return 1
   parent_meta="$parent/state/$mate_id.meta"
   [ -f "$parent_meta" ] && [ ! -L "$parent_meta" ] || return 1
-  [ "$(fmx_meta_get "$parent_meta" kind)" = secondmate ] || return 1
-  meta_home=$(fmx_meta_get "$parent_meta" home)
+  [ "$(xox_meta_get "$parent_meta" kind)" = secondmate ] || return 1
+  meta_home=$(xox_meta_get "$parent_meta" home)
   meta_home=$(CDPATH='' cd -- "$meta_home" 2>/dev/null && pwd -P) || return 1
   [ "$meta_home" = "$child" ] || return 1
   registry="$parent/data/secondmates.md"
@@ -297,7 +297,7 @@ if [ -f "$XO_HOME/.xo-secondmate-home" ]; then
   elif [ "$PROMOTE_PARENT_ROUTE" = remote ]; then
     PROMOTE_HOME_ENV_TOKEN=
     if [ -f "$XO_HOME/.env" ]; then
-      PROMOTE_HOME_ENV_TOKEN=$(fmx_env_get FMX_PAIRING_TOKEN "$XO_HOME/.env")
+      PROMOTE_HOME_ENV_TOKEN=$(xox_env_get XOX_PAIRING_TOKEN "$XO_HOME/.env")
     fi
     if [ -n "$PROMOTE_HOME_ENV_TOKEN" ]; then
       promote_warn_parent_unresolved "$PROMOTE_MATE_ID"

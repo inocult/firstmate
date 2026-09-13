@@ -316,7 +316,7 @@ else
   DESTINATION=$(xo_pf_outbox_dir "$STATE")
 fi
 printf '%s\n' "$EVENT_JSON" \
-  | fmx_private_artifact_publish_stdin_once "$DESTINATION" "$EVENT_ID.json" 600
+  | xox_private_artifact_publish_stdin_once "$DESTINATION" "$EVENT_ID.json" 600
 case $? in
   0|1) printf '%s\n' "$EVENT_ID" ;;
   *) die "could not publish the terminal event into $HOME_DIR" 1 ;;

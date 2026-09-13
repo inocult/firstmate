@@ -14,7 +14,7 @@ CATEGORIES="deprecated fieldcraft in-progress misc orders playbooks"
 # home layout and state"); these two memberships are the explicit lists the
 # precedence starts from.
 DEPRECATED_SKILLS="decision-hold-lifecycle"
-IN_PROGRESS_SKILLS="breach xo-codexapp xo-orca fmx-respond operation overwatch plane-missions prep"
+IN_PROGRESS_SKILLS="breach xo-codexapp xo-orca xox-respond operation overwatch plane-missions prep"
 
 category_known() {
   case " $CATEGORIES " in

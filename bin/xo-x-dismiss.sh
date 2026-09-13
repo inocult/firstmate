@@ -18,11 +18,11 @@
 # dismiss did not land and can fall back to leaving the inbox file for a later
 # pass.
 #
-# Live post config (home .env, FMX_ENV_FILE, or env): FMX_PAIRING_TOKEN
-# (required), FMX_RELAY_URL (default https://myxo.io). Auth:
+# Live post config (home .env, XOX_ENV_FILE, or env): XOX_PAIRING_TOKEN
+# (required), XOX_RELAY_URL (default https://myxo.io). Auth:
 # Authorization: Bearer <token>.
 #
-# Preview / dry-run: with FMX_DRY_RUN set (truthy), nothing is posted. Instead the
+# Preview / dry-run: with XOX_DRY_RUN set (truthy), nothing is posted. Instead the
 # would-be POST body ({request_id}) is recorded to state/x-outbox/<request_id>.json
 # with an "endpoint":"dismiss" marker so the preview is self-describing (the live
 # POST body stays {request_id}), a "DRY RUN" summary is printed to stderr, and
@@ -47,7 +47,7 @@ if [ -z "$REQ" ] || [ "$#" -gt 1 ]; then
   exit 2
 fi
 
-fmx_load_config
+xox_load_config
 
 # The request_id becomes a filename (inbox/outbox record), so never trust it into
 # a path even though the relay issues it.
@@ -64,33 +64,33 @@ PAYLOAD=$(jq -cn --arg rid "$REQ" '{request_id:$rid}') || {
   echo "xo-x-dismiss: failed to build request payload" >&2; exit 1; }
 
 # Preview / dry-run: surface what we WOULD post and stop, without auth or network.
-if [ -n "$FMX_DRY" ]; then
+if [ -n "$XOX_DRY" ]; then
   outbox_dir="$STATE/x-outbox"
   # The recorded body carries an "endpoint":"dismiss" marker so an outbox record
   # is self-describing (the live POST body stays exactly {request_id}).
   OUTREC=$(printf '%s' "$PAYLOAD" | jq -c '. + {endpoint:"dismiss"}') || {
     echo "xo-x-dismiss: failed to build dry-run outbox record" >&2; exit 1; }
   printf '%s\n' "$OUTREC" \
-    | fmx_private_artifact_publish_stdin "$outbox_dir" "$REQ.json" 600 || {
+    | xox_private_artifact_publish_stdin "$outbox_dir" "$REQ.json" 600 || {
     echo "xo-x-dismiss: cannot write dry-run outbox: $outbox_dir/$REQ.json" >&2
     exit 1
   }
   # A dismissed mention will never get a follow-up, so drop its durable
   # per-request reply context too. Best-effort; a no-op when none was recorded.
-  fmx_context_registry_clear "$STATE" "$REQ"
+  xox_context_registry_clear "$STATE" "$REQ"
   printf 'xo-x-dismiss: DRY RUN - would POST to %s/connector/dismiss (recorded: state/x-outbox/%s.json)\n' \
-    "$FMX_RELAY" "$REQ" >&2
+    "$XOX_RELAY" "$REQ" >&2
   printf '%s\n' "$REQ"
   exit 0
 fi
 
-if [ -z "$FMX_TOKEN" ]; then
-  echo "xo-x-dismiss: X mode not configured (no FMX_PAIRING_TOKEN)" >&2
+if [ -z "$XOX_TOKEN" ]; then
+  echo "xo-x-dismiss: X mode not configured (no XOX_PAIRING_TOKEN)" >&2
   exit 1
 fi
 command -v curl >/dev/null 2>&1 || { echo "xo-x-dismiss: curl not found" >&2; exit 1; }
-AUTH_HEADER_FILE=$(fmx_auth_header_file) || {
-  echo "xo-x-dismiss: invalid FMX_PAIRING_TOKEN" >&2
+AUTH_HEADER_FILE=$(xox_auth_header_file) || {
+  echo "xo-x-dismiss: invalid XOX_PAIRING_TOKEN" >&2
   exit 1
 }
 trap 'rm -f "$AUTH_HEADER_FILE"' EXIT
@@ -100,7 +100,7 @@ code=$(curl -m 10 -s -o /dev/null -w '%{http_code}' \
   -H "@$AUTH_HEADER_FILE" \
   -H 'Content-Type: application/json' \
   --data "$PAYLOAD" \
-  "$FMX_RELAY/connector/dismiss" 2>/dev/null) || {
+  "$XOX_RELAY/connector/dismiss" 2>/dev/null) || {
   echo "xo-x-dismiss: request to relay failed" >&2
   exit 1
 }
@@ -109,7 +109,7 @@ case "$code" in
   2[0-9][0-9])
     # Dropped at the relay: no follow-up will come, so clear the durable
     # per-request reply context too (best-effort, no-op when none was recorded).
-    fmx_context_registry_clear "$STATE" "$REQ"
+    xox_context_registry_clear "$STATE" "$REQ"
     printf '%s\n' "$REQ"
     ;;
   *) echo "xo-x-dismiss: relay returned HTTP $code" >&2; exit 1 ;;

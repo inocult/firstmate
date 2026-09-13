@@ -1,52 +1,52 @@
 #!/usr/bin/env bash
 # Shared config resolution for the X-mode connector client (xo-x-poll.sh and
-# xo-x-reply.sh). X mode is opt-in: a user drops a non-empty FMX_PAIRING_TOKEN
-# into the xo home's .env. FMX_ENV_FILE can point direct client calls at
+# xo-x-reply.sh). X mode is opt-in: a user drops a non-empty XOX_PAIRING_TOKEN
+# into the xo home's .env. XOX_ENV_FILE can point direct client calls at
 # another .env-style file, but bootstrap activation still checks $XO_HOME/.env.
-# Until then polling is a hard no-op; replies can still run in FMX_DRY_RUN
+# Until then polling is a hard no-op; replies can still run in XOX_DRY_RUN
 # preview mode without a token.
 #
 # This file is sourced, never executed. It defines:
-#   fmx_env_get <key> <file>   - read one KEY=VALUE from a .env-style file
-#   fmx_load_config            - resolve FMX_TOKEN, FMX_RELAY, FMX_DRY, FMX_MAX,
-#                                and FMX_THREAD_MAX (env wins over .env)
-#   fmx_auth_header_file       - write the bearer header to a 0600 temp file
-#   fmx_extract_reply_context <json-file> - the single owner of reply-context
+#   xox_env_get <key> <file>   - read one KEY=VALUE from a .env-style file
+#   xox_load_config            - resolve XOX_TOKEN, XOX_RELAY, XOX_DRY, XOX_MAX,
+#                                and XOX_THREAD_MAX (env wins over .env)
+#   xox_auth_header_file       - write the bearer header to a 0600 temp file
+#   xox_extract_reply_context <json-file> - the single owner of reply-context
 #                                extraction: infer {platform, reply_max_chars}
 #                                from any mention/relay payload file
-#   fmx_request_inbox_context <state> <request_id> - reply context from a stashed
+#   xox_request_inbox_context <state> <request_id> - reply context from a stashed
 #                                mention payload (wrapper over the extractor)
-#   fmx_request_relay_context <request_id> - resolve reply platform/limit
+#   xox_request_relay_context <request_id> - resolve reply platform/limit
 #                                AUTHORITATIVELY from the relay by request_id when
 #                                no local inbox payload survives
-#   fmx_context_registry_set <state> <request_id> <platform> <reply-max> [refresh]
+#   xox_context_registry_set <state> <request_id> <platform> <reply-max> [refresh]
 #                                - persist the durable per-request reply context;
 #                                refresh=1 resets its retention timestamp
-#   fmx_offer_registry_claim <state> <request_id> - atomically claim the durable
+#   xox_offer_registry_claim <state> <request_id> - atomically claim the durable
 #                                one-wake offer marker; 0=new, 1=existing, 2=error
-#   fmx_context_registry_prune <state> - remove records older than seven days
-#   fmx_context_registry_get <state> <request_id> - read the durable per-request
+#   xox_context_registry_prune <state> - remove records older than seven days
+#   xox_context_registry_get <state> <request_id> - read the durable per-request
 #                                reply context, or the empty shape when absent
-#   fmx_context_registry_clear <state> <request_id> - drop the durable record
-#   fmx_resolve_reply_context <state> <request_id> <allow-relay> - resolve reply
+#   xox_context_registry_clear <state> <request_id> - drop the durable record
+#   xox_resolve_reply_context <state> <request_id> <allow-relay> - resolve reply
 #                                context through registry -> inbox -> relay
-#   fmx_reply_limit_for_platform <platform> <explicit-limit> - pick split budget
-#   fmx_split_thread <max> <cap> - split a reply (stdin) into a numbered thread
-#   fmx_image_payload_file <path> <client> <payload-file> - encode one image
+#   xox_reply_limit_for_platform <platform> <explicit-limit> - pick split budget
+#   xox_split_thread <max> <cap> - split a reply (stdin) into a numbered thread
+#   xox_image_payload_file <path> <client> <payload-file> - encode one image
 #                                attachment to a JSON file and print preview JSON
-#   fmx_reply_payload_json <request_id> <chunks> <n> [image-json-file]
+#   xox_reply_payload_json <request_id> <chunks> <n> [image-json-file]
 #                                - build the answer/followup POST body
-#   fmx_reply_outbox_json <request_id> <chunks> <n> <followup-0|1> [image-preview-json]
+#   xox_reply_outbox_json <request_id> <chunks> <n> <followup-0|1> [image-preview-json]
 #                                - build the dry-run record without image bytes
-#   fmx_post_json <endpoint> <payload-file> [body-file] - POST JSON to the relay,
+#   xox_post_json <endpoint> <payload-file> [body-file] - POST JSON to the relay,
 #                                printing HTTP code and writing response body
-#   fmx_meta_get <meta> <key>  - read one key=value line from a task meta file
-#   fmx_meta_link_set <meta> <request_id> <epoch> [followups] [platform] [max]
+#   xox_meta_get <meta> <key>  - read one key=value line from a task meta file
+#   xox_meta_link_set <meta> <request_id> <epoch> [followups] [platform] [max]
 #                                - (re)write the X-request link, defaulting
 #                                followups to 0
-#   fmx_meta_followups_set <meta> <n> - rewrite just the follow-up counter
-#   fmx_meta_link_clear <meta> - remove the X-request link entirely
-# Callers must have XO_HOME set before calling fmx_load_config.
+#   xox_meta_followups_set <meta> <n> - rewrite just the follow-up counter
+#   xox_meta_link_clear <meta> - remove the X-request link entirely
+# Callers must have XO_HOME set before calling xox_load_config.
 
 _XO_X_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if ! command -v xo_backlog_atomic_transition >/dev/null 2>&1; then
@@ -60,7 +60,7 @@ fi
 # leading "export ", surrounding whitespace, and one layer of matching single or
 # double quotes. Prints nothing (and succeeds) when the file or key is absent, so
 # callers can treat empty output as "unset".
-fmx_env_get() {
+xox_env_get() {
   local key=$1 file=$2 line val
   [ -f "$file" ] || return 0
   line=$(grep -E "^[[:space:]]*(export[[:space:]]+)?${key}=" "$file" 2>/dev/null | tail -n1) || return 0
@@ -75,7 +75,7 @@ fmx_env_get() {
   printf '%s' "$val"
 }
 
-fmx_poll_shim_content() {
+xox_poll_shim_content() {
   local home=$1 root=$2
   printf '%s\n' \
     '#!/usr/bin/env bash' \
@@ -85,7 +85,7 @@ fmx_poll_shim_content() {
     "exec $(printf '%q' "$root/bin/xo-x-poll.sh")"
 }
 
-fmx_single_link_file_valid() {
+xox_single_link_file_valid() {
   local file=$1 expected_device=${2-} links device
   [ -f "$file" ] && [ ! -L "$file" ] || return 1
   if [ "$(uname)" = Darwin ]; then
@@ -99,9 +99,9 @@ fmx_single_link_file_valid() {
   [ -z "$expected_device" ] || [ "$device" = "$expected_device" ]
 }
 
-fmx_single_link_file_mode_valid() {
+xox_single_link_file_mode_valid() {
   local file=$1 expected_mode=$2 expected_device=${3-} mode
-  fmx_single_link_file_valid "$file" "$expected_device" || return 1
+  xox_single_link_file_valid "$file" "$expected_device" || return 1
   if [ "$(uname)" = Darwin ]; then
     mode=$(/usr/bin/stat -f %Lp "$file" 2>/dev/null) || return 1
   else
@@ -110,7 +110,7 @@ fmx_single_link_file_mode_valid() {
   [ "$mode" = "$expected_mode" ]
 }
 
-fmx_private_artifact_dir_device() {
+xox_private_artifact_dir_device() {
   local dir=$1 mode device
   [ -d "$dir" ] && [ ! -L "$dir" ] || return 1
   if [ "$(uname)" = Darwin ]; then
@@ -124,7 +124,7 @@ fmx_private_artifact_dir_device() {
   printf '%s\n' "$device"
 }
 
-fmx_private_artifact_dir_prepare() {
+xox_private_artifact_dir_prepare() {
   local dir=$1 parent
   parent=${dir%/*}
   if [ "$parent" != "$dir" ]; then
@@ -140,10 +140,10 @@ fmx_private_artifact_dir_prepare() {
   else
     (umask 077; mkdir -p "$dir" 2>/dev/null) || return 1
   fi
-  fmx_private_artifact_dir_device "$dir"
+  xox_private_artifact_dir_device "$dir"
 }
 
-fmx_private_artifact_publish_stdin() {
+xox_private_artifact_publish_stdin() {
   local dir=$1 base=$2 mode=$3 device tmp dest
   case "$base" in
     ''|.*|*/*) return 1 ;;
@@ -152,17 +152,17 @@ fmx_private_artifact_publish_stdin() {
     600|700) ;;
     *) return 1 ;;
   esac
-  device=$(fmx_private_artifact_dir_prepare "$dir") || return 1
+  device=$(xox_private_artifact_dir_prepare "$dir") || return 1
   dest="$dir/$base"
   tmp=$(umask 077; mktemp "$dir/.${base}.xo-x.XXXXXX" 2>/dev/null) || return 1
   if ! cat > "$tmp" \
     || ! chmod "$mode" "$tmp" 2>/dev/null \
-    || ! fmx_single_link_file_mode_valid "$tmp" "$mode" "$device"; then
+    || ! xox_single_link_file_mode_valid "$tmp" "$mode" "$device"; then
     rm -f -- "$tmp"
     return 1
   fi
   if { [ -e "$dest" ] || [ -L "$dest" ]; } \
-    && ! fmx_single_link_file_mode_valid "$dest" "$mode" "$device"; then
+    && ! xox_single_link_file_mode_valid "$dest" "$mode" "$device"; then
     rm -f -- "$tmp"
     return 1
   fi
@@ -170,7 +170,7 @@ fmx_private_artifact_publish_stdin() {
     rm -f -- "$tmp"
     return 1
   fi
-  if ! fmx_single_link_file_mode_valid "$dest" "$mode" "$device"; then
+  if ! xox_single_link_file_mode_valid "$dest" "$mode" "$device"; then
     rm -f -- "$dest"
     return 1
   fi
@@ -181,7 +181,7 @@ fmx_private_artifact_publish_stdin() {
 # callers cannot both create the destination. Returns 0 when this caller created
 # it, 1 when another valid private artifact already owns the path, and 2 on an
 # unsafe path or publication failure.
-fmx_private_artifact_publish_stdin_once() {
+xox_private_artifact_publish_stdin_once() {
   local dir=$1 base=$2 mode=$3 device tmp dest
   case "$base" in
     ''|.*|*/*) return 2 ;;
@@ -190,31 +190,31 @@ fmx_private_artifact_publish_stdin_once() {
     600|700) ;;
     *) return 2 ;;
   esac
-  device=$(fmx_private_artifact_dir_prepare "$dir") || return 2
+  device=$(xox_private_artifact_dir_prepare "$dir") || return 2
   dest="$dir/$base"
   tmp=$(umask 077; mktemp "$dir/.${base}.xo-x.XXXXXX" 2>/dev/null) || return 2
   if ! cat > "$tmp" \
     || ! chmod "$mode" "$tmp" 2>/dev/null \
-    || ! fmx_single_link_file_mode_valid "$tmp" "$mode" "$device"; then
+    || ! xox_single_link_file_mode_valid "$tmp" "$mode" "$device"; then
     rm -f -- "$tmp"
     return 2
   fi
   if ln -- "$tmp" "$dest" 2>/dev/null; then
     rm -f -- "$tmp"
-    if fmx_single_link_file_mode_valid "$dest" "$mode" "$device"; then
+    if xox_single_link_file_mode_valid "$dest" "$mode" "$device"; then
       return 0
     fi
     rm -f -- "$dest"
     return 2
   fi
   rm -f -- "$tmp"
-  if fmx_single_link_file_mode_valid "$dest" "$mode" "$device"; then
+  if xox_single_link_file_mode_valid "$dest" "$mode" "$device"; then
     return 1
   fi
   return 2
 }
 
-fmx_private_artifact_file_valid() {
+xox_private_artifact_file_valid() {
   local dir=$1 base=$2 mode=$3 device
   case "$base" in
     ''|.*|*/*) return 1 ;;
@@ -223,79 +223,79 @@ fmx_private_artifact_file_valid() {
     600|700) ;;
     *) return 1 ;;
   esac
-  device=$(fmx_private_artifact_dir_device "$dir") || return 1
-  fmx_single_link_file_mode_valid "$dir/$base" "$mode" "$device"
+  device=$(xox_private_artifact_dir_device "$dir") || return 1
+  xox_single_link_file_mode_valid "$dir/$base" "$mode" "$device"
 }
 
-fmx_poll_shim_identity_valid() {
-  fmx_single_link_file_mode_valid "$1" "$2" "${3-}"
+xox_poll_shim_identity_valid() {
+  xox_single_link_file_mode_valid "$1" "$2" "${3-}"
 }
 
-fmx_poll_shim_private_identity_valid() {
-  fmx_poll_shim_identity_valid "$1" 700
+xox_poll_shim_private_identity_valid() {
+  xox_poll_shim_identity_valid "$1" 700
 }
 
-fmx_poll_shim_valid() {
+xox_poll_shim_valid() {
   local file=$1 home=$2 root=$3
-  fmx_poll_shim_private_identity_valid "$file" || return 1
-  cmp -s "$file" <(fmx_poll_shim_content "$home" "$root")
+  xox_poll_shim_private_identity_valid "$file" || return 1
+  cmp -s "$file" <(xox_poll_shim_content "$home" "$root")
 }
 
-# Resolve the X-mode settings into FMX_TOKEN, FMX_RELAY, FMX_DRY, FMX_MAX,
-# FMX_DISCORD_MAX, and FMX_THREAD_MAX. An explicit environment variable always
+# Resolve the X-mode settings into XOX_TOKEN, XOX_RELAY, XOX_DRY, XOX_MAX,
+# XOX_DISCORD_MAX, and XOX_THREAD_MAX. An explicit environment variable always
 # wins over the .env file; the relay URL defaults to the production host so a
-# normal user configures only the token. FMX_RELAY has any trailing slash trimmed
+# normal user configures only the token. XOX_RELAY has any trailing slash trimmed
 # so callers can append "/connector/..." cleanly.
-# FMX_DRY is set to "1" when FMX_DRY_RUN is a truthy value (anything other than
+# XOX_DRY is set to "1" when XOX_DRY_RUN is a truthy value (anything other than
 # unset/empty/0/false/no/off), and "" otherwise: preview mode, where the client
 # composes a reply but records it instead of posting (see xo-x-reply.sh).
-fmx_load_config() {
-  local env_file="${FMX_ENV_FILE:-$XO_HOME/.env}" dry
-  if [ -n "${FMX_PAIRING_TOKEN+x}" ]; then
-    FMX_TOKEN=${FMX_PAIRING_TOKEN-}
+xox_load_config() {
+  local env_file="${XOX_ENV_FILE:-$XO_HOME/.env}" dry
+  if [ -n "${XOX_PAIRING_TOKEN+x}" ]; then
+    XOX_TOKEN=${XOX_PAIRING_TOKEN-}
   else
-    FMX_TOKEN=$(fmx_env_get FMX_PAIRING_TOKEN "$env_file")
+    XOX_TOKEN=$(xox_env_get XOX_PAIRING_TOKEN "$env_file")
   fi
-  if [ -n "${FMX_RELAY_URL+x}" ]; then
-    FMX_RELAY=${FMX_RELAY_URL-}
+  if [ -n "${XOX_RELAY_URL+x}" ]; then
+    XOX_RELAY=${XOX_RELAY_URL-}
   else
-    FMX_RELAY=$(fmx_env_get FMX_RELAY_URL "$env_file")
+    XOX_RELAY=$(xox_env_get XOX_RELAY_URL "$env_file")
   fi
-  [ -n "$FMX_RELAY" ] || FMX_RELAY="https://myxo.io"
-  FMX_RELAY=${FMX_RELAY%/}
-  if [ -n "${FMX_DRY_RUN+x}" ]; then
-    dry=${FMX_DRY_RUN-}
+  [ -n "$XOX_RELAY" ] || XOX_RELAY="https://myxo.io"
+  XOX_RELAY=${XOX_RELAY%/}
+  if [ -n "${XOX_DRY_RUN+x}" ]; then
+    dry=${XOX_DRY_RUN-}
   else
-    dry=$(fmx_env_get FMX_DRY_RUN "$env_file")
+    dry=$(xox_env_get XOX_DRY_RUN "$env_file")
   fi
-  # shellcheck disable=SC2034 # FMX_DRY is read by callers (xo-x-reply.sh) after sourcing.
+  # shellcheck disable=SC2034 # XOX_DRY is read by callers (xo-x-reply.sh) after sourcing.
   case "$(printf '%s' "$dry" | tr '[:upper:]' '[:lower:]')" in
-    ''|0|false|no|off) FMX_DRY="" ;;
-    *) FMX_DRY=1 ;;
+    ''|0|false|no|off) XOX_DRY="" ;;
+    *) XOX_DRY=1 ;;
   esac
 
   # Per-message character budgets for thread-splitting, and the maximum number
   # of messages in one auto-split thread (anti-spam cap).
   local maxraw discordraw threadraw
-  if [ -n "${FMX_X_REPLY_MAX_CHARS+x}" ]; then maxraw=${FMX_X_REPLY_MAX_CHARS-}; else maxraw=$(fmx_env_get FMX_X_REPLY_MAX_CHARS "$env_file"); fi
+  if [ -n "${XOX_X_REPLY_MAX_CHARS+x}" ]; then maxraw=${XOX_X_REPLY_MAX_CHARS-}; else maxraw=$(xox_env_get XOX_X_REPLY_MAX_CHARS "$env_file"); fi
   case "$maxraw" in ''|*[!0-9]*) maxraw=280 ;; esac
   [ "$maxraw" -ge 50 ] 2>/dev/null || maxraw=50
-  # shellcheck disable=SC2034 # FMX_MAX is read by callers (xo-x-reply.sh) after sourcing.
-  FMX_MAX=$maxraw
-  if [ -n "${FMX_DISCORD_REPLY_MAX_CHARS+x}" ]; then discordraw=${FMX_DISCORD_REPLY_MAX_CHARS-}; else discordraw=$(fmx_env_get FMX_DISCORD_REPLY_MAX_CHARS "$env_file"); fi
+  # shellcheck disable=SC2034 # XOX_MAX is read by callers (xo-x-reply.sh) after sourcing.
+  XOX_MAX=$maxraw
+  if [ -n "${XOX_DISCORD_REPLY_MAX_CHARS+x}" ]; then discordraw=${XOX_DISCORD_REPLY_MAX_CHARS-}; else discordraw=$(xox_env_get XOX_DISCORD_REPLY_MAX_CHARS "$env_file"); fi
   case "$discordraw" in ''|*[!0-9]*) discordraw=1900 ;; esac
   [ "$discordraw" -ge 50 ] 2>/dev/null || discordraw=50
   [ "$discordraw" -le 2000 ] 2>/dev/null || discordraw=1900
-  # shellcheck disable=SC2034 # FMX_DISCORD_MAX is read by callers (xo-x-reply.sh) after sourcing.
-  FMX_DISCORD_MAX=$discordraw
-  if [ -n "${FMX_X_THREAD_MAX+x}" ]; then threadraw=${FMX_X_THREAD_MAX-}; else threadraw=$(fmx_env_get FMX_X_THREAD_MAX "$env_file"); fi
+  # shellcheck disable=SC2034 # XOX_DISCORD_MAX is read by callers (xo-x-reply.sh) after sourcing.
+  XOX_DISCORD_MAX=$discordraw
+  if [ -n "${XOX_X_THREAD_MAX+x}" ]; then threadraw=${XOX_X_THREAD_MAX-}; else threadraw=$(xox_env_get XOX_X_THREAD_MAX "$env_file"); fi
   case "$threadraw" in ''|*[!0-9]*) threadraw=25 ;; esac
   [ "$threadraw" -ge 1 ] 2>/dev/null || threadraw=25
-  # shellcheck disable=SC2034 # FMX_THREAD_MAX is read by callers (xo-x-reply.sh) after sourcing.
-  FMX_THREAD_MAX=$threadraw
+  # shellcheck disable=SC2034 # XOX_THREAD_MAX is read by callers (xo-x-reply.sh) after sourcing.
+  XOX_THREAD_MAX=$threadraw
 }
 
-# fmx_extract_reply_context <json-file>: the SINGLE owner of reply-context
+# xox_extract_reply_context <json-file>: the SINGLE owner of reply-context
 # extraction. Print {"platform":"...","reply_max_chars":"..."} inferred from a
 # mention/relay payload file. Explicit relay-provided platform/limit fields win;
 # absent those, the legacy tweet_id shape is used ("discord:<channel>:<message>"
@@ -303,7 +303,7 @@ fmx_load_config() {
 # must default safely. A missing file yields the empty shape. The inbox, relay,
 # and poll paths all feed their payload through this one function so platform
 # inference can never drift between them.
-fmx_extract_reply_context() {
+xox_extract_reply_context() {
   local file=$1
   if [ ! -f "$file" ]; then
     printf '{"platform":"","reply_max_chars":""}\n'
@@ -334,19 +334,19 @@ fmx_extract_reply_context() {
   ' "$file"
 }
 
-# fmx_request_inbox_context <state> <request_id>: reply context from a stashed
+# xox_request_inbox_context <state> <request_id>: reply context from a stashed
 # mention payload (state/x-inbox/<request_id>.json), or the empty shape when the
-# inbox file is absent. Thin wrapper over fmx_extract_reply_context.
-fmx_request_inbox_context() {
+# inbox file is absent. Thin wrapper over xox_extract_reply_context.
+xox_request_inbox_context() {
   local state=$1 rid=$2
-  if ! fmx_private_artifact_file_valid "$state/x-inbox" "$rid.json" 600; then
+  if ! xox_private_artifact_file_valid "$state/x-inbox" "$rid.json" 600; then
     printf '{"platform":"","reply_max_chars":""}\n'
     return 0
   fi
-  fmx_extract_reply_context "$state/x-inbox/$rid.json"
+  xox_extract_reply_context "$state/x-inbox/$rid.json"
 }
 
-# fmx_request_relay_context <request_id>: resolve the reply platform/limit
+# xox_request_relay_context <request_id>: resolve the reply platform/limit
 # AUTHORITATIVELY from the relay by request_id when local per-request registry or
 # inbox context is missing an axis. The request_id is the durable key the relay
 # still holds within the follow-up window, so live follow-ups can recover missing
@@ -354,18 +354,18 @@ fmx_request_inbox_context() {
 #
 # POSTs {request_id} to $RELAY/connector/request-context and prints
 # {"platform":"...","reply_max_chars":"..."} in the SAME shape as
-# fmx_request_inbox_context, so callers feed both through the identical
-# normalization and fmx_reply_limit_for_platform path.
+# xox_request_inbox_context, so callers feed both through the identical
+# normalization and xox_reply_limit_for_platform path.
 #
 # Best-effort by design: it prints the empty-context shape and returns non-zero
 # when the query cannot run (no token, no curl/jq) or the relay does not resolve
 # it (non-2xx - e.g. an older relay without this endpoint, or a request already
 # swept past its window). Callers must treat that as "unknown" and warn loudly
-# rather than silently defaulting to the X budget. Requires fmx_load_config to
-# have populated FMX_TOKEN and FMX_RELAY first.
-fmx_request_relay_context() {
+# rather than silently defaulting to the X budget. Requires xox_load_config to
+# have populated XOX_TOKEN and XOX_RELAY first.
+xox_request_relay_context() {
   local rid=$1 payload_file body_file code rc ctx empty='{"platform":"","reply_max_chars":""}'
-  [ -n "${FMX_TOKEN:-}" ] || { printf '%s\n' "$empty"; return 1; }
+  [ -n "${XOX_TOKEN:-}" ] || { printf '%s\n' "$empty"; return 1; }
   command -v curl >/dev/null 2>&1 || { printf '%s\n' "$empty"; return 1; }
   command -v jq >/dev/null 2>&1 || { printf '%s\n' "$empty"; return 1; }
   payload_file=$(mktemp "${TMPDIR:-/tmp}/xo-x-reqctx.XXXXXX") || { printf '%s\n' "$empty"; return 1; }
@@ -373,7 +373,7 @@ fmx_request_relay_context() {
   if ! jq -cn --arg rid "$rid" '{request_id:$rid}' > "$payload_file" 2>/dev/null; then
     rm -f "$payload_file" "$body_file"; printf '%s\n' "$empty"; return 1
   fi
-  code=$(fmx_post_json request-context "$payload_file" "$body_file"); rc=$?
+  code=$(xox_post_json request-context "$payload_file" "$body_file"); rc=$?
   rm -f "$payload_file"
   if [ "$rc" != 0 ]; then rm -f "$body_file"; printf '%s\n' "$empty"; return 1; fi
   case "$code" in
@@ -382,7 +382,7 @@ fmx_request_relay_context() {
   esac
   # Same extraction as the inbox path, so a relay-resolved context and an
   # inbox-resolved one normalize identically.
-  ctx=$(fmx_extract_reply_context "$body_file" 2>/dev/null) || ctx=
+  ctx=$(xox_extract_reply_context "$body_file" 2>/dev/null) || ctx=
   rm -f "$body_file"
   [ -n "$ctx" ] || { printf '%s\n' "$empty"; return 1; }
   # A 200 that resolved neither a platform nor a limit is treated as unresolved so
@@ -404,11 +404,11 @@ fmx_request_relay_context() {
 # durable fix: one small JSON per request_id, keyed independently of any task
 # link, written at poll time from the authoritative relay payload. It survives
 # inbox cleanup, process restart, and concurrent requests, so
-# fmx_resolve_reply_context can always recover the ORIGINAL platform/budget for a
+# xox_resolve_reply_context can always recover the ORIGINAL platform/budget for a
 # request without depending on task-link state. Entries are volatile runtime
 # state under state/ and are pruned after the relay's 7-day follow-up window.
 
-fmx_context_registry_mtime() {
+xox_context_registry_mtime() {
   local file=$1 mtime
   mtime=$(/usr/bin/stat -f '%m' "$file" 2>/dev/null) || mtime=$(stat -c '%Y' "$file" 2>/dev/null) || return 1
   case "$mtime" in
@@ -417,7 +417,7 @@ fmx_context_registry_mtime() {
   printf '%s\n' "$mtime"
 }
 
-fmx_context_registry_recorded_at() {
+xox_context_registry_recorded_at() {
   local file=$1 now=${2:-} recorded_at
   recorded_at=$(jq -r '
     .recorded_at
@@ -433,7 +433,7 @@ fmx_context_registry_recorded_at() {
     recorded_at=
   fi
   if [ -z "$recorded_at" ]; then
-    recorded_at=$(fmx_context_registry_mtime "$file") || return 1
+    recorded_at=$(xox_context_registry_mtime "$file") || return 1
     if [ -n "$now" ] && [ "$recorded_at" -gt "$now" ]; then
       return 1
     fi
@@ -441,27 +441,27 @@ fmx_context_registry_recorded_at() {
   printf '%s\n' "$recorded_at"
 }
 
-fmx_context_registry_prune() {
+xox_context_registry_prune() {
   local state=$1 dir now max_age file recorded_at age dir_device
   dir="$state/x-context"
-  dir_device=$(fmx_private_artifact_dir_device "$dir" 2>/dev/null) || return 0
-  now=${FMX_NOW_OVERRIDE:-$(date +%s)}
+  dir_device=$(xox_private_artifact_dir_device "$dir" 2>/dev/null) || return 0
+  now=${XOX_NOW_OVERRIDE:-$(date +%s)}
   case "$now" in
     ''|*[!0-9]*) return 0 ;;
   esac
   [ "${#now}" -le 18 ] || return 0
-  max_age=${FMX_FOLLOWUP_MAX_AGE_SECS:-604800}
+  max_age=${XOX_FOLLOWUP_MAX_AGE_SECS:-604800}
   case "$max_age" in
     ''|*[!0-9]*) max_age=604800 ;;
   esac
   [ "${#max_age}" -le 18 ] || max_age=604800
   [ "$max_age" -le 604800 ] || max_age=604800
   while IFS= read -r -d '' file; do
-    if ! fmx_single_link_file_mode_valid "$file" 600 "$dir_device"; then
+    if ! xox_single_link_file_mode_valid "$file" 600 "$dir_device"; then
       rm -f -- "$file" 2>/dev/null || true
       continue
     fi
-    if ! recorded_at=$(fmx_context_registry_recorded_at "$file" "$now"); then
+    if ! recorded_at=$(xox_context_registry_recorded_at "$file" "$now"); then
       rm -f -- "$file" 2>/dev/null || true
       continue
     fi
@@ -473,14 +473,14 @@ fmx_context_registry_prune() {
   return 0
 }
 
-# fmx_context_registry_set <state> <request_id> <platform> <reply-max> [refresh]:
+# xox_context_registry_set <state> <request_id> <platform> <reply-max> [refresh]:
 # persist the durable per-request reply context atomically. Normalizes platform
 # (twitter -> x, anything unrecognized -> empty) and requires a numeric budget.
 # A refresh value of 1 resets the retention timestamp; ordinary writes preserve
 # it. A no-op (success) when neither a platform nor a budget is known, so callers
 # never write an empty, useless record. Returns non-zero only on invalid input or
 # a write failure; callers treat the write as best-effort.
-fmx_context_registry_set() {
+xox_context_registry_set() {
   local state=$1 rid=$2 platform=${3:-} reply_max=${4:-} refresh=${5:-0} dir file dir_device now recorded_at
   case "$rid" in
     ''|.*|*[!A-Za-z0-9._-]*) return 1 ;;
@@ -501,21 +501,21 @@ fmx_context_registry_set() {
     return 0
   fi
   dir="$state/x-context"
-  dir_device=$(fmx_private_artifact_dir_prepare "$dir") || return 1
+  dir_device=$(xox_private_artifact_dir_prepare "$dir") || return 1
   file="$dir/$rid.json"
   if { [ -e "$file" ] || [ -L "$file" ]; } \
-    && ! fmx_single_link_file_mode_valid "$file" 600 "$dir_device"; then
+    && ! xox_single_link_file_mode_valid "$file" 600 "$dir_device"; then
     return 1
   fi
-  fmx_context_registry_prune "$state"
-  now=${FMX_NOW_OVERRIDE:-$(date +%s)}
+  xox_context_registry_prune "$state"
+  now=${XOX_NOW_OVERRIDE:-$(date +%s)}
   case "$now" in
     ''|*[!0-9]*) return 1 ;;
   esac
   [ "${#now}" -le 18 ] || return 1
   recorded_at=
   if [ "$refresh" = 0 ] && [ -f "$file" ]; then
-    recorded_at=$(fmx_context_registry_recorded_at "$file" "$now") || recorded_at=
+    recorded_at=$(xox_context_registry_recorded_at "$file" "$now") || recorded_at=
   fi
   if [ -z "$recorded_at" ]; then
     recorded_at=$now
@@ -523,22 +523,22 @@ fmx_context_registry_set() {
   (set -o pipefail; jq -cn --arg rid "$rid" --arg platform "$platform" --arg max "$reply_max" \
     --argjson recorded_at "$recorded_at" \
     '{request_id:$rid, platform:$platform, reply_max_chars:$max, recorded_at:$recorded_at}' \
-    | fmx_private_artifact_publish_stdin "$dir" "$rid.json" 600) || return 1
+    | xox_private_artifact_publish_stdin "$dir" "$rid.json" 600) || return 1
 }
 
-# fmx_offer_registry_claim <state> <request_id>: atomically claim the durable
+# xox_offer_registry_claim <state> <request_id>: atomically claim the durable
 # one-wake marker at state/x-context/<request_id>.offered.json. The marker uses
 # the context registry's recorded_at retention contract, so its first claim
 # survives inbox cleanup and expires with the relay's bounded follow-up window.
 # Returns 0 only to the caller that created the marker, 1 when a valid marker
 # already exists, and 2 on invalid input or a publication failure.
-fmx_offer_registry_claim() {
+xox_offer_registry_claim() {
   local state=$1 rid=$2 dir now record rc
   case "$rid" in
     ''|.*|*[!A-Za-z0-9._-]*) return 2 ;;
   esac
-  fmx_context_registry_prune "$state"
-  now=${FMX_NOW_OVERRIDE:-$(date +%s)}
+  xox_context_registry_prune "$state"
+  now=${XOX_NOW_OVERRIDE:-$(date +%s)}
   case "$now" in
     ''|*[!0-9]*) return 2 ;;
   esac
@@ -547,34 +547,34 @@ fmx_offer_registry_claim() {
     '{request_id:$rid, recorded_at:$recorded_at}') || return 2
   dir="$state/x-context"
   printf '%s\n' "$record" \
-    | fmx_private_artifact_publish_stdin_once "$dir" "$rid.offered.json" 600
+    | xox_private_artifact_publish_stdin_once "$dir" "$rid.offered.json" 600
   rc=$?
   return "$rc"
 }
 
-# fmx_context_registry_get <state> <request_id>: print the durable per-request
+# xox_context_registry_get <state> <request_id>: print the durable per-request
 # reply context as {"platform":"...","reply_max_chars":"..."} (the same shape as
 # the inbox and relay extractors), or the empty shape when no record exists.
-fmx_context_registry_get() {
+xox_context_registry_get() {
   local state=$1 rid=$2 dir file
   case "$rid" in
     ''|.*|*[!A-Za-z0-9._-]*) printf '{"platform":"","reply_max_chars":""}\n'; return 0 ;;
   esac
   dir="$state/x-context"
   file="$dir/$rid.json"
-  if ! fmx_private_artifact_file_valid "$dir" "$rid.json" 600; then
+  if ! xox_private_artifact_file_valid "$dir" "$rid.json" 600; then
     printf '{"platform":"","reply_max_chars":""}\n'
     return 0
   fi
-  fmx_context_registry_prune "$state"
+  xox_context_registry_prune "$state"
   jq -c '{platform:(.platform // ""), reply_max_chars:(.reply_max_chars // "")}' "$file" 2>/dev/null \
     || printf '{"platform":"","reply_max_chars":""}\n'
 }
 
-# fmx_context_registry_clear <state> <request_id>: drop the durable record.
+# xox_context_registry_clear <state> <request_id>: drop the durable record.
 # Idempotent and best-effort; a dismiss (no follow-up will ever come) uses it so
 # a skipped mention leaves no stray context behind.
-fmx_context_registry_clear() {
+xox_context_registry_clear() {
   local state=$1 rid=$2 dir
   case "$rid" in
     ''|.*|*[!A-Za-z0-9._-]*) return 0 ;;
@@ -585,7 +585,7 @@ fmx_context_registry_clear() {
   return 0
 }
 
-# fmx_resolve_reply_context <state> <request_id> <allow-relay>: resolve the reply
+# xox_resolve_reply_context <state> <request_id> <allow-relay>: resolve the reply
 # platform/budget for a request through the durable sources, in order:
 #   1. the per-request context registry (durable, survives inbox cleanup, restart,
 #      and concurrent requests - the primary source after this fix);
@@ -596,18 +596,18 @@ fmx_context_registry_clear() {
 # are present or the sources are exhausted. <allow-relay>
 # must be 0 in dry-run / no-token / no-network contexts; the caller gates it
 # (typically: follow-up + live + token) so the answer path and dry-run stay
-# network-free. Requires fmx_load_config to have run when <allow-relay> is 1.
-fmx_resolve_reply_context() {
+# network-free. Requires xox_load_config to have run when <allow-relay> is 1.
+xox_resolve_reply_context() {
   # Bash local accepts p= and m= as explicit empty assignment arguments.
   # shellcheck disable=SC1007
   local state=$1 rid=$2 allow_relay=${3:-0} src ctx source_p source_m p= m=
   for src in registry inbox relay; do
     case "$src" in
-      registry) ctx=$(fmx_context_registry_get "$state" "$rid" 2>/dev/null) || ctx= ;;
-      inbox)    ctx=$(fmx_request_inbox_context "$state" "$rid" 2>/dev/null) || ctx= ;;
+      registry) ctx=$(xox_context_registry_get "$state" "$rid" 2>/dev/null) || ctx= ;;
+      inbox)    ctx=$(xox_request_inbox_context "$state" "$rid" 2>/dev/null) || ctx= ;;
       relay)
         [ "$allow_relay" = 1 ] || continue
-        ctx=$(fmx_request_relay_context "$rid" 2>/dev/null) || ctx=
+        ctx=$(xox_request_relay_context "$rid" 2>/dev/null) || ctx=
         ;;
     esac
     [ -n "$ctx" ] || continue
@@ -622,20 +622,20 @@ fmx_resolve_reply_context() {
   return 0
 }
 
-# fmx_reply_limit_for_platform <platform> <explicit-limit>: choose the split
-# budget for one outbound message. X keeps the existing FMX_X_REPLY_MAX_CHARS
+# xox_reply_limit_for_platform <platform> <explicit-limit>: choose the split
+# budget for one outbound message. X keeps the existing XOX_X_REPLY_MAX_CHARS
 # default of 280. Discord uses 1900 by default, below Discord's 2000-character
 # message limit so relay/client metadata or small counting differences have
 # headroom. A relay-provided explicit limit is honored when present.
-fmx_reply_limit_for_platform() {
+xox_reply_limit_for_platform() {
   local platform=${1:-} explicit=${2:-}
   case "$explicit" in
     ''|*[!0-9]*) ;;
     *) [ "$explicit" -ge 50 ] 2>/dev/null && { printf '%s\n' "$explicit"; return 0; } ;;
   esac
   case "$platform" in
-    discord) printf '%s\n' "${FMX_DISCORD_MAX:-1900}" ;;
-    *) printf '%s\n' "${FMX_MAX:-280}" ;;
+    discord) printf '%s\n' "${XOX_DISCORD_MAX:-1900}" ;;
+    *) printf '%s\n' "${XOX_MAX:-280}" ;;
   esac
 }
 
@@ -647,7 +647,7 @@ fmx_reply_limit_for_platform() {
 # the last kept message is marked with an ellipsis. Reads the reply text on stdin
 # and prints a compact JSON array of chunks. Length is codepoint-based (via jq);
 # the relay remains the final authority and trims.
-fmx_split_thread() {
+xox_split_thread() {
   jq -Rsc --argjson limit "$1" --argjson cap "$2" '
     def trim: gsub("^[[:space:]]+|[[:space:]]+$"; "");
     def fence_marker: test("^[[:space:]]*```");
@@ -722,18 +722,18 @@ fmx_split_thread() {
   '
 }
 
-fmx_auth_header_file() {
+xox_auth_header_file() {
   local file
-  case "$FMX_TOKEN" in
+  case "$XOX_TOKEN" in
     *$'\n'*|*$'\r'*) return 1 ;;
   esac
   file=$(umask 077; mktemp "${TMPDIR:-/tmp}/xo-x-auth.XXXXXX") || return 1
   chmod 600 "$file" 2>/dev/null || { rm -f "$file"; return 1; }
-  printf 'Authorization: Bearer %s\n' "$FMX_TOKEN" > "$file" || { rm -f "$file"; return 1; }
+  printf 'Authorization: Bearer %s\n' "$XOX_TOKEN" > "$file" || { rm -f "$file"; return 1; }
   printf '%s\n' "$file"
 }
 
-fmx_image_media_type_from_path() {
+xox_image_media_type_from_path() {
   local path=$1 lower detected
   lower=$(printf '%s' "$path" | tr '[:upper:]' '[:lower:]')
   case "$lower" in
@@ -757,10 +757,10 @@ fmx_image_media_type_from_path() {
   esac
 }
 
-# fmx_image_payload_file <path> <client-name> <payload-file>: validate and encode
+# xox_image_payload_file <path> <client-name> <payload-file>: validate and encode
 # a local outbound image. The relay payload object is written to <payload-file>.
-# The compact preview object is printed for FMX_DRY_RUN outbox records.
-fmx_image_payload_file() {
+# The compact preview object is printed for XOX_DRY_RUN outbox records.
+xox_image_payload_file() {
   local path=$1 client=${2:-xo-x-reply} payload_file=${3:-} media_type bytes
   if [ -z "$payload_file" ]; then
     echo "$client: missing image payload destination" >&2
@@ -778,7 +778,7 @@ fmx_image_payload_file() {
     echo "$client: image file is not readable: $path" >&2
     return 1
   fi
-  media_type=$(fmx_image_media_type_from_path "$path") || {
+  media_type=$(xox_image_media_type_from_path "$path") || {
     echo "$client: unsupported image media type for: $path" >&2
     return 1
   }
@@ -808,7 +808,7 @@ fmx_image_payload_file() {
     '{media_type:$media_type,bytes:$bytes,source_path:$source_path}'
 }
 
-fmx_reply_payload_json() {
+xox_reply_payload_json() {
   local rid=$1 chunks=$2 n=$3 image_json_file=${4:-}
   if [ -n "$image_json_file" ]; then
     if [ "$n" -le 1 ]; then
@@ -827,7 +827,7 @@ fmx_reply_payload_json() {
   fi
 }
 
-fmx_reply_outbox_json() {
+xox_reply_outbox_json() {
   local rid=$1 chunks=$2 n=$3 followup=$4 image_preview_json=${5:-}
   if [ -n "$image_preview_json" ]; then
     if [ "$followup" = 1 ]; then
@@ -866,11 +866,11 @@ fmx_reply_outbox_json() {
   fi
 }
 
-fmx_post_json() (
+xox_post_json() (
   local endpoint=$1 payload_file=$2 body_file=${3:-/dev/null} auth_header_file code rc
   command -v curl >/dev/null 2>&1 || return 127
   [ -r "$payload_file" ] || return 2
-  auth_header_file=$(fmx_auth_header_file) || return 3
+  auth_header_file=$(xox_auth_header_file) || return 3
   trap 'rm -f "$auth_header_file"' EXIT
   trap 'rm -f "$auth_header_file"; exit 143' HUP INT TERM
   code=$(curl -m 10 -s -o "$body_file" -w '%{http_code}' \
@@ -878,7 +878,7 @@ fmx_post_json() (
     -H "@$auth_header_file" \
     -H 'Content-Type: application/json' \
     --data-binary "@$payload_file" \
-    "$FMX_RELAY/connector/$endpoint" 2>/dev/null)
+    "$XOX_RELAY/connector/$endpoint" 2>/dev/null)
   rc=$?
   rm -f "$auth_header_file"
   trap - EXIT HUP INT TERM
@@ -900,10 +900,10 @@ fmx_post_json() (
 # own the read/write/clear so xo-x-link.sh and xo-x-followup.sh never hand-edit
 # meta and the rewrite stays atomic and preserves every other meta line.
 
-# fmx_meta_get <meta> <key>: print the value of the last "key=value" line in
+# xox_meta_get <meta> <key>: print the value of the last "key=value" line in
 # <meta>, or nothing (and succeed) when the file or key is absent. Callers treat
 # empty output as "unset".
-fmx_meta_get() {
+xox_meta_get() {
   local meta=$1 key=$2 line
   [ -f "$meta" ] || return 0
   line=$(grep -E "^${key}=" "$meta" 2>/dev/null | tail -n1) || return 0
@@ -911,7 +911,7 @@ fmx_meta_get() {
   printf '%s' "${line#*=}"
 }
 
-fmx_meta_tmp() {
+xox_meta_tmp() {
   local meta=$1 dir base
   dir=${meta%/*}
   base=${meta##*/}
@@ -920,20 +920,20 @@ fmx_meta_tmp() {
   mktemp "$dir/.${base}.xo-x.XXXXXX"
 }
 
-# fmx_meta_link_set <meta> <request_id> <epoch> [followups] [platform] [max]:
+# xox_meta_link_set <meta> <request_id> <epoch> [followups] [platform] [max]:
 # atomically (re)write the x_request/x_request_ts/x_followups lines plus optional
 # reply-platform context, dropping any prior link and preserving every other meta
 # line. <followups> defaults to 0 (a fresh link); pass the prior task's count to
 # carry it forward onto a successor task instead of granting a fresh follow-up
 # budget against a binding the relay already knows about. Returns non-zero if
 # <meta> is missing or the rewrite fails.
-fmx_meta_link_set() {
+xox_meta_link_set() {
   local meta=$1 rid=$2 ts=$3 followups=${4:-0} platform=${5:-} reply_max=${6:-} tmp lock
   [ -f "$meta" ] || return 1
   lock=$(xo_meta_lock_path "$meta") || return 1
   xo_lock_acquire_wait "$lock"
   [ -f "$meta" ] || { xo_lock_release "$lock"; return 1; }
-  tmp=$(fmx_meta_tmp "$meta") || { xo_lock_release "$lock"; return 1; }
+  tmp=$(xox_meta_tmp "$meta") || { xo_lock_release "$lock"; return 1; }
   if ! { grep -vE '^x_request=|^x_request_ts=|^x_followups=|^x_platform=|^x_reply_max_chars=' "$meta" || true; } > "$tmp"; then
     rm -f "$tmp"; xo_lock_release "$lock"; return 1
   fi
@@ -955,16 +955,16 @@ fmx_meta_link_set() {
   xo_lock_release "$lock"
 }
 
-# fmx_meta_followups_set <meta> <n>: atomically rewrite just the x_followups
+# xox_meta_followups_set <meta> <n>: atomically rewrite just the x_followups
 # line, preserving every other meta line including link and reply context.
 # Returns non-zero if <meta> is missing or the rewrite fails.
-fmx_meta_followups_set() {
+xox_meta_followups_set() {
   local meta=$1 n=$2 tmp lock
   [ -f "$meta" ] || return 1
   lock=$(xo_meta_lock_path "$meta") || return 1
   xo_lock_acquire_wait "$lock"
   [ -f "$meta" ] || { xo_lock_release "$lock"; return 1; }
-  tmp=$(fmx_meta_tmp "$meta") || { xo_lock_release "$lock"; return 1; }
+  tmp=$(xox_meta_tmp "$meta") || { xo_lock_release "$lock"; return 1; }
   if ! { grep -vE '^x_followups=' "$meta" || true; } > "$tmp"; then
     rm -f "$tmp"; xo_lock_release "$lock"; return 1
   fi
@@ -976,15 +976,15 @@ fmx_meta_followups_set() {
   xo_lock_release "$lock"
 }
 
-# fmx_meta_link_clear <meta> [expected-request]: atomically remove the
+# xox_meta_link_clear <meta> [expected-request]: atomically remove the
 # x_request/x_request_ts/x_followups and reply-platform lines while preserving
 # every other meta line. With expected-request, a present link is cleared only
 # when its request identity matches, and absence succeeds only when the
 # authorized parent directory can be inspected safely. That guarded mode also
-# bounds its lock wait (FMX_LINK_CLEAR_LOCK_TIMEOUT, default 10 seconds) so an
+# bounds its lock wait (XOX_LINK_CLEAR_LOCK_TIMEOUT, default 10 seconds) so an
 # unattended remote clear refuses instead of hanging. Unguarded calls remain
 # idempotent when <meta> is missing and keep the ordinary unbounded wait.
-fmx_meta_link_clear() {
+xox_meta_link_clear() {
   local meta=$1 expected_set=0 expected='' tmp lock line rid='' link_present=0 parent
   local lock_timeout
   if [ "$#" -ge 2 ]; then
@@ -1016,7 +1016,7 @@ fmx_meta_link_clear() {
     # retry forever instead of returning the reconciliation refusal this guard
     # exists to produce. A bounded acquire turns that race, and a live holder,
     # into a refusal. Unguarded local callers keep the ordinary wait unchanged.
-    lock_timeout=${FMX_LINK_CLEAR_LOCK_TIMEOUT:-10}
+    lock_timeout=${XOX_LINK_CLEAR_LOCK_TIMEOUT:-10}
     case "$lock_timeout" in ''|*[!0-9]*|0) lock_timeout=10 ;; esac
     xo_lock_acquire_wait_bounded "$lock" "$lock_timeout" || return 1
   else
@@ -1038,7 +1038,7 @@ fmx_meta_link_clear() {
     }
     [ "$link_present" -eq 1 ] || { xo_lock_release "$lock"; return 0; }
   fi
-  tmp=$(fmx_meta_tmp "$meta") || { xo_lock_release "$lock"; return 1; }
+  tmp=$(xox_meta_tmp "$meta") || { xo_lock_release "$lock"; return 1; }
   if ! { grep -vE '^x_request=|^x_request_ts=|^x_followups=|^x_platform=|^x_reply_max_chars=' "$meta" || true; } > "$tmp"; then
     rm -f "$tmp"; xo_lock_release "$lock"; return 1
   fi

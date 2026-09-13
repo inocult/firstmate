@@ -145,7 +145,7 @@ printf 'codex\n' > "$PARENT/config/secondmate-harness"
 printf 'tmux\n' > "$PARENT/config/backend"
 
 # The primary home is the X-mode / relay home: the captain's real activation.
-printf 'FMX_PAIRING_TOKEN=repro-token\n' > "$PARENT/.env"
+printf 'XOX_PAIRING_TOKEN=repro-token\n' > "$PARENT/.env"
 
 # --- deterministic SSH boundary, identical shape to the lifecycle e2e suite --
 cat > "$FAKEBIN/fake-ssh" <<'SH'
@@ -262,7 +262,7 @@ run_child_teardown() { # <extra env assignments...>
 # root, and that root itself carries an X-mode .env - a plausible real-world
 # state (a captain who also runs XO directly on the build Mac). Before
 # the fix this refused; the durable record now makes it out of scope.
-printf 'FMX_PAIRING_TOKEN=remote-host-token\n' > "$REMOTE_ROOT/.env"
+printf 'XOX_PAIRING_TOKEN=remote-host-token\n' > "$REMOTE_ROOT/.env"
 run_child_teardown XO_PUBLIC_FOLLOWUP_PRIMARY_HOME="$DELIVERED"
 rm -f "$REMOTE_ROOT/.env"
 [ "$CHILD_TEARDOWN_RC" -eq 0 ] \
@@ -271,13 +271,13 @@ assert_not_contains "$CHILD_TEARDOWN_OUT" "cannot resolve the primary home" \
   "a cross-machine parent must never be reported as an unresolved binding"
 pass "a remote secondmate's finished worker cleans up when the remote code root's own .env looked relay-active"
 
-# Case C-equivalent: FMX_PAIRING_TOKEN exported directly in the process
+# Case C-equivalent: XOX_PAIRING_TOKEN exported directly in the process
 # environment, simulating the remote host's own login-shell export reaching the
 # agent's pane. xo_pf_relay_active's environment-wins rule would make this look
 # identical to a genuine same-home commitment; the fix must tell them apart by
 # reading only $XO_HOME/.env, never the process environment, once the durable
 # record says the parent is remote.
-run_child_teardown XO_PUBLIC_FOLLOWUP_PRIMARY_HOME="$DELIVERED" FMX_PAIRING_TOKEN=ambient-login-token
+run_child_teardown XO_PUBLIC_FOLLOWUP_PRIMARY_HOME="$DELIVERED" XOX_PAIRING_TOKEN=ambient-login-token
 [ "$CHILD_TEARDOWN_RC" -eq 0 ] \
   || fail "a remote-routed child must allow cleanup when only an ambient exported token looks relay-active (rc=$CHILD_TEARDOWN_RC): $CHILD_TEARDOWN_OUT"
 assert_not_contains "$CHILD_TEARDOWN_OUT" "cannot resolve the primary home" \
@@ -294,7 +294,7 @@ pass "a remote secondmate's finished worker cleans up with no relay signal anywh
 # environment, not the remote code root) carries a real token. That is a
 # genuine same-filesystem signal this child's own home could hold, so it must
 # still refuse even though the parent route is remote.
-printf 'FMX_PAIRING_TOKEN=child-own-token\n' > "$REMOTE_HOME/.env"
+printf 'XOX_PAIRING_TOKEN=child-own-token\n' > "$REMOTE_HOME/.env"
 run_child_teardown
 rm -f "$REMOTE_HOME/.env"
 [ "$CHILD_TEARDOWN_RC" -ne 0 ] \

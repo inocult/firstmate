@@ -19,7 +19,7 @@
 # This script composes them; it never restates their contracts or schemas.
 #
 # ZERO OVERHEAD FOR HOMES THAT DO NOT USE THE RELAY: every subcommand gates
-# first on the authoritative activation contract (a non-empty FMX_PAIRING_TOKEN
+# first on the authoritative activation contract (a non-empty XOX_PAIRING_TOKEN
 # in $XO_HOME/.env). Read-side and cleanup paths then use an O(1) presence check
 # for registrations this home actually created. A relay-disabled home therefore
 # runs one [ -f ] test before any backlog work: no tasks-axi call, no backlog scan,
@@ -319,7 +319,7 @@ cmd_register() {
   local mkdir_target registry_state retired_file
   for mkdir_target in "$(xo_pf_registry_dir "$STATE")" "$(xo_pf_events_dir "$STATE")" \
                       "$(xo_pf_consumed_dir "$STATE")" "$(xo_pf_rejected_dir "$STATE")"; do
-    fmx_private_artifact_dir_prepare "$mkdir_target" >/dev/null \
+    xox_private_artifact_dir_prepare "$mkdir_target" >/dev/null \
       || die "could not prepare $mkdir_target" 1
   done
 
@@ -338,7 +338,7 @@ cmd_register() {
   printf 'obligation_id=%s\nrelation_id=%s\nwork_home=%s\nwork_home_path=%s\nwork_id=%s\ngeneration=%s\nplatform=%s\nrequest_id=%s\nstate=open\nfollowup_expires_at=%s\nrequest_context_b64=%s\n' \
     "$id" "$relation" "$work_home" "$work_home_path" "$work_id" "$generation" "$platform" "$request" \
     "$followup_expires_at" "$request_context_b64" \
-    | fmx_private_artifact_publish_stdin "$(xo_pf_registry_dir "$STATE")" "$id" 600 \
+    | xox_private_artifact_publish_stdin "$(xo_pf_registry_dir "$STATE")" "$id" 600 \
     || die "could not write the registration record" 1
   pf_registry_lock_release "$id"
 
@@ -470,10 +470,10 @@ EOF
 reject_event() {
   local file=$1 event_id=$2 reason=$3 rejected event_payload
   rejected=$(xo_pf_rejected_dir "$STATE")
-  fmx_private_artifact_dir_prepare "$rejected" >/dev/null \
+  xox_private_artifact_dir_prepare "$rejected" >/dev/null \
     || { printf 'rejected %s: %s (quarantine failed; event retained)\n' "$event_id" "$reason"; return 1; }
   if ! printf '%s\n' "$reason" \
-      | fmx_private_artifact_publish_stdin "$rejected" "$event_id.reason" 600 2>/dev/null; then
+      | xox_private_artifact_publish_stdin "$rejected" "$event_id.reason" 600 2>/dev/null; then
     printf 'rejected %s: %s (quarantine failed; event retained)\n' "$event_id" "$reason"
     return 1
   fi
@@ -482,7 +482,7 @@ reject_event() {
     return 1
   fi
   if ! printf '%s' "$event_payload" \
-      | fmx_private_artifact_publish_stdin "$rejected" "$event_id.json" 600 2>/dev/null; then
+      | xox_private_artifact_publish_stdin "$rejected" "$event_id.json" 600 2>/dev/null; then
     printf 'rejected %s: %s (quarantine failed; event retained)\n' "$event_id" "$reason"
     return 1
   fi
@@ -564,7 +564,7 @@ collect_remote_staged_events() {
         continue
       fi
       printf '%s\n' "$line" \
-        | fmx_private_artifact_publish_stdin_once "$(xo_pf_events_dir "$STATE")" "$event_id.json" 600
+        | xox_private_artifact_publish_stdin_once "$(xo_pf_events_dir "$STATE")" "$event_id.json" 600
       case $? in
         0|1) ;;
         *)
@@ -605,7 +605,7 @@ cmd_consume() {
   local obligation delivery request platform
   events_dir=$(xo_pf_events_dir "$STATE")
   consumed_dir=$(xo_pf_consumed_dir "$STATE")
-  fmx_private_artifact_dir_prepare "$consumed_dir" >/dev/null \
+  xox_private_artifact_dir_prepare "$consumed_dir" >/dev/null \
     || die "could not prepare the consumed-event ledger" 1
   stderr_file=$(mktemp "${TMPDIR:-/tmp}/xo-pf-consume.XXXXXX") \
     || die "could not stage the reconciliation log" 1
@@ -681,7 +681,7 @@ cmd_consume() {
     fi
 
     if ! printf 'accepted %s\n' "$(now_rfc3339)" \
-        | fmx_private_artifact_publish_stdin "$consumed_dir" "$event_id" 600 2>/dev/null; then
+        | xox_private_artifact_publish_stdin "$consumed_dir" "$event_id" 600 2>/dev/null; then
       printf 'accepted %s: consumed ledger could not be recorded; event retained for reconciliation\n' "$event_id"
       consume_rc=1
       continue
@@ -856,7 +856,7 @@ public_followup_registration_valid() {
 public_followup_secondmate_home() {
   local id=$1 include_absent=${2:-} meta_home registry_home home marker
   xo_pf_home_id_valid "secondmate:$id" || return 1
-  meta_home=$(fmx_meta_get "$STATE/$id.meta" home)
+  meta_home=$(xox_meta_get "$STATE/$id.meta" home)
   registry_home=
   if [ -f "$DATA/secondmates.md" ] && [ ! -L "$DATA/secondmates.md" ]; then
     registry_home=$(secondmate_registry_field "$DATA/secondmates.md" "$id" home || true)
@@ -996,7 +996,7 @@ public_followup_legacy_link_status() {
     meta="$home/state/$work_id.meta"
     [ -e "$meta" ] || continue
     [ -f "$meta" ] && [ ! -L "$meta" ] || return 2
-    [ -n "$(fmx_meta_get "$meta" x_request)" ] && return 0
+    [ -n "$(xox_meta_get "$meta" x_request)" ] && return 0
   done <<EOF
 $relations
 EOF
@@ -1154,7 +1154,7 @@ cmd_deliver() {
   esac
 
   rc=0
-  FMX_REPLY_PLATFORM="$platform" XO_HOME="$XO_HOME" \
+  XOX_REPLY_PLATFORM="$platform" XO_HOME="$XO_HOME" \
     "$XO_ROOT/bin/xo-x-reply.sh" "$request" --followup --receipt-file "$receipt" \
     --text-file "$tmp_text" >/dev/null || rc=$?
 
@@ -1388,7 +1388,7 @@ cmd_rechain() {
     source_record=$(grep -v -E '^rechain_to=' "$src_file" 2>/dev/null) \
       || die "could not read source registration '$from' while claiming it" 1
     printf '%s\nrechain_to=%s\n' "$source_record" "$new_id" \
-      | fmx_private_artifact_publish_stdin "$(xo_pf_registry_dir "$STATE")" "$from" 600 \
+      | xox_private_artifact_publish_stdin "$(xo_pf_registry_dir "$STATE")" "$from" 600 \
       || die "could not claim source registration '$from' for '$new_id'" 1
     first_claim=1
   fi
@@ -1534,7 +1534,7 @@ cmd_retire() {
   retired_at=$(now_rfc3339)
   registry_file="$(xo_pf_registry_dir "$STATE")/$id"
   printf 'reason=%s\nretired_at=%s\n' "$reason" "$retired_at" \
-    | fmx_private_artifact_publish_stdin "$retired_dir" "$id" 600 \
+    | xox_private_artifact_publish_stdin "$retired_dir" "$id" 600 \
     || retirement_rc=1
   if [ "$retirement_rc" -eq 0 ]; then
     if ! rm -f -- "$registry_file" 2>/dev/null \

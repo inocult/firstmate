@@ -15,7 +15,7 @@
 #
 # The --text-file / stdin forms exist so a caller never has to inline reply text
 # (which may be influenced by a public mention) into a shell command, where shell
-# expansion or quote-breakage could bite. fmx-respond uses them; the positional
+# expansion or quote-breakage could bite. xox-respond uses them; the positional
 # <text> form is kept for back-compat and tests.
 #
 # Optional --image <path> attaches one local image file to the answer or followup
@@ -49,10 +49,10 @@
 # window/cap pruning remains the primary guard.
 #
 # Reply platform + split budget are resolved per axis: an explicit
-# FMX_REPLY_PLATFORM / FMX_REPLY_MAX_CHARS env override wins (xo-x-followup passes
+# XOX_REPLY_PLATFORM / XOX_REPLY_MAX_CHARS env override wins (xo-x-followup passes
 # recorded task-link context this way); otherwise resolution runs the durable
 # per-request context registry -> the still-present inbox payload -> an
-# authoritative relay lookup by request_id (xo-x-lib.sh:fmx_resolve_reply_context).
+# authoritative relay lookup by request_id (xo-x-lib.sh:xox_resolve_reply_context).
 # The relay step is confined to a live follow-up so the answer path and every
 # dry-run stay network-free. This is what keeps a delayed request-id follow-up on
 # the ORIGINAL platform's budget even after the inbox is drained and with no task
@@ -62,20 +62,20 @@
 # retries it.
 #
 # Long replies auto-split into a numbered thread. X stays within
-# FMX_X_REPLY_MAX_CHARS, default 280. Discord uses
-# FMX_DISCORD_REPLY_MAX_CHARS, default 1900, safely below Discord's 2000
+# XOX_X_REPLY_MAX_CHARS, default 280. Discord uses
+# XOX_DISCORD_REPLY_MAX_CHARS, default 1900, safely below Discord's 2000
 # character message limit. A reply that fits in one message sends
 # {request_id, text}; a thread sends {request_id, text, texts:[chunk,...]} where
 # `texts` is the ordered "(k/n)" chunks for the relay to post as chained replies,
 # and `text` is the first chunk so a relay that only reads `text` still posts the
 # opener. If --image is present, the relay attaches it to this opener. At most
-# FMX_X_THREAD_MAX messages (default 25) are produced.
+# XOX_X_THREAD_MAX messages (default 25) are produced.
 #
-# Live post config (home .env, FMX_ENV_FILE, or env): FMX_PAIRING_TOKEN
-# (required), FMX_RELAY_URL (default https://myxo.io). Auth:
+# Live post config (home .env, XOX_ENV_FILE, or env): XOX_PAIRING_TOKEN
+# (required), XOX_RELAY_URL (default https://myxo.io). Auth:
 # Authorization: Bearer <token>.
 #
-# Preview / dry-run: with FMX_DRY_RUN set (truthy), the reply is NOT posted.
+# Preview / dry-run: with XOX_DRY_RUN set (truthy), the reply is NOT posted.
 # Instead the would-be POST body ({request_id, text}, or {request_id, text,
 # texts} for a thread) is recorded to state/x-outbox/<request_id>.json and a "DRY
 # RUN" summary is printed to stderr; stdout still echoes the request_id and the
@@ -223,7 +223,7 @@ else
   ENDPOINT=answer
 fi
 
-fmx_load_config
+xox_load_config
 
 # The request_id becomes a filename (inbox/outbox record), so never trust it into
 # a path even though the relay issues it.
@@ -241,19 +241,19 @@ command -v jq >/dev/null 2>&1 || { echo "xo-x-reply: jq not found" >&2; exit 1; 
 # the follow-up path so the answer path and every dry-run stay network-free
 # (xo-x-lib.sh owns the resolution-order contract).
 ALLOW_RELAY=0
-if [ -n "${FMX_REPLY_PLATFORM:-}" ] && [ -n "${FMX_REPLY_MAX_CHARS:-}" ]; then
-  REQ_PLATFORM=${FMX_REPLY_PLATFORM}
-  REQ_EXPLICIT_MAX=${FMX_REPLY_MAX_CHARS}
+if [ -n "${XOX_REPLY_PLATFORM:-}" ] && [ -n "${XOX_REPLY_MAX_CHARS:-}" ]; then
+  REQ_PLATFORM=${XOX_REPLY_PLATFORM}
+  REQ_EXPLICIT_MAX=${XOX_REPLY_MAX_CHARS}
 else
-  if [ "$FOLLOWUP" = 1 ] && [ -z "$FMX_DRY" ] && [ -n "$FMX_TOKEN" ]; then
+  if [ "$FOLLOWUP" = 1 ] && [ -z "$XOX_DRY" ] && [ -n "$XOX_TOKEN" ]; then
     ALLOW_RELAY=1
   fi
-  REPLY_CONTEXT=$(fmx_resolve_reply_context "$STATE" "$REQ" "$ALLOW_RELAY") || {
+  REPLY_CONTEXT=$(xox_resolve_reply_context "$STATE" "$REQ" "$ALLOW_RELAY") || {
     echo "xo-x-reply: failed to resolve request platform context" >&2
     exit 1
   }
-  REQ_PLATFORM=${FMX_REPLY_PLATFORM:-$(printf '%s' "$REPLY_CONTEXT" | jq -r '.platform // ""')}
-  REQ_EXPLICIT_MAX=${FMX_REPLY_MAX_CHARS:-$(printf '%s' "$REPLY_CONTEXT" | jq -r '.reply_max_chars // ""')}
+  REQ_PLATFORM=${XOX_REPLY_PLATFORM:-$(printf '%s' "$REPLY_CONTEXT" | jq -r '.platform // ""')}
+  REQ_EXPLICIT_MAX=${XOX_REPLY_MAX_CHARS:-$(printf '%s' "$REPLY_CONTEXT" | jq -r '.reply_max_chars // ""')}
 fi
 case "$REQ_PLATFORM" in
   discord|x|'') ;;
@@ -277,7 +277,7 @@ if [ "$FOLLOWUP" = 1 ] && [ "$CONTEXT_RESOLVED" = 0 ]; then
     "$REQ" "$relay_note" >&2
   exit 8
 fi
-REPLY_MAX=$(fmx_reply_limit_for_platform "$REQ_PLATFORM" "$REQ_EXPLICIT_MAX")
+REPLY_MAX=$(xox_reply_limit_for_platform "$REQ_PLATFORM" "$REQ_EXPLICIT_MAX")
 
 IMAGE_PAYLOAD_FILE=
 IMAGE_PREVIEW=
@@ -286,7 +286,7 @@ RESPONSE_BODY_FILE=
 if [ -n "$IMAGE_PATH" ]; then
   reply_make_tmp_file IMAGE_PAYLOAD_FILE || {
     echo "xo-x-reply: cannot create image payload temp file" >&2; exit 1; }
-  IMAGE_PREVIEW=$(fmx_image_payload_file "$IMAGE_PATH" xo-x-reply "$IMAGE_PAYLOAD_FILE") || exit 1
+  IMAGE_PREVIEW=$(xox_image_payload_file "$IMAGE_PATH" xo-x-reply "$IMAGE_PAYLOAD_FILE") || exit 1
   printf '%s' "$IMAGE_PREVIEW" | jq -e . >/dev/null 2>&1 || {
     echo "xo-x-reply: failed to build image preview" >&2; exit 1; }
 fi
@@ -294,7 +294,7 @@ fi
 # Auto-split a long reply into a numbered thread using the target platform's
 # per-message budget. A reply that fits in one message stays single and
 # unnumbered.
-CHUNKS=$(printf '%s' "$TEXT" | fmx_split_thread "$REPLY_MAX" "$FMX_THREAD_MAX") || {
+CHUNKS=$(printf '%s' "$TEXT" | xox_split_thread "$REPLY_MAX" "$XOX_THREAD_MAX") || {
   echo "xo-x-reply: failed to split reply into a thread" >&2
   exit 1
 }
@@ -309,32 +309,32 @@ case "$N" in ''|*[!0-9]*) echo "xo-x-reply: failed to split reply into a thread"
 reply_make_tmp_file PAYLOAD_FILE || {
   echo "xo-x-reply: cannot create request payload temp file" >&2; exit 1; }
 if [ -n "$IMAGE_PAYLOAD_FILE" ]; then
-  fmx_reply_payload_json "$REQ" "$CHUNKS" "$N" "$IMAGE_PAYLOAD_FILE" > "$PAYLOAD_FILE" || {
+  xox_reply_payload_json "$REQ" "$CHUNKS" "$N" "$IMAGE_PAYLOAD_FILE" > "$PAYLOAD_FILE" || {
     echo "xo-x-reply: failed to build request payload" >&2; exit 1; }
 else
-  fmx_reply_payload_json "$REQ" "$CHUNKS" "$N" > "$PAYLOAD_FILE" || {
+  xox_reply_payload_json "$REQ" "$CHUNKS" "$N" > "$PAYLOAD_FILE" || {
     echo "xo-x-reply: failed to build request payload" >&2; exit 1; }
 fi
 
 # Preview / dry-run: surface what we WOULD post and stop, without auth or network.
-if [ -n "$FMX_DRY" ]; then
+if [ -n "$XOX_DRY" ]; then
   outbox_dir="$STATE/x-outbox"
   # The recorded body is the would-be POST body, except image bytes are replaced
   # by a compact marker. A follow-up preview additionally carries an
   # "endpoint":"followup" marker so an outbox record is self-describing.
-  OUTREC=$(fmx_reply_outbox_json "$REQ" "$CHUNKS" "$N" "$FOLLOWUP" "$IMAGE_PREVIEW") || {
+  OUTREC=$(xox_reply_outbox_json "$REQ" "$CHUNKS" "$N" "$FOLLOWUP" "$IMAGE_PREVIEW") || {
     echo "xo-x-reply: failed to build dry-run outbox record" >&2; exit 1; }
   printf '%s\n' "$OUTREC" \
-    | fmx_private_artifact_publish_stdin "$outbox_dir" "$REQ.json" 600 || {
+    | xox_private_artifact_publish_stdin "$outbox_dir" "$REQ.json" 600 || {
     echo "xo-x-reply: cannot write dry-run outbox: $outbox_dir/$REQ.json" >&2
     exit 1
   }
   if [ "$N" -le 1 ]; then
     printf 'xo-x-reply: DRY RUN - would POST to %s/connector/%s (recorded: state/x-outbox/%s.json): %s\n' \
-      "$FMX_RELAY" "$ENDPOINT" "$REQ" "$(printf '%s' "$CHUNKS" | jq -r '.[0]')" >&2
+      "$XOX_RELAY" "$ENDPOINT" "$REQ" "$(printf '%s' "$CHUNKS" | jq -r '.[0]')" >&2
   else
     printf 'xo-x-reply: DRY RUN - would POST a %s-tweet thread to %s/connector/%s (recorded: state/x-outbox/%s.json):\n' \
-      "$N" "$FMX_RELAY" "$ENDPOINT" "$REQ" >&2
+      "$N" "$XOX_RELAY" "$ENDPOINT" "$REQ" >&2
     printf '%s' "$CHUNKS" | jq -r '.[]' | while IFS= read -r __chunk; do printf '  %s\n' "$__chunk" >&2; done
   fi
   write_reply_receipt "$N" 1
@@ -342,25 +342,25 @@ if [ -n "$FMX_DRY" ]; then
   exit 0
 fi
 
-if [ -z "$FMX_TOKEN" ]; then
-  echo "xo-x-reply: X mode not configured (no FMX_PAIRING_TOKEN)" >&2
+if [ -z "$XOX_TOKEN" ]; then
+  echo "xo-x-reply: X mode not configured (no XOX_PAIRING_TOKEN)" >&2
   exit 1
 fi
 reply_make_tmp_file RESPONSE_BODY_FILE || {
   echo "xo-x-reply: cannot create relay response temp file" >&2; exit 1; }
-code=$(fmx_post_json "$ENDPOINT" "$PAYLOAD_FILE" "$RESPONSE_BODY_FILE")
+code=$(xox_post_json "$ENDPOINT" "$PAYLOAD_FILE" "$RESPONSE_BODY_FILE")
 post_rc=$?
 case "$post_rc" in
   0) : ;;
   127) echo "xo-x-reply: curl not found" >&2; exit 1 ;;
-  3) echo "xo-x-reply: invalid FMX_PAIRING_TOKEN" >&2; exit 1 ;;
+  3) echo "xo-x-reply: invalid XOX_PAIRING_TOKEN" >&2; exit 1 ;;
   *) echo "xo-x-reply: request to relay failed" >&2; exit 1 ;;
 esac
 
 case "$code" in
   2[0-9][0-9])
     if [ "$FOLLOWUP" = 0 ]; then
-      fmx_context_registry_set "$STATE" "$REQ" "$REQ_PLATFORM" "$REQ_EXPLICIT_MAX" 1 2>/dev/null \
+      xox_context_registry_set "$STATE" "$REQ" "$REQ_PLATFORM" "$REQ_EXPLICIT_MAX" 1 2>/dev/null \
         || echo "xo-x-reply: warning: could not retain reply context for $REQ" >&2
     fi
     write_reply_receipt "$N" 0

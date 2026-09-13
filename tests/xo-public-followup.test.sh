@@ -123,7 +123,7 @@ make_home() {  # <name> [relay-on|relay-off]
 
 ## Done
 EOF
-  [ "$relay" = relay-off ] || printf 'FMX_PAIRING_TOKEN=test-token\n' > "$home/.env"
+  [ "$relay" = relay-off ] || printf 'XOX_PAIRING_TOKEN=test-token\n' > "$home/.env"
   make_fake_curl "$home" >/dev/null
   xo_fake_exit0 "$home/fakebin" tmux treehouse no-mistakes gh gh-axi
   printf '%s\n' "$home"
@@ -135,7 +135,7 @@ run_pf() {  # <home> <args...>
   PATH="$home/fakebin:$PATH" XO_ROOT_OVERRIDE="$ROOT" XO_HOME="$home" \
     XO_STATE_OVERRIDE="$home/state" FAKE_CURL_LOG="${FAKE_CURL_LOG:-}" \
     FAKE_FOLLOWUP_CODE="${FAKE_FOLLOWUP_CODE:-200}" \
-    FMX_NOW_OVERRIDE="${FMX_NOW_OVERRIDE:-$PF_TEST_NOW}" "$PF" "$@"
+    XOX_NOW_OVERRIDE="${XOX_NOW_OVERRIDE:-$PF_TEST_NOW}" "$PF" "$@"
 }
 
 # Drive the real script through macOS system bash (3.2.x). /usr/bin/env bash
@@ -147,7 +147,7 @@ run_pf_sysbash() {  # <home> <args...>
   PATH="$home/fakebin:$PATH" XO_ROOT_OVERRIDE="$ROOT" XO_HOME="$home" \
     XO_STATE_OVERRIDE="$home/state" FAKE_CURL_LOG="${FAKE_CURL_LOG:-}" \
     FAKE_FOLLOWUP_CODE="${FAKE_FOLLOWUP_CODE:-200}" \
-    FMX_NOW_OVERRIDE="${FMX_NOW_OVERRIDE:-$PF_TEST_NOW}" /bin/bash "$PF" "$@"
+    XOX_NOW_OVERRIDE="${XOX_NOW_OVERRIDE:-$PF_TEST_NOW}" /bin/bash "$PF" "$@"
 }
 
 tasks_in() {  # <home> <tasks-axi args...>
@@ -192,8 +192,8 @@ seed_commitment() {
     > "$home/state/x-inbox/$request.json"
   chmod 700 "$home/state/x-inbox"
   chmod 600 "$home/state/x-inbox/$request.json"
-  XO_HOME="$home" FMX_NOW_OVERRIDE="$PF_TEST_NOW" bash -c \
-    ". '$ROOT/bin/xo-x-lib.sh'; fmx_context_registry_set '$home/state' '$request' '$platform' 1900" \
+  XO_HOME="$home" XOX_NOW_OVERRIDE="$PF_TEST_NOW" bash -c \
+    ". '$ROOT/bin/xo-x-lib.sh'; xox_context_registry_set '$home/state' '$request' '$platform' 1900" \
     || fail "could not retain the private request context"
 
   run_pf "$home" register "$obligation" --relation rel-code \
@@ -222,8 +222,8 @@ seed_repro_commitment() {   # <home> <obligation> <request> <work-home> <work-id
     --expires-at 2026-10-01T00:00:00Z >/dev/null || fail "add failed"
   tasks_in "$home" public-followup bind-work "$obligation" --relation-file "$home/relation.json" >/dev/null \
     || fail "bind-work failed"
-  XO_HOME="$home" FMX_NOW_OVERRIDE="$PF_TEST_NOW" bash -c \
-    ". '$ROOT/bin/xo-x-lib.sh'; fmx_context_registry_set '$home/state' '$request' discord 2000" \
+  XO_HOME="$home" XOX_NOW_OVERRIDE="$PF_TEST_NOW" bash -c \
+    ". '$ROOT/bin/xo-x-lib.sh'; xox_context_registry_set '$home/state' '$request' discord 2000" \
     || fail "context retain failed"
   run_pf "$home" register "$obligation" --relation rel-code --work-home "$work_home" \
     --work-id "$work_id" --generation 1 >/dev/null || fail "register failed"
@@ -511,7 +511,7 @@ test_dry_run_does_not_close_commitment() {
   emit_terminal "$home" "$home" pf-dry main work-dry >/dev/null || fail "emit failed"
   run_pf "$home" consume >/dev/null || fail "consume failed"
 
-  FMX_DRY_RUN=1 FAKE_CURL_LOG="$log" expect_failure \
+  XOX_DRY_RUN=1 FAKE_CURL_LOG="$log" expect_failure \
     "a dry-run must not close a public commitment" run_pf "$home" deliver pf-dry
   assert_contains "$EXPECT_OUT" "recorded as retryable" \
     "a dry-run must leave a retryable typed state"
@@ -1618,11 +1618,11 @@ test_rechain_claims_delivered_source_once() {
   FAKE_CURL_LOG="$log" run_pf "$home" consume >/dev/null || fail "consume failed"
   FAKE_CURL_LOG="$log" run_pf "$home" deliver public-final-claim-a >/dev/null || fail "deliver failed"
 
-  FMX_NOW_OVERRIDE=1787539200 run_pf "$home" rechain public-final-claim-b \
+  XOX_NOW_OVERRIDE=1787539200 run_pf "$home" rechain public-final-claim-b \
     --from public-final-claim-a --work-home main --work-id ship-claim-b \
     --expected pr-merged > "$home/rechain-b.out" 2>&1 &
   pid_b=$!
-  FMX_NOW_OVERRIDE=1787539200 run_pf "$home" rechain public-final-claim-c \
+  XOX_NOW_OVERRIDE=1787539200 run_pf "$home" rechain public-final-claim-c \
     --from public-final-claim-a --work-home main --work-id ship-claim-c \
     --expected pr-merged > "$home/rechain-c.out" 2>&1 &
   pid_c=$!
@@ -1712,8 +1712,8 @@ test_first_register_succeeds_with_empty_lock_list_under_bash32() {
   tasks_in "$home" public-followup bind-work pf-empty-locks \
     --relation-file "$home/relation.json" >/dev/null \
     || fail "could not bind work to the public commitment"
-  XO_HOME="$home" FMX_NOW_OVERRIDE="$PF_TEST_NOW" bash -c \
-    ". '$ROOT/bin/xo-x-lib.sh'; fmx_context_registry_set '$home/state' req-empty-locks discord 1900" \
+  XO_HOME="$home" XOX_NOW_OVERRIDE="$PF_TEST_NOW" bash -c \
+    ". '$ROOT/bin/xo-x-lib.sh'; xox_context_registry_set '$home/state' req-empty-locks discord 1900" \
     || fail "could not retain the private request context"
 
   err=$(mktemp "$home/register-err.XXXXXX")
@@ -2116,7 +2116,7 @@ test_expiry_escalation_uses_now_override() {
     || exp=$(date -u -d '2026-08-28T01:12:00Z' +%s)
   now_closing=$((exp - 3600))
   now_expired=$((exp + 60))
-  out=$(FMX_NOW_OVERRIDE="$now_expired" run_pf "$home" pending)
+  out=$(XOX_NOW_OVERRIDE="$now_expired" run_pf "$home" pending)
   assert_contains "$out" "unresolved pf-exp" "an owed reply must remain listed after expiry"
   assert_contains "$out" "can no longer be reached" \
     "an expired unresolved reply must escalate the unreachable thread"
@@ -2128,14 +2128,14 @@ test_expiry_escalation_uses_now_override() {
     --outcome-text 'Reproduced.' >/dev/null || fail "emit failed"
   run_pf "$home" consume >/dev/null || fail "consume failed"
   FAKE_CURL_LOG="$home/curl.log" run_pf "$home" deliver pf-exp >/dev/null || fail "deliver failed"
-  out=$(FMX_NOW_OVERRIDE="$now_closing" run_pf "$home" pending)
+  out=$(XOX_NOW_OVERRIDE="$now_closing" run_pf "$home" pending)
   assert_contains "$out" "open-loop pf-exp" "closing window must still list the loop"
   assert_contains "$out" "DEADLINE:" "a window under 48 hours must escalate"
   assert_contains "$out" "under 48 hours" "the closing wording must name the remaining window"
-  out=$(FMX_NOW_OVERRIDE="$now_expired" run_pf "$home" pending)
+  out=$(XOX_NOW_OVERRIDE="$now_expired" run_pf "$home" pending)
   assert_contains "$out" "can no longer be reached" "a past expiry must name the unreachable thread"
   assert_contains "$out" "captain decision" "a past expiry is a captain call"
-  FMX_NOW_OVERRIDE="$now_expired" expect_failure "rechain past expiry must refuse" \
+  XOX_NOW_OVERRIDE="$now_expired" expect_failure "rechain past expiry must refuse" \
     run_pf "$home" rechain pf-exp-next --from pf-exp --work-home main --work-id work-next --expected pr-merged
   assert_contains "$EXPECT_OUT" "can no longer be reached" "rechain must name the closed window"
   registry="$home/state/public-followup/registry/pf-exp"
@@ -2150,7 +2150,7 @@ test_expiry_escalation_uses_now_override() {
     run_pf "$home" rechain pf-exp-next --from pf-exp --work-home main --work-id work-next --expected pr-merged
   assert_contains "$EXPECT_OUT" "thread window cannot be checked" \
     "rechain must fail closed when its retained expiry cannot be parsed"
-  pass "expiry escalation is pinned by FMX_NOW_OVERRIDE"
+  pass "expiry escalation is pinned by XOX_NOW_OVERRIDE"
 }
 
 test_brief_fails_without_typed_deliverable_keys() {
@@ -2296,7 +2296,7 @@ test_secondmate_promotion_uses_teardown_parent_resolution() {
   printf '%s\n' remote-mate > "$remote_child/.xo-secondmate-home"
   printf 'schema=xo-secondmate-parent.v1\nroute=remote\nparent_host=remote.example\n' \
     > "$remote_child/.xo-secondmate-parent"
-  printf 'FMX_PAIRING_TOKEN=child-local-token\n' > "$remote_child/.env"
+  printf 'XOX_PAIRING_TOKEN=child-local-token\n' > "$remote_child/.env"
   xo_write_meta "$remote_child/state/promote-remote.meta" \
     "window=xo:xo-promote-remote" "kind=scout"
   write_promotion_brief "$remote_child" promote-remote
@@ -2400,7 +2400,7 @@ run_pf_remote() {  # <home> <args...>
   PATH="$home/fakebin:$PATH" XO_ROOT_OVERRIDE="$ROOT" XO_HOME="$home" \
     XO_STATE_OVERRIDE="$home/state" FAKE_CURL_LOG="${FAKE_CURL_LOG:-}" \
     FAKE_FOLLOWUP_CODE="${FAKE_FOLLOWUP_CODE:-200}" \
-    FMX_NOW_OVERRIDE="${FMX_NOW_OVERRIDE:-$PF_TEST_NOW}" \
+    XOX_NOW_OVERRIDE="${XOX_NOW_OVERRIDE:-$PF_TEST_NOW}" \
     XO_SSH_BIN="$REMOTE_FIXTURE_SSH" \
     XO_FAKE_SSH_MODE="${XO_FAKE_SSH_MODE:-normal}" \
     XO_FAKE_REMOTE_ENTRYPOINT="$REMOTE_FIXTURE_ROOT/bin/xo-remote-entrypoint.sh" \
@@ -2416,7 +2416,7 @@ run_pf_remote_timed() {  # <seconds> <home> <args...>
     PATH="$home/fakebin:$PATH" XO_ROOT_OVERRIDE="$ROOT" XO_HOME="$home" \
     XO_STATE_OVERRIDE="$home/state" FAKE_CURL_LOG="${FAKE_CURL_LOG:-}" \
     FAKE_FOLLOWUP_CODE="${FAKE_FOLLOWUP_CODE:-200}" \
-    FMX_NOW_OVERRIDE="${FMX_NOW_OVERRIDE:-$PF_TEST_NOW}" \
+    XOX_NOW_OVERRIDE="${XOX_NOW_OVERRIDE:-$PF_TEST_NOW}" \
     XO_SSH_BIN="$REMOTE_FIXTURE_SSH" \
     XO_FAKE_SSH_MODE="${XO_FAKE_SSH_MODE:-normal}" \
     XO_FAKE_REMOTE_ENTRYPOINT="$REMOTE_FIXTURE_ROOT/bin/xo-remote-entrypoint.sh" \

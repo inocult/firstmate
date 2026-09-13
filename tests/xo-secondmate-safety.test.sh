@@ -1674,7 +1674,7 @@ test_secondmate_teardown_preserves_process_events_on_later_refusal() {
   printf 'domain\n' > "$subhome/.xo-secondmate-home"
   printf 'adapter=lavish\n' > "$subhome/state/procevent/source.source"
   install_fake_process_event_sweep "$subhome" "$sweep_log"
-  printf 'FMX_PAIRING_TOKEN=test-token\n' > "$home/.env"
+  printf 'XOX_PAIRING_TOKEN=test-token\n' > "$home/.env"
   printf 'work_home=secondmate:domain\nwork_id=domain\n' > "$home/state/public-followup/registry/obligation"
   xo_write_secondmate_meta "$home/state/domain.meta" "$subhome"
   printf '%s\n' '- domain - design domain (home: '"$subhome"'; scope: design domain; projects: alpha; added 2026-06-22)' > "$home/data/secondmates.md"

@@ -2029,7 +2029,7 @@ while :; do
       [ -e "$c" ] || continue
       is_pr_poll=0
       if [ "$(basename "$c")" = x-watch.check.sh ]; then
-        if fmx_poll_shim_valid "$c" "$XO_HOME" "$XO_ROOT" \
+        if xox_poll_shim_valid "$c" "$XO_HOME" "$XO_ROOT" \
           && [ -f "$XO_ROOT/bin/xo-x-poll.sh" ] && [ ! -L "$XO_ROOT/bin/xo-x-poll.sh" ]; then
           XO_HOME="$XO_HOME" run_check_capture "$XO_ROOT/bin/xo-x-poll.sh" || exit 1
           out=$XO_CHECK_RESULT

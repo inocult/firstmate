@@ -131,8 +131,8 @@ test_poll_no_token_is_hard_noop() {
   local home fakebin out rc
   home="$TMP_ROOT/poll-noop"; mkdir -p "$home"
   fakebin=$(make_fake_curl "$home")
-  # No .env, no FMX_PAIRING_TOKEN: must exit 0 with no output and touch nothing.
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_PAIRING_TOKEN='' \
+  # No .env, no XOX_PAIRING_TOKEN: must exit 0 with no output and touch nothing.
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_PAIRING_TOKEN='' \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "poll no-token exit"
   [ -z "$out" ] || fail "poll no-token must be silent (got: $out)"
@@ -145,8 +145,8 @@ test_poll_empty_env_token_overrides_env_file() {
   home="$TMP_ROOT/poll-empty-env-token"; mkdir -p "$home"
   fakebin=$(make_fake_curl "$home")
   log="$home/curl.log"
-  printf 'FMX_PAIRING_TOKEN=tok-dotenv\n' > "$home/.env"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_PAIRING_TOKEN='' \
+  printf 'XOX_PAIRING_TOKEN=tok-dotenv\n' > "$home/.env"
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_PAIRING_TOKEN='' \
     FAKE_CURL_LOG="$log" FAKE_POLL_CODE=204 \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "poll empty-env-token exit"
@@ -161,8 +161,8 @@ test_poll_204_is_silent() {
   home="$TMP_ROOT/poll-204"; mkdir -p "$home"
   fakebin=$(make_fake_curl "$home")
   log="$home/curl.log"
-  printf 'FMX_PAIRING_TOKEN=tok-204\n' > "$home/.env"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
+  printf 'XOX_PAIRING_TOKEN=tok-204\n' > "$home/.env"
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     FAKE_CURL_LOG="$log" FAKE_POLL_CODE=204 \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "poll 204 exit"
@@ -180,8 +180,8 @@ test_poll_empty_env_relay_overrides_env_file() {
   home="$TMP_ROOT/poll-empty-env-relay"; mkdir -p "$home"
   fakebin=$(make_fake_curl "$home")
   log="$home/curl.log"
-  printf 'FMX_PAIRING_TOKEN=tok-relay\nFMX_RELAY_URL=https://dotenv-relay.test/\n' > "$home/.env"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL='' \
+  printf 'XOX_PAIRING_TOKEN=tok-relay\nXOX_RELAY_URL=https://dotenv-relay.test/\n' > "$home/.env"
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL='' \
     FAKE_CURL_LOG="$log" FAKE_POLL_CODE=204 \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "poll empty-env-relay exit"
@@ -195,8 +195,8 @@ test_poll_auth_error_reports_once() {
   local home fakebin out rc
   home="$TMP_ROOT/poll-auth"; mkdir -p "$home"
   fakebin=$(make_fake_curl "$home")
-  printf 'FMX_PAIRING_TOKEN=tok-auth\n' > "$home/.env"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
+  printf 'XOX_PAIRING_TOKEN=tok-auth\n' > "$home/.env"
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     FAKE_POLL_CODE=401 \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "poll auth error exit"
@@ -205,12 +205,12 @@ test_poll_auth_error_reports_once() {
   assert_present "$home/state/x-poll.error" "poll auth error must write a dedupe marker"
   [ "$(path_mode "$home/state")" = 700 ] || fail "poll auth error must create private state"
   [ "$(path_mode "$home/state/x-poll.error")" = 600 ] || fail "poll auth error marker must be private"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     FAKE_POLL_CODE=401 \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "poll repeated auth error exit"
   [ -z "$out" ] || fail "repeated poll auth error must be quiet after the first diagnostic (got: $out)"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     FAKE_POLL_CODE=204 \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "poll recovered auth error exit"
@@ -225,8 +225,8 @@ test_poll_error_private_publication_rejects_unsafe_paths() {
   home="$TMP_ROOT/poll-error-linked-state"; mkdir -p "$home/external-state"
   fakebin=$(make_fake_curl "$home")
   ln -s "$home/external-state" "$home/state"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
-    FMX_PAIRING_TOKEN=tok-linked-state FAKE_POLL_CODE=401 \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
+    XOX_PAIRING_TOKEN=tok-linked-state FAKE_POLL_CODE=401 \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "poll linked state diagnostic exit"
   [ "$out" = "x-mode-error relay returned HTTP 401" ] \
@@ -240,8 +240,8 @@ test_poll_error_private_publication_rejects_unsafe_paths() {
   target="$home/external-error"
   printf 'relay returned HTTP 401\n' > "$target"
   ln -s "$target" "$home/state/x-poll.error"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
-    FMX_PAIRING_TOKEN=tok-linked-marker FAKE_POLL_CODE=401 \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
+    XOX_PAIRING_TOKEN=tok-linked-marker FAKE_POLL_CODE=401 \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "poll linked marker diagnostic exit"
   [ "$out" = "x-mode-error relay returned HTTP 401" ] \
@@ -258,8 +258,8 @@ test_poll_error_private_publication_rejects_unsafe_paths() {
   printf 'relay returned HTTP 401\n' > "$marker"
   chmod 600 "$marker"
   ln "$marker" "$hardlink"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
-    FMX_PAIRING_TOKEN=tok-hard-marker FAKE_POLL_CODE=401 \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
+    XOX_PAIRING_TOKEN=tok-hard-marker FAKE_POLL_CODE=401 \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "poll hardlinked marker diagnostic exit"
   [ "$out" = "x-mode-error relay returned HTTP 401" ] \
@@ -274,9 +274,9 @@ test_poll_question_stashes_and_marks() {
   local home fakebin out rc body
   home="$TMP_ROOT/poll-q"; mkdir -p "$home"
   fakebin=$(make_fake_curl "$home")
-  printf 'FMX_PAIRING_TOKEN=tok-q\n' > "$home/.env"
+  printf 'XOX_PAIRING_TOKEN=tok-q\n' > "$home/.env"
   body='{"request_id":"req-7","tweet_id":"555","author_id":"42","text":"what are you building?"}'
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "poll question exit"
@@ -293,26 +293,26 @@ test_poll_mentions_wake_once_per_durable_offer() {
   local home fakebin out rc body marker
   home="$TMP_ROOT/poll-offer-dedupe"; mkdir -p "$home"
   fakebin=$(make_fake_curl "$home")
-  printf 'FMX_PAIRING_TOKEN=tok-offer\n' > "$home/.env"
+  printf 'XOX_PAIRING_TOKEN=tok-offer\n' > "$home/.env"
   body='{"request_id":"req-repeat","platform":"discord","reply_max_chars":1900,"text":"status?"}'
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_NOW_OVERRIDE=1700000000 \
-    FMX_RELAY_URL="https://relay.test" FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_NOW_OVERRIDE=1700000000 \
+    XOX_RELAY_URL="https://relay.test" FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "first offered mention poll exit"
   [ "$out" = "x-mention req-repeat" ] \
     || fail "a newly offered mention must wake once (got: $out)"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_NOW_OVERRIDE=1700000030 \
-    FMX_RELAY_URL="https://relay.test" FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_NOW_OVERRIDE=1700000030 \
+    XOX_RELAY_URL="https://relay.test" FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "repeated pending mention poll exit"
   [ -z "$out" ] || fail "an already offered pending mention must stay silent (got: $out)"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     FAKE_DISMISS_CODE=200 "$ROOT/bin/xo-x-dismiss.sh" req-repeat); rc=$?
   expect_code 0 "$rc" "successful dismiss before relay re-offer exit"
   [ "$out" = "req-repeat" ] || fail "the dismiss fixture must succeed before the re-offer"
   rm -f "$home/state/x-inbox/req-repeat.json"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_NOW_OVERRIDE=1700000060 \
-    FMX_RELAY_URL="https://relay.test" FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_NOW_OVERRIDE=1700000060 \
+    XOX_RELAY_URL="https://relay.test" FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "post-answer re-offer poll exit"
   [ -z "$out" ] || fail "a relay re-offer after inbox cleanup must stay silent (got: $out)"
@@ -321,15 +321,15 @@ test_poll_mentions_wake_once_per_durable_offer() {
   marker="$home/state/x-context/req-repeat.offered.json"
   assert_present "$marker" "the durable offer marker must survive inbox cleanup"
   rm -f "$marker"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_NOW_OVERRIDE=1700000090 \
-    FMX_RELAY_URL="https://relay.test" FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_NOW_OVERRIDE=1700000090 \
+    XOX_RELAY_URL="https://relay.test" FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "mention re-offer after local marker loss exit"
   [ "$out" = "x-mention req-repeat" ] \
     || fail "a re-offer after local marker loss must wake once (got: $out)"
   body='{"request_id":"req-new","platform":"discord","reply_max_chars":1900,"text":"new status?"}'
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_NOW_OVERRIDE=1700000120 \
-    FMX_RELAY_URL="https://relay.test" FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_NOW_OVERRIDE=1700000120 \
+    XOX_RELAY_URL="https://relay.test" FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "genuinely new mention poll exit"
   [ "$out" = "x-mention req-new" ] \
@@ -337,8 +337,8 @@ test_poll_mentions_wake_once_per_durable_offer() {
   marker="$home/state/x-context/req-new.offered.json"
   [ "$(path_mode "$marker")" = 600 ] \
     || fail "the durable offer marker must be a private file"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_NOW_OVERRIDE=1700604921 \
-    FMX_RELAY_URL="https://relay.test" FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_NOW_OVERRIDE=1700604921 \
+    XOX_RELAY_URL="https://relay.test" FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "mention re-offer after marker expiry exit"
   [ "$out" = "x-mention req-new" ] \
@@ -353,36 +353,36 @@ test_poll_offer_claim_failure_reports_once() {
   chmod 700 "$home/state"
   ln -s "$home/external-context" "$home/state/x-context"
   body='{"request_id":"req-claim-failure","text":"status?"}'
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
-    FMX_PAIRING_TOKEN=tok-claim-failure FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
+    XOX_PAIRING_TOKEN=tok-claim-failure FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "first offer claim failure poll exit"
   [ "$out" = "x-mode-error cannot record mention offer" ] \
     || fail "an offer claim failure must emit one diagnostic (got: $out)"
   assert_present "$home/state/x-poll.claim-error" "offer claim failure must write a dedupe marker"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
-    FMX_PAIRING_TOKEN=tok-claim-failure FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
+    XOX_PAIRING_TOKEN=tok-claim-failure FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "repeated offer claim failure poll exit"
   [ -z "$out" ] || fail "a repeated offer claim failure must stay silent (got: $out)"
   assert_present "$home/state/x-poll.claim-error" "a repeated offer claim failure must retain its dedupe marker"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
-    FMX_PAIRING_TOKEN=tok-claim-failure FAKE_POLL_CODE=204 \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
+    XOX_PAIRING_TOKEN=tok-claim-failure FAKE_POLL_CODE=204 \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "no-pending poll after offer claim failure exit"
   [ -z "$out" ] || fail "a no-pending poll must stay silent after an offer claim failure (got: $out)"
   assert_present "$home/state/x-poll.claim-error" \
     "a no-pending poll must retain the offer claim dedupe marker"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
-    FMX_PAIRING_TOKEN=tok-claim-failure FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
+    XOX_PAIRING_TOKEN=tok-claim-failure FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "re-offered claim failure poll exit"
   [ -z "$out" ] || fail "a re-offered claim failure must stay silent (got: $out)"
   rm "$home/state/x-context"
   mkdir "$home/state/x-context"
   chmod 700 "$home/state/x-context"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
-    FMX_PAIRING_TOKEN=tok-claim-failure FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
+    XOX_PAIRING_TOKEN=tok-claim-failure FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "recovered offer claim poll exit"
   [ "$out" = "x-mention req-claim-failure" ] \
@@ -395,10 +395,10 @@ test_poll_preserves_conversation_context() {
   local home fakebin out rc body f
   home="$TMP_ROOT/poll-ctx"; mkdir -p "$home"
   fakebin=$(make_fake_curl "$home")
-  printf 'FMX_PAIRING_TOKEN=tok-c\n' > "$home/.env"
+  printf 'XOX_PAIRING_TOKEN=tok-c\n' > "$home/.env"
   # A follow-up reply: the relay includes in_reply_to with the parent tweet.
   body='{"request_id":"req-c","tweet_id":"9","author_id":"42","text":"and then what?","in_reply_to":{"author_handle":"@asker","text":"are you shipping today?"}}'
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "poll conversation exit"
@@ -412,9 +412,9 @@ test_poll_preserves_conversation_context() {
   # A fresh, standalone mention: in_reply_to is null and round-trips as null.
   home="$TMP_ROOT/poll-ctx-fresh"; mkdir -p "$home"
   fakebin=$(make_fake_curl "$home")
-  printf 'FMX_PAIRING_TOKEN=tok-c\n' > "$home/.env"
+  printf 'XOX_PAIRING_TOKEN=tok-c\n' > "$home/.env"
   body='{"request_id":"req-f","tweet_id":"10","author_id":"42","text":"what are you up to?","in_reply_to":null}'
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "poll fresh-mention exit"
@@ -433,7 +433,7 @@ test_poll_preserves_inbound_attachment_urls() {
   home="$TMP_ROOT/poll-inbound-urls"; mkdir -p "$home"
   fakebin=$(make_fake_curl "$home")
   log="$home/curl.log"
-  printf 'FMX_PAIRING_TOKEN=tok-inbound\n' > "$home/.env"
+  printf 'XOX_PAIRING_TOKEN=tok-inbound\n' > "$home/.env"
   img1="https://cdn.discordapp.com/attachments/1012345678900020080/1234567891233211234/IMG_2718.png?ex=65d903de&is=65c68ede&hm=2481f30d"
   img2="https://cdn.discordapp.com/attachments/1012345678900020080/1234567891233211235/IMG_2717.png?ex=65d903de&is=65c68ede&hm=2481f30e"
   doc="https://cdn.discordapp.com/attachments/1012345678900020080/1234567891233211236/trace.log"
@@ -455,7 +455,7 @@ test_poll_preserves_inbound_attachment_urls() {
       }
     ]
   }')
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     FAKE_CURL_LOG="$log" FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "poll inbound-attachment exit"
@@ -501,9 +501,9 @@ esac
 exec /bin/mv "$@"
 SH
   chmod +x "$fakebin/mv"
-  printf 'FMX_PAIRING_TOKEN=tok-q\n' > "$home/.env"
+  printf 'XOX_PAIRING_TOKEN=tok-q\n' > "$home/.env"
   body='{"request_id":"req-rename","tweet_id":"555","author_id":"42","text":"what are you building?"}'
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "poll inbox commit failure exit"
@@ -512,13 +512,13 @@ SH
   assert_absent "$home/state/x-inbox/req-rename.json" "poll must not report a committed inbox file that was not created"
   assert_absent "$home/state/x-inbox/req-rename.json.tmp" "poll must clean up the failed inbox temp file"
   assert_present "$home/state/x-poll.error" "poll inbox commit failure must write a dedupe marker"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "poll repeated inbox commit failure exit"
   [ -z "$out" ] || fail "repeated poll inbox commit failure must be quiet after the first diagnostic (got: $out)"
   rm -f "$fakebin/mv"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "poll recovered inbox commit failure exit"
@@ -535,8 +535,8 @@ test_poll_inbox_private_publication_rejects_unsafe_paths() {
   home="$TMP_ROOT/poll-inbox-linked-dir"; mkdir -p "$home/state" "$home/external"
   fakebin=$(make_fake_curl "$home")
   ln -s "$home/external" "$home/state/x-inbox"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
-    FMX_PAIRING_TOKEN=tok-linked FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
+    XOX_PAIRING_TOKEN=tok-linked FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "poll linked inbox dir exit"
   [ "$out" = "x-mode-error cannot write inbox" ] \
@@ -547,8 +547,8 @@ test_poll_inbox_private_publication_rejects_unsafe_paths() {
   home="$TMP_ROOT/poll-inbox-public-dir"; mkdir -p "$home/state/x-inbox"
   fakebin=$(make_fake_curl "$home")
   chmod 755 "$home/state/x-inbox"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
-    FMX_PAIRING_TOKEN=tok-public FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
+    XOX_PAIRING_TOKEN=tok-public FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "poll public inbox dir exit"
   [ "$out" = "x-mode-error cannot write inbox" ] \
@@ -562,8 +562,8 @@ test_poll_inbox_private_publication_rejects_unsafe_paths() {
   target="$home/external-target.json"
   printf 'external sentinel\n' > "$target"
   ln -s "$target" "$home/state/x-inbox/req-x.json"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
-    FMX_PAIRING_TOKEN=tok-linkdest FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
+    XOX_PAIRING_TOKEN=tok-linkdest FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "poll linked inbox destination exit"
   [ "$out" = "x-mode-error cannot write inbox" ] \
@@ -580,8 +580,8 @@ test_poll_inbox_private_publication_rejects_unsafe_paths() {
   printf '{"request_id":"req-x","text":"old"}\n' > "$dest"
   chmod 600 "$dest"
   ln "$dest" "$hardlink"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
-    FMX_PAIRING_TOKEN=tok-hard FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
+    XOX_PAIRING_TOKEN=tok-hard FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "poll hardlinked inbox destination exit"
   [ "$out" = "x-mode-error cannot write inbox" ] \
@@ -592,8 +592,8 @@ test_poll_inbox_private_publication_rejects_unsafe_paths() {
 
   home="$TMP_ROOT/poll-inbox-private-success"; mkdir -p "$home"
   fakebin=$(make_fake_curl "$home")
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
-    FMX_PAIRING_TOKEN=tok-ok FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
+    XOX_PAIRING_TOKEN=tok-ok FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "poll private inbox success exit"
   [ "$out" = "x-mention req-x" ] || fail "poll must still emit a wake after private publication (got: $out)"
@@ -608,14 +608,14 @@ test_poll_rejects_unsafe_request_id() {
   local home fakebin out rc
   home="$TMP_ROOT/poll-evil"; mkdir -p "$home"
   fakebin=$(make_fake_curl "$home")
-  printf 'FMX_PAIRING_TOKEN=tok-e\n' > "$home/.env"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
+  printf 'XOX_PAIRING_TOKEN=tok-e\n' > "$home/.env"
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     FAKE_POLL_CODE=200 FAKE_POLL_BODY='{"request_id":"../../etc/x","text":"hi"}' \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "poll unsafe id exit"
   [ -z "$out" ] || fail "poll must not emit a marker for an unsafe request_id (got: $out)"
   assert_absent "$home/state/x-inbox/../../etc/x.json" "poll must not write outside the inbox"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     FAKE_POLL_CODE=200 FAKE_POLL_BODY='{"request_id":".hidden","text":"hi"}' \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "poll hidden id exit"
@@ -629,8 +629,8 @@ test_reply_success_posts_request_bound_only() {
   home="$TMP_ROOT/reply-ok"; mkdir -p "$home"
   fakebin=$(make_fake_curl "$home")
   log="$home/curl.log"
-  printf 'FMX_PAIRING_TOKEN=tok-r\n' > "$home/.env"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
+  printf 'XOX_PAIRING_TOKEN=tok-r\n' > "$home/.env"
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     FAKE_CURL_LOG="$log" FAKE_ANSWER_CODE=200 \
     "$ROOT/bin/xo-x-reply.sh" "req-7" "Aye, charting a couple of fixes."); rc=$?
   expect_code 0 "$rc" "reply success exit"
@@ -655,8 +655,8 @@ test_reply_non_2xx_fails() {
   home="$TMP_ROOT/reply-500"; mkdir -p "$home"
   fakebin=$(make_fake_curl "$home")
   err="$home/err.txt"
-  printf 'FMX_PAIRING_TOKEN=tok-r\n' > "$home/.env"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
+  printf 'XOX_PAIRING_TOKEN=tok-r\n' > "$home/.env"
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     FAKE_ANSWER_CODE=500 \
     "$ROOT/bin/xo-x-reply.sh" "req-7" "hi" 2>"$err"); rc=$?
   [ "$rc" -ne 0 ] || fail "reply must exit non-zero on a non-2xx response"
@@ -688,8 +688,8 @@ kill -TERM "$PPID"
 exit 143
 SH
   chmod +x "$fakebin/curl"
-  printf 'FMX_PAIRING_TOKEN=tok-clean\n' > "$home/.env"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
+  printf 'XOX_PAIRING_TOKEN=tok-clean\n' > "$home/.env"
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     FAKE_AUTH_FILE_LOG="$log" \
     "$ROOT/bin/xo-x-reply.sh" "req-clean" "Hello." 2>"$home/err"); rc=$?
   [ "$rc" -ne 0 ] || fail "interrupted relay post must fail"
@@ -725,7 +725,7 @@ test_reply_whitespace_text_rejected() {
   local home out rc err
   home="$TMP_ROOT/reply-whitespace"; mkdir -p "$home"
   err="$home/err.txt"
-  out=$(PATH="$BASE_PATH" XO_HOME="$home" FMX_DRY_RUN=1 \
+  out=$(PATH="$BASE_PATH" XO_HOME="$home" XOX_DRY_RUN=1 \
     "$ROOT/bin/xo-x-reply.sh" "req-space" "   " 2>"$err"); rc=$?
   expect_code 2 "$rc" "reply whitespace text exit"
   [ -z "$out" ] || fail "whitespace-only reply must not echo the request_id (got: $out)"
@@ -737,9 +737,9 @@ test_reply_whitespace_text_rejected() {
 test_bootstrap_activates_on_env_token() {
   local home out sum1 sum2 n
   home="$TMP_ROOT/boot-on"; mkdir -p "$home"
-  printf 'FMX_PAIRING_TOKEN=tok-boot\n' > "$home/.env"
+  printf 'XOX_PAIRING_TOKEN=tok-boot\n' > "$home/.env"
   out=$(XO_HOME="$home" "$ROOT/bin/xo-bootstrap.sh" 2>/dev/null)
-  assert_contains "$out" "FMX: X mode on" "bootstrap must announce X mode"
+  assert_contains "$out" "XOX: X mode on" "bootstrap must announce X mode"
   assert_present "$home/state/x-watch.check.sh" "bootstrap must drop the check shim"
   [ -x "$home/state/x-watch.check.sh" ] || fail "the check shim must be executable"
   assert_grep "xo-x-poll.sh" "$home/state/x-watch.check.sh" "the shim must exec the poll script"
@@ -767,12 +767,12 @@ test_bootstrap_relative_home_writes_absolute_poll_shim() {
   root="$TMP_ROOT/boot-relative-home"
   mkdir -p "$root/home" "$root/cdpath/home"
   home=$(cd "$root/home" && pwd -P)
-  printf 'FMX_PAIRING_TOKEN=tok-relative\n' > "$home/.env"
+  printf 'XOX_PAIRING_TOKEN=tok-relative\n' > "$home/.env"
   out=$(
     cd "$root" || exit 1
     CDPATH="$root/cdpath" XO_HOME=home "$ROOT/bin/xo-bootstrap.sh" 2>/dev/null
   )
-  assert_contains "$out" "FMX: X mode on" "relative-home bootstrap must announce X mode"
+  assert_contains "$out" "XOX: X mode on" "relative-home bootstrap must announce X mode"
   quoted_home=$(printf '%q' "$home")
   assert_grep "export XO_HOME=$quoted_home" "$home/state/x-watch.check.sh" \
     "relative XO_HOME leaked into the durable X-mode poll shim"
@@ -815,11 +815,11 @@ fi
 exit 0
 SH
   chmod +x "$fakebin/treehouse"
-  printf 'FMX_PAIRING_TOKEN=tok-missing\n' > "$home/.env"
+  printf 'XOX_PAIRING_TOKEN=tok-missing\n' > "$home/.env"
   out=$(PATH="$fakebin" XO_HOME="$home" XO_ROOT_OVERRIDE="$home" \
     "$BASH" "$ROOT/bin/xo-bootstrap.sh" 2>/dev/null)
   assert_contains "$out" "MISSING: jq" "bootstrap must report missing jq when X mode is opted in"
-  assert_not_contains "$out" "FMX: X mode on" "bootstrap must not announce X mode when a dependency is missing"
+  assert_not_contains "$out" "XOX: X mode on" "bootstrap must not announce X mode when a dependency is missing"
   assert_absent "$home/state/x-watch.check.sh" "missing jq must not arm the check shim"
   assert_absent "$home/config/x-mode.env" "missing jq must not write the cadence config"
   pass "bootstrap reports missing X-mode dependencies before arming"
@@ -828,12 +828,12 @@ SH
 test_bootstrap_does_not_announce_when_arm_fails() {
   local home out
   home="$TMP_ROOT/boot-arm-fail"; mkdir -p "$home"
-  printf 'FMX_PAIRING_TOKEN=tok-boot\n' > "$home/.env"
+  printf 'XOX_PAIRING_TOKEN=tok-boot\n' > "$home/.env"
   printf '%s\n' 'not a directory' > "$home/config"
   out=$(XO_HOME="$home" XO_CONFIG_OVERRIDE="$home/config" "$ROOT/bin/xo-bootstrap.sh" 2>/dev/null)
-  assert_contains "$out" "FMX: X mode off - failed to arm relay poll shim or 30s cadence" \
+  assert_contains "$out" "XOX: X mode off - failed to arm relay poll shim or 30s cadence" \
     "bootstrap must report a failed X-mode activation"
-  assert_not_contains "$out" "FMX: X mode on" \
+  assert_not_contains "$out" "XOX: X mode on" \
     "bootstrap must not announce X mode when the shim or cadence was not armed"
   assert_absent "$home/state/x-watch.check.sh" "failed X-mode activation must not leave an armed shim"
   pass "bootstrap does not report X mode on when activation artifacts cannot be written"
@@ -843,7 +843,7 @@ test_bootstrap_does_not_follow_x_artifact_symlinks() {
   local home shim_target cadence_target out
   home="$TMP_ROOT/boot-linked-artifacts"
   mkdir -p "$home/state" "$home/config"
-  printf 'FMX_PAIRING_TOKEN=tok-linked\n' > "$home/.env"
+  printf 'XOX_PAIRING_TOKEN=tok-linked\n' > "$home/.env"
   shim_target="$home/external-shim"
   cadence_target="$home/external-cadence"
   printf 'external shim sentinel\n' > "$shim_target"
@@ -854,9 +854,9 @@ test_bootstrap_does_not_follow_x_artifact_symlinks() {
 
   out=$(XO_HOME="$home" "$ROOT/bin/xo-bootstrap.sh" 2>"$home/bootstrap.err")
 
-  assert_contains "$out" "FMX: X mode off - failed to arm relay poll shim or 30s cadence" \
+  assert_contains "$out" "XOX: X mode off - failed to arm relay poll shim or 30s cadence" \
     "bootstrap must reject linked X-mode destinations"
-  assert_not_contains "$out" "FMX: X mode on" \
+  assert_not_contains "$out" "XOX: X mode on" \
     "bootstrap must not announce X mode after rejecting linked destinations"
   [ "$(cat "$shim_target")" = 'external shim sentinel' ] \
     || fail "bootstrap changed the linked shim target"
@@ -876,14 +876,14 @@ test_bootstrap_inert_without_token() {
   # No .env at all.
   home="$TMP_ROOT/boot-off"; mkdir -p "$home"
   out=$(XO_HOME="$home" "$ROOT/bin/xo-bootstrap.sh" 2>/dev/null)
-  assert_not_contains "$out" "FMX:" "bootstrap must say nothing about X mode without a token"
+  assert_not_contains "$out" "XOX:" "bootstrap must say nothing about X mode without a token"
   assert_absent "$home/state/x-watch.check.sh" "no token -> no check shim"
   assert_absent "$home/config/x-mode.env" "no token -> no cadence config"
   # .env present but token empty -> still off.
   home="$TMP_ROOT/boot-empty"; mkdir -p "$home"
-  printf 'FMX_PAIRING_TOKEN=\n' > "$home/.env"
+  printf 'XOX_PAIRING_TOKEN=\n' > "$home/.env"
   out=$(XO_HOME="$home" "$ROOT/bin/xo-bootstrap.sh" 2>/dev/null)
-  assert_not_contains "$out" "FMX:" "an empty token must be treated as off"
+  assert_not_contains "$out" "XOX:" "an empty token must be treated as off"
   assert_absent "$home/state/x-watch.check.sh" "empty token -> no check shim"
   pass "bootstrap is inert without a non-empty .env token (non-X users unaffected)"
 }
@@ -892,22 +892,22 @@ test_poll_empty_text_is_silent() {
   local home fakebin out rc
   home="$TMP_ROOT/poll-empty-text"; mkdir -p "$home"
   fakebin=$(make_fake_curl "$home")
-  printf 'FMX_PAIRING_TOKEN=tok-t\n' > "$home/.env"
+  printf 'XOX_PAIRING_TOKEN=tok-t\n' > "$home/.env"
   # A 200 with a request_id but an empty .text is not an actionable question.
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     FAKE_POLL_CODE=200 FAKE_POLL_BODY='{"request_id":"req-9","text":""}' \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "poll empty-text exit"
   [ -z "$out" ] || fail "poll must not emit a marker for an empty question (got: $out)"
   assert_absent "$home/state/x-inbox/req-9.json" "poll must not stash an empty question"
   # Same when .text is missing entirely.
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     FAKE_POLL_CODE=200 FAKE_POLL_BODY='{"request_id":"req-10"}' \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "poll missing-text exit"
   [ -z "$out" ] || fail "poll must not emit a marker when .text is absent (got: $out)"
   assert_absent "$home/state/x-inbox/req-10.json" "poll must not stash when .text is absent"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     FAKE_POLL_CODE=200 FAKE_POLL_BODY='{"request_id":"req-11","text":" \n\t "}' \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "poll whitespace-text exit"
@@ -920,13 +920,13 @@ test_reply_text_file_and_stdin() {
   local home fakebin log data rc out
   home="$TMP_ROOT/reply-input"; mkdir -p "$home"
   fakebin=$(make_fake_curl "$home")
-  printf 'FMX_PAIRING_TOKEN=tok-r\n' > "$home/.env"
+  printf 'XOX_PAIRING_TOKEN=tok-r\n' > "$home/.env"
   # --text-file: text with shell metacharacters must survive verbatim (no shell
   # expansion) because it never touches a shell command line.
   log="$home/file.log"
   # shellcheck disable=SC2016  # single quotes are deliberate: the metacharacters must stay literal
   printf '%s' 'Aye $(whoami) & "fixes" `now`' > "$home/reply.txt"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     FAKE_CURL_LOG="$log" FAKE_ANSWER_CODE=200 \
     "$ROOT/bin/xo-x-reply.sh" "req-1" --text-file "$home/reply.txt"); rc=$?
   expect_code 0 "$rc" "reply --text-file exit"
@@ -938,7 +938,7 @@ test_reply_text_file_and_stdin() {
   # stdin form.
   log="$home/stdin.log"
   out=$(printf '%s' 'reply via stdin' | PATH="$fakebin:$BASE_PATH" XO_HOME="$home" \
-    FMX_RELAY_URL="https://relay.test" FAKE_CURL_LOG="$log" FAKE_ANSWER_CODE=200 \
+    XOX_RELAY_URL="https://relay.test" FAKE_CURL_LOG="$log" FAKE_ANSWER_CODE=200 \
     "$ROOT/bin/xo-x-reply.sh" "req-2" -); rc=$?
   expect_code 0 "$rc" "reply stdin exit"
   data=$(grep '^data=' "$log" | tail -1 | sed 's/^data=//')
@@ -951,14 +951,14 @@ test_bootstrap_opt_out_cleanup() {
   local home out
   home="$TMP_ROOT/boot-optout"; mkdir -p "$home"
   # Opt in, artifacts appear.
-  printf 'FMX_PAIRING_TOKEN=tok-out\n' > "$home/.env"
+  printf 'XOX_PAIRING_TOKEN=tok-out\n' > "$home/.env"
   XO_HOME="$home" "$ROOT/bin/xo-bootstrap.sh" >/dev/null 2>&1
   assert_present "$home/state/x-watch.check.sh" "opt-in must create the shim"
   assert_present "$home/config/x-mode.env" "opt-in must create the cadence config"
   # Opt out: empty the token, re-run bootstrap -> artifacts removed + one off line.
-  printf 'FMX_PAIRING_TOKEN=\n' > "$home/.env"
+  printf 'XOX_PAIRING_TOKEN=\n' > "$home/.env"
   out=$(CLAUDECODE=1 XO_HOME="$home" "$ROOT/bin/xo-bootstrap.sh" 2>/dev/null)
-  assert_contains "$out" "FMX: X mode off" "opt-out must announce X mode off when it removed artifacts"
+  assert_contains "$out" "XOX: X mode off" "opt-out must announce X mode off when it removed artifacts"
   assert_contains "$out" "watcher supervision needs Stop-owned automatic recovery" "opt-out remediation must use neutral automatic-recovery guidance"
   assert_not_contains "$out" "is broken" "opt-out remediation claimed an unverified mechanism failure"
   assert_not_contains "$out" "bin/xo-watch-arm.sh --restart" "opt-out remediation must not hardcode a background-arm restart"
@@ -966,14 +966,14 @@ test_bootstrap_opt_out_cleanup() {
   assert_absent "$home/config/x-mode.env" "opt-out must remove the cadence config"
   # Steady-state off: another run with nothing to remove is silent.
   out=$(XO_HOME="$home" "$ROOT/bin/xo-bootstrap.sh" 2>/dev/null)
-  assert_not_contains "$out" "FMX:" "steady-state off must be silent"
+  assert_not_contains "$out" "XOX:" "steady-state off must be silent"
   pass "bootstrap cleans up X artifacts on opt-out and is silent once off"
 }
 
 test_bootstrap_opt_out_reports_cleanup_failure() {
   local home fakebin out
   home="$TMP_ROOT/boot-optout-fail"; mkdir -p "$home"
-  printf 'FMX_PAIRING_TOKEN=tok-out\n' > "$home/.env"
+  printf 'XOX_PAIRING_TOKEN=tok-out\n' > "$home/.env"
   XO_HOME="$home" "$ROOT/bin/xo-bootstrap.sh" >/dev/null 2>&1
   assert_present "$home/state/x-watch.check.sh" "opt-in must create the shim before cleanup failure"
   assert_present "$home/config/x-mode.env" "opt-in must create the cadence config before cleanup failure"
@@ -983,9 +983,9 @@ test_bootstrap_opt_out_reports_cleanup_failure() {
 exit 1
 SH
   chmod +x "$fakebin/rm"
-  printf 'FMX_PAIRING_TOKEN=\n' > "$home/.env"
+  printf 'XOX_PAIRING_TOKEN=\n' > "$home/.env"
   out=$(PATH="$fakebin:$PATH" XO_HOME="$home" "$ROOT/bin/xo-bootstrap.sh" 2>/dev/null)
-  assert_contains "$out" "FMX: X mode off - failed to remove relay poll shim or 30s cadence" \
+  assert_contains "$out" "XOX: X mode off - failed to remove relay poll shim or 30s cadence" \
     "opt-out cleanup failure must be reported"
   assert_present "$home/state/x-watch.check.sh" "failed opt-out cleanup must leave the stale shim visible"
   assert_present "$home/config/x-mode.env" "failed opt-out cleanup must leave the stale cadence visible"
@@ -997,9 +997,9 @@ test_reply_dry_run_records_not_posts() {
   home="$TMP_ROOT/reply-dry"; mkdir -p "$home"
   fakebin=$(make_fake_curl "$home")
   log="$home/curl.log"
-  printf 'FMX_PAIRING_TOKEN=tok-d\n' > "$home/.env"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
-    FMX_DRY_RUN=1 FAKE_CURL_LOG="$log" \
+  printf 'XOX_PAIRING_TOKEN=tok-d\n' > "$home/.env"
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
+    XOX_DRY_RUN=1 FAKE_CURL_LOG="$log" \
     "$ROOT/bin/xo-x-reply.sh" "req-1" "Aye, a couple of fixes underway." 2>"$home/err"); rc=$?
   expect_code 0 "$rc" "dry-run reply exit"
   [ "$out" = "req-1" ] || fail "dry-run must still echo the request_id (got: $out)"
@@ -1018,7 +1018,7 @@ test_reply_dry_run_needs_no_token() {
   local home out rc
   home="$TMP_ROOT/reply-dry-notoken"; mkdir -p "$home"
   # No token at all: dry-run still previews (it neither authenticates nor posts).
-  out=$(PATH="$BASE_PATH" XO_HOME="$home" FMX_DRY_RUN=1 \
+  out=$(PATH="$BASE_PATH" XO_HOME="$home" XOX_DRY_RUN=1 \
     "$ROOT/bin/xo-x-reply.sh" "req-2" "preview without creds" 2>/dev/null); rc=$?
   expect_code 0 "$rc" "dry-run no-token exit"
   [ "$out" = "req-2" ] || fail "dry-run without a token must still echo the request_id (got: $out)"
@@ -1031,15 +1031,15 @@ test_reply_dry_run_from_env_file() {
   home="$TMP_ROOT/reply-dry-env"; mkdir -p "$home"
   fakebin=$(make_fake_curl "$home")
   log="$home/curl.log"
-  # FMX_DRY_RUN read from .env (not just the environment).
-  printf 'FMX_PAIRING_TOKEN=tok-d\nFMX_DRY_RUN=1\n' > "$home/.env"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
+  # XOX_DRY_RUN read from .env (not just the environment).
+  printf 'XOX_PAIRING_TOKEN=tok-d\nXOX_DRY_RUN=1\n' > "$home/.env"
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     FAKE_CURL_LOG="$log" "$ROOT/bin/xo-x-reply.sh" "req-3" "from dotenv" 2>/dev/null); rc=$?
   expect_code 0 "$rc" "dry-run-from-.env exit"
   [ "$out" = "req-3" ] || fail "dry-run from .env must echo the request_id (got: $out)"
   [ -f "$log" ] && grep -q "method=POST" "$log" && fail "dry-run from .env must not POST"
   assert_present "$home/state/x-outbox/req-3.json" "dry-run from .env must record the preview"
-  pass "xo-x-reply honors FMX_DRY_RUN from .env"
+  pass "xo-x-reply honors XOX_DRY_RUN from .env"
 }
 
 test_reply_empty_env_dry_run_overrides_env_file() {
@@ -1047,9 +1047,9 @@ test_reply_empty_env_dry_run_overrides_env_file() {
   home="$TMP_ROOT/reply-dry-empty-env"; mkdir -p "$home"
   fakebin=$(make_fake_curl "$home")
   log="$home/curl.log"
-  printf 'FMX_PAIRING_TOKEN=tok-d\nFMX_DRY_RUN=1\n' > "$home/.env"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
-    FMX_DRY_RUN='' FAKE_CURL_LOG="$log" FAKE_ANSWER_CODE=200 \
+  printf 'XOX_PAIRING_TOKEN=tok-d\nXOX_DRY_RUN=1\n' > "$home/.env"
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
+    XOX_DRY_RUN='' FAKE_CURL_LOG="$log" FAKE_ANSWER_CODE=200 \
     "$ROOT/bin/xo-x-reply.sh" "req-5" "empty env disables dry run" 2>/dev/null); rc=$?
   expect_code 0 "$rc" "dry-run empty-env override exit"
   [ "$out" = "req-5" ] || fail "empty dry-run env override must still echo the request_id (got: $out)"
@@ -1063,7 +1063,7 @@ test_reply_dry_run_fails_when_outbox_unwritable() {
   home="$TMP_ROOT/reply-dry-unwritable"; mkdir -p "$home/state"
   err="$home/err.txt"
   printf '%s\n' 'not a directory' > "$home/state/x-outbox"
-  out=$(PATH="$BASE_PATH" XO_HOME="$home" FMX_DRY_RUN=1 \
+  out=$(PATH="$BASE_PATH" XO_HOME="$home" XOX_DRY_RUN=1 \
     "$ROOT/bin/xo-x-reply.sh" "req-4" "preview text" 2>"$err"); rc=$?
   [ "$rc" -ne 0 ] || fail "dry-run must fail when it cannot record the preview"
   [ -z "$out" ] || fail "dry-run record failure must not echo the request_id (got: $out)"
@@ -1077,7 +1077,7 @@ test_reply_dry_run_outbox_private_publication_rejects_unsafe_paths() {
   home="$TMP_ROOT/reply-outbox-linked-dir"; mkdir -p "$home/state" "$home/external"
   err="$home/err.txt"
   ln -s "$home/external" "$home/state/x-outbox"
-  out=$(XO_HOME="$home" FMX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" req-x "preview text" 2>"$err"); rc=$?
+  out=$(XO_HOME="$home" XOX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" req-x "preview text" 2>"$err"); rc=$?
   [ "$rc" -ne 0 ] || fail "reply dry-run must reject a linked outbox directory"
   [ -z "$out" ] || fail "rejected linked outbox must not echo the request_id (got: $out)"
   assert_grep "cannot write dry-run outbox" "$err" "reply dry-run must report the linked outbox write failure"
@@ -1089,7 +1089,7 @@ test_reply_dry_run_outbox_private_publication_rejects_unsafe_paths() {
   target="$home/external-target.json"
   printf 'external sentinel\n' > "$target"
   ln -s "$target" "$home/state/x-outbox/req-x.json"
-  out=$(XO_HOME="$home" FMX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" req-x "preview text" 2>"$err"); rc=$?
+  out=$(XO_HOME="$home" XOX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" req-x "preview text" 2>"$err"); rc=$?
   [ "$rc" -ne 0 ] || fail "reply dry-run must reject a linked outbox destination"
   [ "$(cat "$target")" = "external sentinel" ] || fail "reply dry-run must not write through a linked outbox destination"
   [ -L "$home/state/x-outbox/req-x.json" ] || fail "reply dry-run must not replace a rejected linked destination"
@@ -1103,7 +1103,7 @@ test_reply_dry_run_outbox_private_publication_rejects_unsafe_paths() {
   printf '{"request_id":"req-x","text":"old"}\n' > "$dest"
   chmod 600 "$dest"
   ln "$dest" "$hardlink"
-  out=$(XO_HOME="$home" FMX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" req-x "preview text" 2>"$err"); rc=$?
+  out=$(XO_HOME="$home" XOX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" req-x "preview text" 2>"$err"); rc=$?
   [ "$rc" -ne 0 ] || fail "reply dry-run must reject a hardlinked outbox destination"
   [ "$(jq -r .text "$dest")" = "old" ] || fail "reply dry-run must preserve a rejected hardlinked destination"
   [ "$(jq -r .text "$hardlink")" = "old" ] || fail "reply dry-run must preserve the hardlink peer"
@@ -1115,14 +1115,14 @@ test_reply_dry_run_outbox_private_publication_rejects_unsafe_paths() {
   dest="$home/state/x-outbox/req-x.json"
   printf '{"request_id":"req-x","text":"old"}\n' > "$dest"
   chmod 644 "$dest"
-  out=$(XO_HOME="$home" FMX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" req-x "preview text" 2>"$err"); rc=$?
+  out=$(XO_HOME="$home" XOX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" req-x "preview text" 2>"$err"); rc=$?
   [ "$rc" -ne 0 ] || fail "reply dry-run must reject a wrong-mode outbox destination"
   [ "$(jq -r .text "$dest")" = "old" ] || fail "reply dry-run must preserve a rejected wrong-mode destination"
   [ "$(path_mode "$dest")" = 644 ] || fail "reply dry-run must leave a rejected wrong-mode destination unchanged"
   assert_no_private_artifact_temps "$home/state/x-outbox"
 
   home="$TMP_ROOT/reply-outbox-private-success"; mkdir -p "$home"
-  out=$(XO_HOME="$home" FMX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" req-x "preview text" 2>/dev/null); rc=$?
+  out=$(XO_HOME="$home" XOX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" req-x "preview text" 2>/dev/null); rc=$?
   expect_code 0 "$rc" "reply private outbox success exit"
   [ "$out" = "req-x" ] || fail "reply dry-run must still echo the request_id after private publication (got: $out)"
   [ "$(path_mode "$home/state/x-outbox")" = 700 ] || fail "reply dry-run must create the outbox directory as private"
@@ -1136,12 +1136,12 @@ test_split_thread_lib() {
   . "$ROOT/bin/xo-x-lib.sh"
   local out n last rejoin maxlen txt
   # A reply that fits one tweet stays a single, UNNUMBERED chunk.
-  out=$(printf 'Aye, all shipshape.' | fmx_split_thread 280 25)
+  out=$(printf 'Aye, all shipshape.' | xox_split_thread 280 25)
   [ "$(printf '%s' "$out" | jq 'length')" = "1" ] || fail "short reply must be one chunk"
   [ "$(printf '%s' "$out" | jq -r '.[0]')" = "Aye, all shipshape." ] || fail "short reply must be verbatim and unnumbered"
   # A long reply splits on word boundaries; every chunk within the limit; lossless.
   txt="alpha bravo charlie delta echo foxtrot golf hotel india juliet kilo lima mike november"
-  out=$(printf '%s' "$txt" | fmx_split_thread 30 25)
+  out=$(printf '%s' "$txt" | xox_split_thread 30 25)
   n=$(printf '%s' "$out" | jq 'length')
   [ "$n" -gt 1 ] || fail "a long reply must split into more than one chunk"
   maxlen=$(printf '%s' "$out" | jq 'map(length)|max')
@@ -1151,10 +1151,10 @@ test_split_thread_lib() {
   rejoin=$(printf '%s' "$out" | jq -r 'map(sub(" \\([0-9]+/[0-9]+\\)$";""))|join(" ")')
   [ "$rejoin" = "$txt" ] || fail "thread must rejoin losslessly (got: $rejoin)"
   # A single over-long word is hard-split so no chunk exceeds the limit.
-  out=$(printf 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' | fmx_split_thread 20 25)
+  out=$(printf 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' | xox_split_thread 20 25)
   [ "$(printf '%s' "$out" | jq 'map(length)|max')" -le 20 ] || fail "over-long word must hard-split within the limit"
   # The cap bounds the thread; a truncated thread is marked with an ellipsis.
-  out=$(printf 'one two three four five six seven eight nine ten' | fmx_split_thread 20 2)
+  out=$(printf 'one two three four five six seven eight nine ten' | xox_split_thread 20 2)
   [ "$(printf '%s' "$out" | jq 'length')" -le 2 ] || fail "thread must respect the cap"
   case "$(printf '%s' "$out" | jq -r '.[-1]')" in *…*) : ;; *) fail "a capped thread must mark truncation" ;; esac
   txt=$(cat <<'TXT'
@@ -1168,7 +1168,7 @@ printf '%s\n' "the marker must not land in here"
 Final paragraph also has enough words to make the reply split after the fenced block.
 TXT
 )
-  out=$(printf '%s' "$txt" | fmx_split_thread 120 25)
+  out=$(printf '%s' "$txt" | xox_split_thread 120 25)
   [ "$(printf '%s' "$out" | jq 'length')" -gt 1 ] || fail "fenced markdown reply must split"
   printf '%s' "$out" | jq -e \
     'all(.[]; (((gsub(" \\([0-9]+/[0-9]+\\)$"; "") | split("```") | length) - 1) % 2) == 0)' \
@@ -1179,13 +1179,13 @@ TXT
   printf '%s' "$out" | jq -e \
     'all(.[] | split("\n")[]; (test("^[[:space:]]*```.* \\([0-9]+/[0-9]+\\)$") | not))' \
     >/dev/null || fail "numbering markers must not be appended to fenced-code boundary lines"
-  pass "fmx_split_thread: word-boundary, fence-aware, within-limit, numbered, lossless, capped"
+  pass "xox_split_thread: word-boundary, fence-aware, within-limit, numbered, lossless, capped"
 }
 
 test_reply_single_no_texts() {
   local home out
   home="$TMP_ROOT/reply-single"; mkdir -p "$home"
-  out=$(XO_HOME="$home" FMX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" req-s "Short and sweet." 2>/dev/null)
+  out=$(XO_HOME="$home" XOX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" req-s "Short and sweet." 2>/dev/null)
   [ "$out" = "req-s" ] || fail "single dry-run must echo the request_id (got: $out)"
   jq -e 'has("texts")|not' "$home/state/x-outbox/req-s.json" >/dev/null || fail "a one-tweet reply must not include texts"
   [ "$(jq -r '.text' "$home/state/x-outbox/req-s.json")" = "Short and sweet." ] || fail "single reply text must be verbatim and unnumbered"
@@ -1196,7 +1196,7 @@ test_reply_thread_dry_run() {
   local home out long
   home="$TMP_ROOT/reply-thread"; mkdir -p "$home"
   long="The captain has me on a sign-in redirect fix, a docs tidy, and keeping the build green while other jobs run in the background today."
-  out=$(XO_HOME="$home" FMX_DRY_RUN=1 FMX_X_REPLY_MAX_CHARS=50 \
+  out=$(XO_HOME="$home" XOX_DRY_RUN=1 XOX_X_REPLY_MAX_CHARS=50 \
     "$ROOT/bin/xo-x-reply.sh" req-t "$long" 2>/dev/null)
   [ "$out" = "req-t" ] || fail "thread dry-run must echo the request_id (got: $out)"
   assert_present "$home/state/x-outbox/req-t.json" "thread dry-run must record the outbox preview"
@@ -1223,7 +1223,7 @@ printf '%s\n' "no numbering marker belongs here"
 Final paragraph also remains in the same public Discord message because the total is far below the 1900 character split budget.
 TXT
 )
-  out=$(XO_HOME="$home" FMX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" req-discord "$reply" 2>/dev/null)
+  out=$(XO_HOME="$home" XOX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" req-discord "$reply" 2>/dev/null)
   [ "$out" = "req-discord" ] || fail "Discord dry-run must echo the request_id (got: $out)"
   jq -e 'has("texts")|not' "$home/state/x-outbox/req-discord.json" >/dev/null \
     || fail "Discord reply below its message budget must not be split into texts[]"
@@ -1238,7 +1238,7 @@ test_reply_x_inbox_still_uses_x_budget() {
   jq -cn '{request_id:"req-x",tweet_id:"1234567890",text:"question"}' > "$home/state/x-inbox/req-x.json"
   private_artifact_file "$home/state/x-inbox/req-x.json"
   long="This X reply intentionally runs beyond the default tweet budget so it still needs a numbered thread on X. It has enough plain words to cross the limit while staying easy to split at word boundaries without code fences or platform ambiguity. The old default must remain intact for numeric tweet ids."
-  out=$(XO_HOME="$home" FMX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" req-x "$long" 2>/dev/null)
+  out=$(XO_HOME="$home" XOX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" req-x "$long" 2>/dev/null)
   [ "$out" = "req-x" ] || fail "X dry-run must echo the request_id (got: $out)"
   jq -e '.texts and (.texts|length>1)' "$home/state/x-outbox/req-x.json" >/dev/null \
     || fail "X reply over 280 characters must still split into texts[]"
@@ -1254,7 +1254,7 @@ test_reply_inbox_explicit_limit_wins() {
     > "$home/state/x-inbox/req-limit.json"
   private_artifact_file "$home/state/x-inbox/req-limit.json"
   long="Discord normally has a much larger budget, but an explicit relay-provided reply_max_chars value must be honored when the payload carries one."
-  out=$(XO_HOME="$home" FMX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" req-limit "$long" 2>/dev/null)
+  out=$(XO_HOME="$home" XOX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" req-limit "$long" 2>/dev/null)
   [ "$out" = "req-limit" ] || fail "explicit-limit dry-run must echo the request_id (got: $out)"
   jq -e '.texts and (.texts|length>1)' "$home/state/x-outbox/req-limit.json" >/dev/null \
     || fail "explicit reply_max_chars must force a split even on Discord"
@@ -1272,7 +1272,7 @@ test_reply_rejects_unsafe_inbox_context_reads() {
     > "$home/external-inbox/req-linked-dir.json"
   chmod 600 "$home/external-inbox/req-linked-dir.json"
   ln -s "$home/external-inbox" "$home/state/x-inbox"
-  out=$(XO_HOME="$home" FMX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" req-linked-dir "$reply" 2>/dev/null); rc=$?
+  out=$(XO_HOME="$home" XOX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" req-linked-dir "$reply" 2>/dev/null); rc=$?
   expect_code 0 "$rc" "reply linked inbox dir read exit"
   jq -e '.texts and (.texts|length>1)' "$home/state/x-outbox/req-linked-dir.json" >/dev/null \
     || fail "reply must not trust a linked inbox directory for Discord budget context"
@@ -1281,7 +1281,7 @@ test_reply_rejects_unsafe_inbox_context_reads() {
   target="$home/external-inbox-record.json"
   jq -cn '{request_id:"req-linked-file",platform:"discord",reply_max_chars:1900,text:"question"}' > "$target"
   ln -s "$target" "$home/state/x-inbox/req-linked-file.json"
-  out=$(XO_HOME="$home" FMX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" req-linked-file "$reply" 2>/dev/null); rc=$?
+  out=$(XO_HOME="$home" XOX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" req-linked-file "$reply" 2>/dev/null); rc=$?
   expect_code 0 "$rc" "reply linked inbox file read exit"
   jq -e '.texts and (.texts|length>1)' "$home/state/x-outbox/req-linked-file.json" >/dev/null \
     || fail "reply must not trust a linked inbox file for Discord budget context"
@@ -1292,7 +1292,7 @@ test_reply_rejects_unsafe_inbox_context_reads() {
   jq -cn '{request_id:"req-hardlink",platform:"discord",reply_max_chars:1900,text:"question"}' > "$dest"
   private_artifact_file "$dest"
   ln "$dest" "$hardlink"
-  out=$(XO_HOME="$home" FMX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" req-hardlink "$reply" 2>/dev/null); rc=$?
+  out=$(XO_HOME="$home" XOX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" req-hardlink "$reply" 2>/dev/null); rc=$?
   expect_code 0 "$rc" "reply hardlinked inbox file read exit"
   jq -e '.texts and (.texts|length>1)' "$home/state/x-outbox/req-hardlink.json" >/dev/null \
     || fail "reply must not trust a hardlinked inbox file for Discord budget context"
@@ -1303,7 +1303,7 @@ test_reply_rejects_unsafe_inbox_context_reads() {
   jq -cn '{request_id:"req-public-dir",platform:"discord",reply_max_chars:1900,text:"question"}' \
     > "$home/state/x-inbox/req-public-dir.json"
   private_artifact_file "$home/state/x-inbox/req-public-dir.json"
-  out=$(XO_HOME="$home" FMX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" req-public-dir "$reply" 2>/dev/null); rc=$?
+  out=$(XO_HOME="$home" XOX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" req-public-dir "$reply" 2>/dev/null); rc=$?
   expect_code 0 "$rc" "reply public inbox dir read exit"
   jq -e '.texts and (.texts|length>1)' "$home/state/x-outbox/req-public-dir.json" >/dev/null \
     || fail "reply must not trust a nonprivate inbox directory for Discord budget context"
@@ -1314,7 +1314,7 @@ test_reply_max_chars_floor_clamps_to_minimum() {
   local home out long
   home="$TMP_ROOT/reply-max-floor"; mkdir -p "$home"
   long="alpha bravo charlie delta echo foxtrot golf hotel india juliet kilo lima mike november"
-  out=$(XO_HOME="$home" FMX_DRY_RUN=1 FMX_X_REPLY_MAX_CHARS=49 \
+  out=$(XO_HOME="$home" XOX_DRY_RUN=1 XOX_X_REPLY_MAX_CHARS=49 \
     "$ROOT/bin/xo-x-reply.sh" req-floor "$long" 2>/dev/null)
   [ "$out" = "req-floor" ] || fail "reply max floor dry-run must echo the request_id (got: $out)"
   jq -e '.texts and (.texts|length>1)' "$home/state/x-outbox/req-floor.json" >/dev/null || fail "a below-floor max must clamp to 50 and still split"
@@ -1327,11 +1327,11 @@ test_reply_thread_live_posts_texts() {
   home="$TMP_ROOT/reply-thread-live"; mkdir -p "$home"
   fakebin=$(make_fake_curl "$home")
   log="$home/curl.log"
-  printf 'FMX_PAIRING_TOKEN=tok-th\n' > "$home/.env"
+  printf 'XOX_PAIRING_TOKEN=tok-th\n' > "$home/.env"
   # 50 is the configured minimum per-tweet budget; the text is well over it so it
   # must split into a multi-tweet thread.
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
-    FMX_X_REPLY_MAX_CHARS=50 FAKE_CURL_LOG="$log" FAKE_ANSWER_CODE=200 \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
+    XOX_X_REPLY_MAX_CHARS=50 FAKE_CURL_LOG="$log" FAKE_ANSWER_CODE=200 \
     "$ROOT/bin/xo-x-reply.sh" req-l "alpha bravo charlie delta echo foxtrot golf hotel india juliet kilo lima mike november oscar papa quebec romeo")
   [ "$out" = "req-l" ] || fail "live thread must echo the request_id (got: $out)"
   assert_grep "method=POST" "$log" "live thread must POST"
@@ -1349,8 +1349,8 @@ test_reply_image_live_posts_image_object() {
   img="$home/diagram.png"
   make_sample_image "$img"
   expected=$(base64 < "$img" | tr -d '\n\r')
-  printf 'FMX_PAIRING_TOKEN=tok-img\n' > "$home/.env"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
+  printf 'XOX_PAIRING_TOKEN=tok-img\n' > "$home/.env"
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     FAKE_CURL_LOG="$log" FAKE_ANSWER_CODE=200 \
     "$ROOT/bin/xo-x-reply.sh" "req-img" --image "$img" "Here is the illustration."); rc=$?
   expect_code 0 "$rc" "reply image live exit"
@@ -1377,8 +1377,8 @@ test_reply_image_live_streams_payload_file() {
     printf '0123456789abcdef0123456789abcdef' >> "$img"
     i=$((i + 1))
   done
-  printf 'FMX_PAIRING_TOKEN=tok-img-stream\n' > "$home/.env"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
+  printf 'XOX_PAIRING_TOKEN=tok-img-stream\n' > "$home/.env"
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     FAKE_CURL_LOG="$log" FAKE_ANSWER_CODE=200 \
     "$ROOT/bin/xo-x-reply.sh" "req-img-stream" --image "$img" "Here is the illustration."); rc=$?
   expect_code 0 "$rc" "streamed image reply exit"
@@ -1400,7 +1400,7 @@ test_reply_image_thread_dry_run_records_compact_marker() {
   img="$home/illustration.webp"
   make_sample_image "$img"
   bytes=$(wc -c < "$img" | tr -d '[:space:]')
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_DRY_RUN=1 FMX_X_REPLY_MAX_CHARS=50 \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_DRY_RUN=1 XOX_X_REPLY_MAX_CHARS=50 \
     FAKE_CURL_LOG="$log" \
     "$ROOT/bin/xo-x-reply.sh" "req-img-dry" --image "$img" \
     "alpha bravo charlie delta echo foxtrot golf hotel india juliet kilo lima mike november" \
@@ -1428,7 +1428,7 @@ test_reply_image_dry_run_cleans_payload_temp_files() {
   tmpdir="$home/tmp"; mkdir -p "$tmpdir"
   img="$home/preview.png"
   make_sample_image "$img"
-  out=$(PATH="$BASE_PATH" TMPDIR="$tmpdir" XO_HOME="$home" FMX_DRY_RUN=1 \
+  out=$(PATH="$BASE_PATH" TMPDIR="$tmpdir" XO_HOME="$home" XOX_DRY_RUN=1 \
     "$ROOT/bin/xo-x-reply.sh" "req-img-temp-clean" --image "$img" "Here is the image." \
     2>"$home/err"); rc=$?
   expect_code 0 "$rc" "reply image temp cleanup exit"
@@ -1442,18 +1442,18 @@ test_reply_image_path_errors_are_clear() {
   local home out rc err img
   home="$TMP_ROOT/reply-image-errors"; mkdir -p "$home"
   err="$home/err.txt"
-  out=$(PATH="$BASE_PATH" XO_HOME="$home" FMX_DRY_RUN=1 \
+  out=$(PATH="$BASE_PATH" XO_HOME="$home" XOX_DRY_RUN=1 \
     "$ROOT/bin/xo-x-reply.sh" "req-missing" --image "$home/missing.png" "text" 2>"$err"); rc=$?
   [ "$rc" -ne 0 ] || fail "missing image path must fail"
   [ -z "$out" ] || fail "missing image path must not echo the request_id (got: $out)"
   assert_grep "image file does not exist" "$err" "missing image path must explain the error"
   img="$home/not-image.txt"
   printf 'not an image' > "$img"
-  out=$(PATH="$BASE_PATH" XO_HOME="$home" FMX_DRY_RUN=1 \
+  out=$(PATH="$BASE_PATH" XO_HOME="$home" XOX_DRY_RUN=1 \
     "$ROOT/bin/xo-x-reply.sh" "req-badtype" --image "$img" "text" 2>"$err"); rc=$?
   [ "$rc" -ne 0 ] || fail "unsupported image path must fail"
   assert_grep "unsupported image media type" "$err" "unsupported image path must explain the error"
-  out=$(PATH="$BASE_PATH" XO_HOME="$home" FMX_DRY_RUN=1 \
+  out=$(PATH="$BASE_PATH" XO_HOME="$home" XOX_DRY_RUN=1 \
     "$ROOT/bin/xo-x-reply.sh" "req-noarg" --image 2>"$err"); rc=$?
   expect_code 2 "$rc" "missing --image argument exit"
   assert_grep "missing --image path" "$err" "missing --image argument must explain the error"
@@ -1467,9 +1467,9 @@ test_reply_followup_live_posts_to_followup_endpoint() {
   home="$TMP_ROOT/reply-followup-live"; mkdir -p "$home"
   fakebin=$(make_fake_curl "$home")
   log="$home/curl.log"
-  printf 'FMX_PAIRING_TOKEN=tok-fu\n' > "$home/.env"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
-    FMX_REPLY_PLATFORM=x FMX_REPLY_MAX_CHARS=280 \
+  printf 'XOX_PAIRING_TOKEN=tok-fu\n' > "$home/.env"
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
+    XOX_REPLY_PLATFORM=x XOX_REPLY_MAX_CHARS=280 \
     FAKE_CURL_LOG="$log" FAKE_FOLLOWUP_CODE=200 \
     "$ROOT/bin/xo-x-reply.sh" "req-7" --followup "Done, captain - the fix has shipped."); rc=$?
   expect_code 0 "$rc" "followup live exit"
@@ -1490,9 +1490,9 @@ test_reply_followup_409_marker_exits_distinctly() {
   home="$TMP_ROOT/reply-followup-409-marker"; mkdir -p "$home"
   fakebin=$(make_fake_curl "$home")
   err="$home/err.txt"
-  printf 'FMX_PAIRING_TOKEN=tok-fu\n' > "$home/.env"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
-    FMX_REPLY_PLATFORM=x FMX_REPLY_MAX_CHARS=280 \
+  printf 'XOX_PAIRING_TOKEN=tok-fu\n' > "$home/.env"
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
+    XOX_REPLY_PLATFORM=x XOX_REPLY_MAX_CHARS=280 \
     FAKE_FOLLOWUP_CODE=409 FAKE_FOLLOWUP_BODY='{"error":"followup_unavailable"}' \
     "$ROOT/bin/xo-x-reply.sh" "req-409-marker" --followup "Late follow-up." 2>"$err"); rc=$?
   expect_code 9 "$rc" "followup 409 marker exit"
@@ -1507,16 +1507,16 @@ test_reply_followup_409_without_marker_still_exits_distinctly() {
   home="$TMP_ROOT/reply-followup-409-fallback"; mkdir -p "$home"
   fakebin=$(make_fake_curl "$home")
   err="$home/err.txt"
-  printf 'FMX_PAIRING_TOKEN=tok-fu\n' > "$home/.env"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
-    FMX_REPLY_PLATFORM=x FMX_REPLY_MAX_CHARS=280 \
+  printf 'XOX_PAIRING_TOKEN=tok-fu\n' > "$home/.env"
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
+    XOX_REPLY_PLATFORM=x XOX_REPLY_MAX_CHARS=280 \
     FAKE_FOLLOWUP_CODE=409 \
     "$ROOT/bin/xo-x-reply.sh" "req-409-bare" --followup "Late follow-up." 2>"$err"); rc=$?
   expect_code 9 "$rc" "followup bare 409 exit"
   [ -z "$out" ] || fail "followup bare 409 must not echo the request_id (got: $out)"
   assert_grep "marker absent" "$err" "bare followup 409 must use the fallback diagnostic"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
-    FMX_REPLY_PLATFORM=x FMX_REPLY_MAX_CHARS=280 \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
+    XOX_REPLY_PLATFORM=x XOX_REPLY_MAX_CHARS=280 \
     FAKE_FOLLOWUP_CODE=409 FAKE_FOLLOWUP_BODY='{"error":"some_other_conflict"}' \
     "$ROOT/bin/xo-x-reply.sh" "req-409-other" --followup "Late follow-up." 2>"$err"); rc=$?
   expect_code 9 "$rc" "followup unrelated-body 409 exit"
@@ -1531,8 +1531,8 @@ test_reply_answer_409_is_generic_failure() {
   home="$TMP_ROOT/reply-answer-409"; mkdir -p "$home"
   fakebin=$(make_fake_curl "$home")
   err="$home/err.txt"
-  printf 'FMX_PAIRING_TOKEN=tok-answer\n' > "$home/.env"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
+  printf 'XOX_PAIRING_TOKEN=tok-answer\n' > "$home/.env"
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     FAKE_ANSWER_CODE=409 FAKE_ANSWER_BODY='{"error":"followup_unavailable"}' \
     "$ROOT/bin/xo-x-reply.sh" "req-answer-409" "Normal answer." 2>"$err"); rc=$?
   expect_code 1 "$rc" "answer 409 exit"
@@ -1549,9 +1549,9 @@ test_reply_followup_image_live_posts_image_object() {
   img="$home/result.jpg"
   make_sample_image "$img"
   expected=$(base64 < "$img" | tr -d '\n\r')
-  printf 'FMX_PAIRING_TOKEN=tok-fu-img\n' > "$home/.env"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
-    FMX_REPLY_PLATFORM=x FMX_REPLY_MAX_CHARS=280 \
+  printf 'XOX_PAIRING_TOKEN=tok-fu-img\n' > "$home/.env"
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
+    XOX_REPLY_PLATFORM=x XOX_REPLY_MAX_CHARS=280 \
     FAKE_CURL_LOG="$log" FAKE_FOLLOWUP_CODE=200 \
     "$ROOT/bin/xo-x-reply.sh" "req-fu-img" --followup --image "$img" \
     "Done - here is the generated image."); rc=$?
@@ -1570,19 +1570,19 @@ test_reply_followup_flag_position_is_flexible() {
   local home fakebin log rc out
   home="$TMP_ROOT/reply-followup-pos"; mkdir -p "$home"
   fakebin=$(make_fake_curl "$home")
-  printf 'FMX_PAIRING_TOKEN=tok-fp\n' > "$home/.env"
+  printf 'XOX_PAIRING_TOKEN=tok-fp\n' > "$home/.env"
   printf '%s' 'done via file' > "$home/reply.txt"
   # --followup AFTER the text source must still select the followup endpoint.
   log="$home/after.log"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
-    FMX_REPLY_PLATFORM=x FMX_REPLY_MAX_CHARS=280 \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
+    XOX_REPLY_PLATFORM=x XOX_REPLY_MAX_CHARS=280 \
     FAKE_CURL_LOG="$log" FAKE_FOLLOWUP_CODE=200 \
     "$ROOT/bin/xo-x-reply.sh" "req-a" --text-file "$home/reply.txt" --followup); rc=$?
   expect_code 0 "$rc" "followup-after-textfile exit"
   assert_grep "url=https://relay.test/connector/followup" "$log" "--followup after --text-file must still hit followup"
   # Without --followup, the answer endpoint is unchanged.
   log="$home/answer.log"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     FAKE_CURL_LOG="$log" FAKE_ANSWER_CODE=200 \
     "$ROOT/bin/xo-x-reply.sh" "req-a" --text-file "$home/reply.txt"); rc=$?
   expect_code 0 "$rc" "answer-still-default exit"
@@ -1593,7 +1593,7 @@ test_reply_followup_flag_position_is_flexible() {
 test_reply_followup_dry_run_marks_endpoint() {
   local home out rc
   home="$TMP_ROOT/reply-followup-dry"; mkdir -p "$home"
-  out=$(XO_HOME="$home" FMX_DRY_RUN=1 FMX_REPLY_PLATFORM=x FMX_REPLY_MAX_CHARS=280 \
+  out=$(XO_HOME="$home" XOX_DRY_RUN=1 XOX_REPLY_PLATFORM=x XOX_REPLY_MAX_CHARS=280 \
     "$ROOT/bin/xo-x-reply.sh" "req-d" --followup "Shipped - all green." 2>"$home/err"); rc=$?
   expect_code 0 "$rc" "followup dry-run exit"
   [ "$out" = "req-d" ] || fail "followup dry-run must echo the request_id (got: $out)"
@@ -1604,7 +1604,7 @@ test_reply_followup_dry_run_marks_endpoint() {
     || fail "followup dry-run preview must hold the reply text"
   assert_grep "/connector/followup" "$home/err" "followup dry-run summary must name the followup endpoint"
   # An answer dry-run must remain unchanged: no endpoint marker.
-  out=$(XO_HOME="$home" FMX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" "req-ans" "Aye." 2>/dev/null)
+  out=$(XO_HOME="$home" XOX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" "req-ans" "Aye." 2>/dev/null)
   jq -e 'has("endpoint")|not' "$home/state/x-outbox/req-ans.json" >/dev/null \
     || fail "an answer dry-run preview must not gain an endpoint marker"
   pass "xo-x-reply --followup dry-run marks the endpoint without changing the answer path"
@@ -1616,8 +1616,8 @@ test_reply_followup_thread_dry_run() {
   long="The captain has me on a sign-in redirect fix, a docs tidy, and keeping the build green while other jobs run in the background today."
   # This test exercises follow-up thread-split + endpoint-marker mechanics for a
   # fully resolved X follow-up.
-  out=$(XO_HOME="$home" FMX_DRY_RUN=1 FMX_X_REPLY_MAX_CHARS=50 \
-    FMX_REPLY_PLATFORM=x FMX_REPLY_MAX_CHARS=50 \
+  out=$(XO_HOME="$home" XOX_DRY_RUN=1 XOX_X_REPLY_MAX_CHARS=50 \
+    XOX_REPLY_PLATFORM=x XOX_REPLY_MAX_CHARS=50 \
     "$ROOT/bin/xo-x-reply.sh" req-ft --followup "$long" 2>/dev/null)
   [ "$out" = "req-ft" ] || fail "followup thread dry-run must echo the request_id (got: $out)"
   jq -e '.texts and (.texts|length>1)' "$home/state/x-outbox/req-ft.json" >/dev/null \
@@ -1634,7 +1634,7 @@ test_reply_followup_image_dry_run_marks_endpoint_and_compacts_image() {
   home="$TMP_ROOT/reply-followup-image-dry"; mkdir -p "$home"
   img="$home/result.gif"
   make_sample_image "$img"
-  out=$(XO_HOME="$home" FMX_DRY_RUN=1 FMX_REPLY_PLATFORM=x FMX_REPLY_MAX_CHARS=280 \
+  out=$(XO_HOME="$home" XOX_DRY_RUN=1 XOX_REPLY_PLATFORM=x XOX_REPLY_MAX_CHARS=280 \
     "$ROOT/bin/xo-x-reply.sh" "req-fu-img-dry" --followup --image "$img" "Done with art." \
     2>"$home/err"); rc=$?
   expect_code 0 "$rc" "followup image dry-run exit"
@@ -1661,11 +1661,11 @@ test_poll_records_context_registry_from_relay_platform() {
   local home fakebin out rc body reg
   home="$TMP_ROOT/poll-registry"; mkdir -p "$home"
   fakebin=$(make_fake_curl "$home")
-  printf 'FMX_PAIRING_TOKEN=tok-reg\n' > "$home/.env"
+  printf 'XOX_PAIRING_TOKEN=tok-reg\n' > "$home/.env"
   # An explicit Discord mention: the registry must capture platform=discord.
   body=$(jq -cn '{request_id:"req-disc",platform:"discord",reply_max_chars:1900,text:"question from discord"}')
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
-    FMX_NOW_OVERRIDE=1700000000 \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
+    XOX_NOW_OVERRIDE=1700000000 \
     FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "poll discord registry exit"
   [ "$out" = "x-mention req-disc" ] || fail "poll must still print the wake marker (got: $out)"
@@ -1676,14 +1676,14 @@ test_poll_records_context_registry_from_relay_platform() {
   [ "$(jq -r .recorded_at "$reg")" = "1700000000" ] || fail "registry must timestamp the context locally"
   # A numeric-tweet_id X mention: the registry must capture platform=x.
   body=$(jq -cn '{request_id:"req-x",tweet_id:"1234567890",reply_max_chars:280,text:"question from x"}')
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "poll x registry exit"
   [ "$(jq -r .platform "$home/state/x-context/req-x.json")" = "x" ] \
     || fail "registry must capture the X platform from a numeric tweet_id"
   # A mention with no platform signal at all: no useless empty record is written.
   body=$(jq -cn '{request_id:"req-unk",text:"platformless question"}')
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     FAKE_POLL_CODE=200 FAKE_POLL_BODY="$body" "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "poll unknown-platform exit"
   assert_present "$home/state/x-inbox/req-unk.json" "an unknown-platform mention is still stashed"
@@ -1699,14 +1699,14 @@ test_context_registry_private_publication_rejects_unsafe_paths() {
 
   home="$TMP_ROOT/context-linked-dir"; mkdir -p "$home/state" "$home/external"
   ln -s "$home/external" "$home/state/x-context"
-  fmx_context_registry_set "$home/state" req-x x 280; rc=$?
+  xox_context_registry_set "$home/state" req-x x 280; rc=$?
   [ "$rc" -ne 0 ] || fail "context registry must reject a linked context directory"
   assert_absent "$home/external/req-x.json" "context registry must not write through a linked context directory"
   [ -L "$home/state/x-context" ] || fail "context registry must leave the rejected directory symlink in place"
 
   home="$TMP_ROOT/context-public-dir"; mkdir -p "$home/state/x-context"
   chmod 755 "$home/state/x-context"
-  fmx_context_registry_set "$home/state" req-x x 280; rc=$?
+  xox_context_registry_set "$home/state" req-x x 280; rc=$?
   [ "$rc" -ne 0 ] || fail "context registry must reject a nonprivate context directory"
   assert_absent "$home/state/x-context/req-x.json" "context registry must not publish into a nonprivate context directory"
   assert_no_private_artifact_temps "$home/state/x-context"
@@ -1716,7 +1716,7 @@ test_context_registry_private_publication_rejects_unsafe_paths() {
   target="$home/external-target.json"
   printf 'external sentinel\n' > "$target"
   ln -s "$target" "$home/state/x-context/req-x.json"
-  fmx_context_registry_set "$home/state" req-x x 280; rc=$?
+  xox_context_registry_set "$home/state" req-x x 280; rc=$?
   [ "$rc" -ne 0 ] || fail "context registry must reject a linked destination"
   [ "$(cat "$target")" = "external sentinel" ] || fail "context registry must not write through a linked destination"
   [ -L "$home/state/x-context/req-x.json" ] || fail "context registry must not replace a rejected linked destination"
@@ -1729,7 +1729,7 @@ test_context_registry_private_publication_rejects_unsafe_paths() {
   jq -cn '{request_id:"req-x",platform:"x",reply_max_chars:"280",recorded_at:1700000000}' > "$dest"
   chmod 600 "$dest"
   ln "$dest" "$hardlink"
-  fmx_context_registry_set "$home/state" req-x discord 1900; rc=$?
+  xox_context_registry_set "$home/state" req-x discord 1900; rc=$?
   [ "$rc" -ne 0 ] || fail "context registry must reject a hardlinked destination"
   [ "$(jq -r .platform "$dest")" = "x" ] || fail "context registry must preserve a rejected hardlinked destination"
   [ "$(jq -r .platform "$hardlink")" = "x" ] || fail "context registry must preserve the hardlink peer"
@@ -1740,14 +1740,14 @@ test_context_registry_private_publication_rejects_unsafe_paths() {
   dest="$home/state/x-context/req-x.json"
   jq -cn '{request_id:"req-x",platform:"x",reply_max_chars:"280",recorded_at:1700000000}' > "$dest"
   chmod 644 "$dest"
-  fmx_context_registry_set "$home/state" req-x discord 1900; rc=$?
+  xox_context_registry_set "$home/state" req-x discord 1900; rc=$?
   [ "$rc" -ne 0 ] || fail "context registry must reject a wrong-mode destination"
   [ "$(jq -r .platform "$dest")" = "x" ] || fail "context registry must preserve a rejected wrong-mode destination"
   [ "$(path_mode "$dest")" = 644 ] || fail "context registry must leave a rejected wrong-mode destination unchanged"
   assert_no_private_artifact_temps "$home/state/x-context"
 
   home="$TMP_ROOT/context-private-success"; mkdir -p "$home"
-  out=$(FMX_NOW_OVERRIDE=1700000000 bash -c '. "$1/bin/xo-x-lib.sh"; fmx_context_registry_set "$2/state" req-x x 280' _ "$ROOT" "$home")
+  out=$(XOX_NOW_OVERRIDE=1700000000 bash -c '. "$1/bin/xo-x-lib.sh"; xox_context_registry_set "$2/state" req-x x 280' _ "$ROOT" "$home")
   rc=$?
   expect_code 0 "$rc" "context private publication success"
   [ -z "$out" ] || fail "context registry setter must stay silent on success"
@@ -1767,7 +1767,7 @@ test_context_registry_rejects_unsafe_reads() {
     > "$home/external-context/req-linked-dir.json"
   chmod 600 "$home/external-context/req-linked-dir.json"
   ln -s "$home/external-context" "$home/state/x-context"
-  out=$(fmx_context_registry_get "$home/state" req-linked-dir)
+  out=$(xox_context_registry_get "$home/state" req-linked-dir)
   [ "$(printf '%s' "$out" | jq -r .platform)" = "" ] \
     || fail "context registry must not read through a linked context directory"
 
@@ -1775,7 +1775,7 @@ test_context_registry_rejects_unsafe_reads() {
   target="$home/external-context-record.json"
   jq -cn '{request_id:"req-linked-file",platform:"discord",reply_max_chars:"1900",recorded_at:1700000000}' > "$target"
   ln -s "$target" "$home/state/x-context/req-linked-file.json"
-  out=$(fmx_context_registry_get "$home/state" req-linked-file)
+  out=$(xox_context_registry_get "$home/state" req-linked-file)
   [ "$(printf '%s' "$out" | jq -r .platform)" = "" ] \
     || fail "context registry must not read through a linked context file"
   [ -L "$home/state/x-context/req-linked-file.json" ] \
@@ -1787,7 +1787,7 @@ test_context_registry_rejects_unsafe_reads() {
   jq -cn '{request_id:"req-hardlink",platform:"discord",reply_max_chars:"1900",recorded_at:1700000000}' > "$dest"
   private_artifact_file "$dest"
   ln "$dest" "$hardlink"
-  out=$(fmx_context_registry_get "$home/state" req-hardlink)
+  out=$(xox_context_registry_get "$home/state" req-hardlink)
   [ "$(printf '%s' "$out" | jq -r .platform)" = "" ] \
     || fail "context registry must not read a hardlinked context file"
   [ "$(jq -r .platform "$hardlink")" = "discord" ] \
@@ -1797,7 +1797,7 @@ test_context_registry_rejects_unsafe_reads() {
   dest="$home/state/x-context/req-mode.json"
   jq -cn '{request_id:"req-mode",platform:"discord",reply_max_chars:"1900",recorded_at:1700000000}' > "$dest"
   chmod 644 "$dest"
-  out=$(fmx_context_registry_get "$home/state" req-mode)
+  out=$(xox_context_registry_get "$home/state" req-mode)
   [ "$(printf '%s' "$out" | jq -r .platform)" = "" ] \
     || fail "context registry must not read a wrong-mode context file"
   pass "context registry reads only private single-link artifacts"
@@ -1808,7 +1808,7 @@ test_private_artifact_publisher_runs_under_system_bash() {
   home="$TMP_ROOT/private-publisher-system-bash"; mkdir -p "$home"
   [ -x /bin/bash ] || { pass "private artifact publisher compatibility check skipped without /bin/bash"; return 0; }
   out=$(/bin/bash -c \
-    '. "$1/bin/xo-x-lib.sh"; printf "%s\n" "{\"request_id\":\"req-bash\"}" | fmx_private_artifact_publish_stdin "$2/state/x-outbox" req-bash.json 600' \
+    '. "$1/bin/xo-x-lib.sh"; printf "%s\n" "{\"request_id\":\"req-bash\"}" | xox_private_artifact_publish_stdin "$2/state/x-outbox" req-bash.json 600' \
     _ "$ROOT" "$home"); rc=$?
   expect_code 0 "$rc" "private artifact publisher under /bin/bash"
   [ -z "$out" ] || fail "private artifact publisher must stay silent under /bin/bash"
@@ -1840,8 +1840,8 @@ test_context_registry_prunes_expired_records() {
     > "$future"
   chmod 600 "$dir/"*.json
   touch -t 202001010000 "$legacy" "$malformed" "$future"
-  out=$(FMX_NOW_OVERRIDE=1700000000 bash -c \
-    '. "$1/bin/xo-x-lib.sh"; fmx_context_registry_get "$2" req-keep' _ "$ROOT" "$home/state")
+  out=$(XOX_NOW_OVERRIDE=1700000000 bash -c \
+    '. "$1/bin/xo-x-lib.sh"; xox_context_registry_get "$2" req-keep' _ "$ROOT" "$home/state")
   [ "$(printf '%s' "$out" | jq -r .platform)" = "discord" ] \
     || fail "a record exactly seven days old must remain usable"
   assert_absent "$dir/req-expired.json" "a registry record beyond seven days must be pruned"
@@ -1851,28 +1851,28 @@ test_context_registry_prunes_expired_records() {
   assert_absent "$malformed" "an expired malformed record must be pruned using its file timestamp"
   assert_absent "$future" "an absurd future timestamp must fall back to bounded file age"
   fakebin=$(make_fake_curl "$home")
-  printf 'FMX_PAIRING_TOKEN=tok-retention\n' > "$home/.env"
+  printf 'XOX_PAIRING_TOKEN=tok-retention\n' > "$home/.env"
   jq -cn '{request_id:"req-poll-expired",platform:"x",reply_max_chars:"280",recorded_at:1699395199}' \
     > "$dir/req-poll-expired.json"
   private_artifact_file "$dir/req-poll-expired.json"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_NOW_OVERRIDE=1700000000 \
-    FMX_RELAY_URL="https://relay.test" FAKE_POLL_CODE=204 "$ROOT/bin/xo-x-poll.sh"); rc=$?
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_NOW_OVERRIDE=1700000000 \
+    XOX_RELAY_URL="https://relay.test" FAKE_POLL_CODE=204 "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "poll retention sweep exit"
   [ -z "$out" ] || fail "a 204 poll retention sweep must stay silent (got: $out)"
   assert_absent "$dir/req-poll-expired.json" "a recurring empty poll must prune expired registry records"
   jq -cn '{request_id:"req-short-window",platform:"x",reply_max_chars:"280",recorded_at:1699999899}' \
     > "$dir/req-short-window.json"
   private_artifact_file "$dir/req-short-window.json"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_NOW_OVERRIDE=1700000000 \
-    FMX_FOLLOWUP_MAX_AGE_SECS=100 FMX_RELAY_URL="https://relay.test" FAKE_POLL_CODE=204 \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_NOW_OVERRIDE=1700000000 \
+    XOX_FOLLOWUP_MAX_AGE_SECS=100 XOX_RELAY_URL="https://relay.test" FAKE_POLL_CODE=204 \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "short retention window poll exit"
   assert_absent "$dir/req-short-window.json" "a smaller configured follow-up window must prune earlier"
   jq -cn '{request_id:"req-overlong-window",platform:"x",reply_max_chars:"280",recorded_at:1699395199}' \
     > "$dir/req-overlong-window.json"
   private_artifact_file "$dir/req-overlong-window.json"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_NOW_OVERRIDE=1700000000 \
-    FMX_FOLLOWUP_MAX_AGE_SECS=999999999 FMX_RELAY_URL="https://relay.test" FAKE_POLL_CODE=204 \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_NOW_OVERRIDE=1700000000 \
+    XOX_FOLLOWUP_MAX_AGE_SECS=999999999 XOX_RELAY_URL="https://relay.test" FAKE_POLL_CODE=204 \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "capped retention window poll exit"
   assert_absent "$dir/req-overlong-window.json" "a configured window must not extend retention past seven days"
@@ -1884,15 +1884,15 @@ test_context_registry_preserves_first_seen_timestamp() {
   home="$TMP_ROOT/registry-first-seen"
   mkdir -p "$home"
   fakebin=$(make_fake_curl "$home")
-  printf 'FMX_PAIRING_TOKEN=tok-first-seen\n' > "$home/.env"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_NOW_OVERRIDE=1700000000 \
-    FMX_RELAY_URL="https://relay.test" FAKE_POLL_CODE=200 \
+  printf 'XOX_PAIRING_TOKEN=tok-first-seen\n' > "$home/.env"
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_NOW_OVERRIDE=1700000000 \
+    XOX_RELAY_URL="https://relay.test" FAKE_POLL_CODE=200 \
     FAKE_POLL_BODY='{"request_id":"req-repeat","platform":"x","reply_max_chars":280,"text":"q"}' \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "first registry poll exit"
   reg="$home/state/x-context/req-repeat.json"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_NOW_OVERRIDE=1700000100 \
-    FMX_RELAY_URL="https://relay.test" FAKE_POLL_CODE=200 \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_NOW_OVERRIDE=1700000100 \
+    XOX_RELAY_URL="https://relay.test" FAKE_POLL_CODE=200 \
     FAKE_POLL_BODY='{"request_id":"req-repeat","platform":"x","reply_max_chars":280,"text":"q"}' \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "repeated registry poll exit"
@@ -1906,41 +1906,41 @@ test_context_registry_retention_starts_on_successful_live_answer() {
   home="$TMP_ROOT/registry-answer-window"
   mkdir -p "$home"
   fakebin=$(make_fake_curl "$home")
-  printf 'FMX_PAIRING_TOKEN=tok-answer-window\n' > "$home/.env"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_NOW_OVERRIDE=1700000000 \
-    FMX_RELAY_URL="https://relay.test" FAKE_POLL_CODE=200 \
+  printf 'XOX_PAIRING_TOKEN=tok-answer-window\n' > "$home/.env"
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_NOW_OVERRIDE=1700000000 \
+    XOX_RELAY_URL="https://relay.test" FAKE_POLL_CODE=200 \
     FAKE_POLL_BODY='{"request_id":"req-answer-window","platform":"discord","reply_max_chars":1900,"text":"q"}' \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "answer-window poll exit"
   reg="$home/state/x-context/req-answer-window.json"
   [ "$(jq -r .recorded_at "$reg")" = "1700000000" ] \
     || fail "the pending context must start at poll time"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_NOW_OVERRIDE=1700000100 \
-    FMX_RELAY_URL="https://relay.test" FAKE_POLL_CODE=200 \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_NOW_OVERRIDE=1700000100 \
+    XOX_RELAY_URL="https://relay.test" FAKE_POLL_CODE=200 \
     FAKE_POLL_BODY='{"request_id":"req-answer-window","platform":"discord","reply_max_chars":1900,"text":"q"}' \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "repeated answer-window poll exit"
   [ "$(jq -r .recorded_at "$reg")" = "1700000000" ] \
     || fail "repeated polling must not move the pending context window"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_NOW_OVERRIDE=1700000200 \
-    FMX_RELAY_URL="https://relay.test" FAKE_ANSWER_CODE=500 \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_NOW_OVERRIDE=1700000200 \
+    XOX_RELAY_URL="https://relay.test" FAKE_ANSWER_CODE=500 \
     "$ROOT/bin/xo-x-reply.sh" req-answer-window "Working on it." 2>/dev/null); rc=$?
   [ "$rc" -ne 0 ] || fail "the failed answer fixture must fail"
   [ "$(jq -r .recorded_at "$reg")" = "1700000000" ] \
     || fail "a failed answer must not refresh context retention"
-  out=$(XO_HOME="$home" FMX_NOW_OVERRIDE=1700000300 FMX_DRY_RUN=1 \
+  out=$(XO_HOME="$home" XOX_NOW_OVERRIDE=1700000300 XOX_DRY_RUN=1 \
     "$ROOT/bin/xo-x-reply.sh" req-answer-window "Working on it." 2>/dev/null); rc=$?
   expect_code 0 "$rc" "answer-window dry-run exit"
   [ "$(jq -r .recorded_at "$reg")" = "1700000000" ] \
     || fail "an answer dry-run must not refresh context retention"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_NOW_OVERRIDE=1700604900 \
-    FMX_RELAY_URL="https://relay.test" FAKE_ANSWER_CODE=200 \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_NOW_OVERRIDE=1700604900 \
+    XOX_RELAY_URL="https://relay.test" FAKE_ANSWER_CODE=200 \
     "$ROOT/bin/xo-x-reply.sh" req-answer-window "Working on it."); rc=$?
   expect_code 0 "$rc" "successful answer-window answer exit"
   [ "$(jq -r .recorded_at "$reg")" = "1700604900" ] \
     || fail "a late successful live initial answer must recreate and start the retained follow-up window"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_NOW_OVERRIDE=1700605000 \
-    FMX_RELAY_URL="https://relay.test" FAKE_FOLLOWUP_CODE=200 \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_NOW_OVERRIDE=1700605000 \
+    XOX_RELAY_URL="https://relay.test" FAKE_FOLLOWUP_CODE=200 \
     "$ROOT/bin/xo-x-reply.sh" req-answer-window --followup "Still working."); rc=$?
   expect_code 0 "$rc" "answer-window follow-up exit"
   [ "$(jq -r .recorded_at "$reg")" = "1700604900" ] \
@@ -1954,15 +1954,15 @@ test_regression_discord_followup_survives_inbox_cleanup() {
   local home fakebin out rc reply reg
   home="$TMP_ROOT/reg-discord-cleanup"; mkdir -p "$home"
   fakebin=$(make_fake_curl "$home")
-  printf 'FMX_PAIRING_TOKEN=tok-rc\n' > "$home/.env"
+  printf 'XOX_PAIRING_TOKEN=tok-rc\n' > "$home/.env"
   # 1. Poll a Discord mention: it stashes the inbox AND records the registry.
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     FAKE_POLL_CODE=200 FAKE_POLL_BODY="$(jq -cn '{request_id:"req-disc",platform:"discord",reply_max_chars:1900,text:"q"}')" \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "poll exit"
   reg="$home/state/x-context/req-disc.json"
   assert_present "$reg" "poll recorded the per-request context"
-  # 2. The acknowledgement drains the inbox file (fmx-respond step 2f).
+  # 2. The acknowledgement drains the inbox file (xox-respond step 2f).
   rm -f "$home/state/x-inbox/req-disc.json"
   # 3. The delayed milestone follow-up is posted DIRECTLY by request_id, with no
   #    task link at all - the exact path that regressed.
@@ -1972,7 +1972,7 @@ TXT
 )
   [ "$(printf '%s' "$reply" | wc -m | tr -d '[:space:]')" -gt 280 ] \
     || fail "the regression reply must exceed the X 280-char budget to be meaningful"
-  out=$(XO_HOME="$home" FMX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" req-disc --followup - <<<"$reply" 2>/dev/null); rc=$?
+  out=$(XO_HOME="$home" XOX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" req-disc --followup - <<<"$reply" 2>/dev/null); rc=$?
   expect_code 0 "$rc" "delayed discord follow-up exit"
   [ "$out" = "req-disc" ] || fail "follow-up must echo the request_id (got: $out)"
   jq -e 'has("texts")|not' "$home/state/x-outbox/req-disc.json" >/dev/null \
@@ -1985,8 +1985,8 @@ test_regression_x_followup_still_splits_after_cleanup() {
   local home fakebin out rc reply
   home="$TMP_ROOT/reg-x-split"; mkdir -p "$home"
   fakebin=$(make_fake_curl "$home")
-  printf 'FMX_PAIRING_TOKEN=tok-rx\n' > "$home/.env"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
+  printf 'XOX_PAIRING_TOKEN=tok-rx\n' > "$home/.env"
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     FAKE_POLL_CODE=200 FAKE_POLL_BODY="$(jq -cn '{request_id:"req-xs",tweet_id:"777",reply_max_chars:280,text:"q"}')" \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "poll x exit"
@@ -1994,7 +1994,7 @@ test_regression_x_followup_still_splits_after_cleanup() {
   reply="This X follow-up intentionally runs well beyond the default single-tweet budget so it still needs a numbered thread on X. It carries enough plain words to comfortably cross the two hundred and eighty character limit while staying easy to split at word boundaries, which proves the established X behavior is not broken by the Discord platform fix at all."
   [ "$(printf '%s' "$reply" | wc -m | tr -d '[:space:]')" -gt 280 ] \
     || fail "the X regression reply must exceed 280 chars to force a split"
-  out=$(XO_HOME="$home" FMX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" req-xs --followup - <<<"$reply" 2>/dev/null); rc=$?
+  out=$(XO_HOME="$home" XOX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" req-xs --followup - <<<"$reply" 2>/dev/null); rc=$?
   expect_code 0 "$rc" "delayed x follow-up exit"
   jq -e '.texts and (.texts|length>1)' "$home/state/x-outbox/req-xs.json" >/dev/null \
     || fail "an X follow-up over 280 characters must still split into a numbered thread"
@@ -2012,7 +2012,7 @@ test_regression_unresolved_followup_fails_safe() {
   # (a) Dry-run, nothing resolvable, no relay reachable: refuse, no outbox.
   home="$TMP_ROOT/reg-failsafe-dry"; mkdir -p "$home"
   err="$home/err.txt"
-  out=$(XO_HOME="$home" FMX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" req-none --followup - <<<"$reply" 2>"$err"); rc=$?
+  out=$(XO_HOME="$home" XOX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" req-none --followup - <<<"$reply" 2>"$err"); rc=$?
   [ "$rc" -eq 8 ] || fail "any unresolved follow-up must exit 8 (fail-safe), got: $rc"
   [ -z "$out" ] || fail "a refused follow-up must echo nothing (got: $out)"
   assert_absent "$home/state/x-outbox/req-none.json" "a refused follow-up must record NO outbox preview"
@@ -2022,8 +2022,8 @@ test_regression_unresolved_followup_fails_safe() {
   fakebin=$(make_fake_curl "$home")
   log="$home/curl.log"
   err="$home/err.txt"
-  printf 'FMX_PAIRING_TOKEN=tok-fs\n' > "$home/.env"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
+  printf 'XOX_PAIRING_TOKEN=tok-fs\n' > "$home/.env"
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     FAKE_CURL_LOG="$log" FAKE_REQCTX_CODE=404 \
     "$ROOT/bin/xo-x-reply.sh" req-live-none --followup - <<<"$reply" 2>"$err"); rc=$?
   [ "$rc" -eq 8 ] || fail "a live unresolved follow-up must exit 8 (fail-safe), got: $rc"
@@ -2043,7 +2043,7 @@ test_followup_partial_registry_uses_relay_budget_live() {
   home="$TMP_ROOT/reg-relay-fallback"; private_artifact_dir "$home/state/x-context"
   fakebin=$(make_fake_curl "$home")
   log="$home/curl.log"
-  printf 'FMX_PAIRING_TOKEN=tok-rf\n' > "$home/.env"
+  printf 'XOX_PAIRING_TOKEN=tok-rf\n' > "$home/.env"
   jq -cn '{request_id:"req-relay",platform:"discord",reply_max_chars:""}' \
     > "$home/state/x-context/req-relay.json"
   private_artifact_file "$home/state/x-context/req-relay.json"
@@ -2051,7 +2051,7 @@ test_followup_partial_registry_uses_relay_budget_live() {
 Aye captain, that one is shipped and green. The change is landed, the regression guard is in place, and nothing else was disturbed along the way. This confirmation deliberately runs past a single X tweet so it proves the relay-recovered Discord budget keeps it one message.
 TXT
 )
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     FAKE_CURL_LOG="$log" FAKE_REQCTX_CODE=200 FAKE_REQCTX_BODY='{"reply_max_chars":1900}' \
     FAKE_FOLLOWUP_CODE=200 \
     "$ROOT/bin/xo-x-reply.sh" req-relay --followup - <<<"$reply"); rc=$?
@@ -2073,14 +2073,14 @@ test_regression_concurrent_requests_keep_own_platform() {
   local home fakebin out rc discord_reply x_reply
   home="$TMP_ROOT/reg-concurrent"; mkdir -p "$home"
   fakebin=$(make_fake_curl "$home")
-  printf 'FMX_PAIRING_TOKEN=tok-cc\n' > "$home/.env"
+  printf 'XOX_PAIRING_TOKEN=tok-cc\n' > "$home/.env"
   # Two concurrent public requests arrive (one Discord, one X) - as if routed
   # through ONE persistent secondmate whose single x_request slot would collide.
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     FAKE_POLL_CODE=200 FAKE_POLL_BODY="$(jq -cn '{request_id:"req-cd",platform:"discord",reply_max_chars:1900,text:"q"}')" \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "poll concurrent discord exit"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     FAKE_POLL_CODE=200 FAKE_POLL_BODY="$(jq -cn '{request_id:"req-cx",tweet_id:"888",reply_max_chars:280,text:"q"}')" \
     "$ROOT/bin/xo-x-poll.sh"); rc=$?
   expect_code 0 "$rc" "poll concurrent x exit"
@@ -2098,11 +2098,11 @@ TXT
   x_reply="The X request is progressing on its own track, and this update deliberately runs well beyond the single-tweet budget on purpose, proving that the concurrent X follow-up still threads correctly at the X budget and did not inherit the larger Discord budget from the other in-flight request routed through the same secondmate."
   [ "$(printf '%s' "$x_reply" | wc -m | tr -d '[:space:]')" -gt 280 ] \
     || fail "the concurrent X reply must exceed 280 chars to force a split"
-  out=$(XO_HOME="$home" FMX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" req-cd --followup - <<<"$discord_reply" 2>/dev/null); rc=$?
+  out=$(XO_HOME="$home" XOX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" req-cd --followup - <<<"$discord_reply" 2>/dev/null); rc=$?
   expect_code 0 "$rc" "concurrent discord follow-up exit"
   jq -e 'has("texts")|not' "$home/state/x-outbox/req-cd.json" >/dev/null \
     || fail "the concurrent Discord follow-up must stay one message"
-  out=$(XO_HOME="$home" FMX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" req-cx --followup - <<<"$x_reply" 2>/dev/null); rc=$?
+  out=$(XO_HOME="$home" XOX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" req-cx --followup - <<<"$x_reply" 2>/dev/null); rc=$?
   expect_code 0 "$rc" "concurrent x follow-up exit"
   jq -e '.texts and (.texts|length>1)' "$home/state/x-outbox/req-cx.json" >/dev/null \
     || fail "the concurrent X follow-up must still split - it kept the X budget"
@@ -2116,7 +2116,7 @@ test_dismiss_clears_context_registry() {
   jq -cn '{request_id:"req-dis",platform:"discord",reply_max_chars:""}' > "$reg"
   private_artifact_file "$reg"
   # A dismissed mention will never get a follow-up, so its context is dropped.
-  out=$(XO_HOME="$home" FMX_DRY_RUN=1 "$ROOT/bin/xo-x-dismiss.sh" req-dis 2>/dev/null); rc=$?
+  out=$(XO_HOME="$home" XOX_DRY_RUN=1 "$ROOT/bin/xo-x-dismiss.sh" req-dis 2>/dev/null); rc=$?
   expect_code 0 "$rc" "dismiss registry-clear exit"
   [ "$out" = "req-dis" ] || fail "dismiss must still echo the request_id (got: $out)"
   assert_absent "$reg" "dismiss must clear the durable per-request context"
@@ -2130,8 +2130,8 @@ test_dismiss_success_posts_request_only() {
   home="$TMP_ROOT/dismiss-ok"; mkdir -p "$home"
   fakebin=$(make_fake_curl "$home")
   log="$home/curl.log"
-  printf 'FMX_PAIRING_TOKEN=tok-d\n' > "$home/.env"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
+  printf 'XOX_PAIRING_TOKEN=tok-d\n' > "$home/.env"
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     FAKE_CURL_LOG="$log" FAKE_DISMISS_CODE=200 \
     "$ROOT/bin/xo-x-dismiss.sh" "req-9"); rc=$?
   expect_code 0 "$rc" "dismiss success exit"
@@ -2154,9 +2154,9 @@ test_dismiss_dry_run_records_not_posts() {
   home="$TMP_ROOT/dismiss-dry"; mkdir -p "$home"
   fakebin=$(make_fake_curl "$home")
   log="$home/curl.log"
-  printf 'FMX_PAIRING_TOKEN=tok-d\n' > "$home/.env"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
-    FMX_DRY_RUN=1 FAKE_CURL_LOG="$log" \
+  printf 'XOX_PAIRING_TOKEN=tok-d\n' > "$home/.env"
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
+    XOX_DRY_RUN=1 FAKE_CURL_LOG="$log" \
     "$ROOT/bin/xo-x-dismiss.sh" "req-1" 2>"$home/err"); rc=$?
   expect_code 0 "$rc" "dry-run dismiss exit"
   [ "$out" = "req-1" ] || fail "dry-run dismiss must still echo the request_id (got: $out)"
@@ -2176,7 +2176,7 @@ test_dismiss_dry_run_needs_no_token() {
   local home out rc
   home="$TMP_ROOT/dismiss-dry-notoken"; mkdir -p "$home"
   # No token at all: dry-run still previews (it neither authenticates nor posts).
-  out=$(PATH="$BASE_PATH" XO_HOME="$home" FMX_DRY_RUN=1 \
+  out=$(PATH="$BASE_PATH" XO_HOME="$home" XOX_DRY_RUN=1 \
     "$ROOT/bin/xo-x-dismiss.sh" "req-2" 2>/dev/null); rc=$?
   expect_code 0 "$rc" "dry-run no-token dismiss exit"
   [ "$out" = "req-2" ] || fail "dry-run dismiss without a token must still echo the request_id (got: $out)"
@@ -2190,7 +2190,7 @@ test_dismiss_dry_run_outbox_private_publication_rejects_unsafe_paths() {
   home="$TMP_ROOT/dismiss-outbox-linked-dir"; mkdir -p "$home/state" "$home/external"
   err="$home/err.txt"
   ln -s "$home/external" "$home/state/x-outbox"
-  out=$(XO_HOME="$home" FMX_DRY_RUN=1 "$ROOT/bin/xo-x-dismiss.sh" req-x 2>"$err"); rc=$?
+  out=$(XO_HOME="$home" XOX_DRY_RUN=1 "$ROOT/bin/xo-x-dismiss.sh" req-x 2>"$err"); rc=$?
   [ "$rc" -ne 0 ] || fail "dismiss dry-run must reject a linked outbox directory"
   [ -z "$out" ] || fail "rejected dismiss outbox must not echo the request_id (got: $out)"
   assert_grep "cannot write dry-run outbox" "$err" "dismiss dry-run must report the linked outbox write failure"
@@ -2202,14 +2202,14 @@ test_dismiss_dry_run_outbox_private_publication_rejects_unsafe_paths() {
   target="$home/external-target.json"
   printf 'external sentinel\n' > "$target"
   ln -s "$target" "$home/state/x-outbox/req-x.json"
-  out=$(XO_HOME="$home" FMX_DRY_RUN=1 "$ROOT/bin/xo-x-dismiss.sh" req-x 2>"$err"); rc=$?
+  out=$(XO_HOME="$home" XOX_DRY_RUN=1 "$ROOT/bin/xo-x-dismiss.sh" req-x 2>"$err"); rc=$?
   [ "$rc" -ne 0 ] || fail "dismiss dry-run must reject a linked outbox destination"
   [ "$(cat "$target")" = "external sentinel" ] || fail "dismiss dry-run must not write through a linked outbox destination"
   [ -L "$home/state/x-outbox/req-x.json" ] || fail "dismiss dry-run must not replace a rejected linked destination"
   assert_no_private_artifact_temps "$home/state/x-outbox"
 
   home="$TMP_ROOT/dismiss-outbox-private-success"; mkdir -p "$home"
-  out=$(XO_HOME="$home" FMX_DRY_RUN=1 "$ROOT/bin/xo-x-dismiss.sh" req-x 2>/dev/null); rc=$?
+  out=$(XO_HOME="$home" XOX_DRY_RUN=1 "$ROOT/bin/xo-x-dismiss.sh" req-x 2>/dev/null); rc=$?
   expect_code 0 "$rc" "dismiss private outbox success exit"
   [ "$out" = "req-x" ] || fail "dismiss dry-run must still echo the request_id after private publication (got: $out)"
   [ "$(path_mode "$home/state/x-outbox")" = 700 ] || fail "dismiss dry-run must create the outbox directory as private"
@@ -2223,8 +2223,8 @@ test_dismiss_non_2xx_fails() {
   home="$TMP_ROOT/dismiss-500"; mkdir -p "$home"
   fakebin=$(make_fake_curl "$home")
   err="$home/err.txt"
-  printf 'FMX_PAIRING_TOKEN=tok-d\n' > "$home/.env"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
+  printf 'XOX_PAIRING_TOKEN=tok-d\n' > "$home/.env"
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     FAKE_DISMISS_CODE=500 \
     "$ROOT/bin/xo-x-dismiss.sh" "req-9" 2>"$err"); rc=$?
   [ "$rc" -ne 0 ] || fail "dismiss must exit non-zero on a non-2xx response"
@@ -2244,8 +2244,8 @@ exit 7
 SH
   chmod +x "$fakebin/curl"
   err="$home/err.txt"
-  printf 'FMX_PAIRING_TOKEN=tok-d\n' > "$home/.env"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
+  printf 'XOX_PAIRING_TOKEN=tok-d\n' > "$home/.env"
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     "$ROOT/bin/xo-x-dismiss.sh" "req-9" 2>"$err"); rc=$?
   [ "$rc" -ne 0 ] || fail "dismiss must exit non-zero on a transport failure"
   [ -z "$out" ] || fail "a transport-failed dismiss must not echo the request_id (got: $out)"
@@ -2258,7 +2258,7 @@ test_dismiss_unsafe_request_id_rejected() {
   home="$TMP_ROOT/dismiss-unsafe"; mkdir -p "$home"
   err="$home/err.txt"
   # Path-traversal-shaped id must be refused before it becomes an outbox filename.
-  out=$(PATH="$BASE_PATH" XO_HOME="$home" FMX_DRY_RUN=1 \
+  out=$(PATH="$BASE_PATH" XO_HOME="$home" XOX_DRY_RUN=1 \
     "$ROOT/bin/xo-x-dismiss.sh" "../evil" 2>"$err"); rc=$?
   expect_code 2 "$rc" "dismiss unsafe id exit"
   [ -z "$out" ] || fail "dismiss must not echo an unsafe request_id (got: $out)"
@@ -2287,7 +2287,7 @@ test_link_records_request_and_timestamp() {
   # No inbox and no relay reachable here: this test pins the request/timestamp
   # recording, not platform resolution, so xo-x-link's no-platform warning to
   # stderr is expected and dropped.
-  out=$(XO_HOME="$home" FMX_NOW_OVERRIDE=1700000000 \
+  out=$(XO_HOME="$home" XOX_NOW_OVERRIDE=1700000000 \
     "$ROOT/bin/xo-x-link.sh" fix-login-k3 req-42 2>/dev/null); rc=$?
   expect_code 0 "$rc" "link exit"
   assert_grep "x_request=req-42" "$meta" "link must record the request_id"
@@ -2296,7 +2296,7 @@ test_link_records_request_and_timestamp() {
   assert_grep "kind=ship" "$meta" "link must preserve other meta lines"
   assert_grep "yolo=off" "$meta" "link must preserve other meta lines"
   # Re-linking replaces the prior link rather than appending a duplicate.
-  XO_HOME="$home" FMX_NOW_OVERRIDE=1700009999 "$ROOT/bin/xo-x-link.sh" fix-login-k3 req-99 >/dev/null 2>&1
+  XO_HOME="$home" XOX_NOW_OVERRIDE=1700009999 "$ROOT/bin/xo-x-link.sh" fix-login-k3 req-99 >/dev/null 2>&1
   [ "$(grep -c '^x_request=' "$meta")" = "1" ] || fail "re-link must not duplicate x_request"
   [ "$(grep -c '^x_request_ts=' "$meta")" = "1" ] || fail "re-link must not duplicate x_request_ts"
   [ "$(grep -c '^x_followups=' "$meta")" = "1" ] || fail "re-link must not duplicate x_followups"
@@ -2314,7 +2314,7 @@ test_link_records_discord_platform_for_followups() {
   jq -cn '{request_id:"req-discord-follow",tweet_id:"discord:channel:message",reply_max_chars:1900,text:"question"}' \
     > "$home/state/x-inbox/req-discord-follow.json"
   private_artifact_file "$home/state/x-inbox/req-discord-follow.json"
-  XO_HOME="$home" FMX_NOW_OVERRIDE=1700000000 \
+  XO_HOME="$home" XOX_NOW_OVERRIDE=1700000000 \
     "$ROOT/bin/xo-x-link.sh" fix-discord req-discord-follow >/dev/null; rc=$?
   expect_code 0 "$rc" "Discord link exit"
   assert_grep "x_platform=discord" "$meta" "link must record Discord platform context"
@@ -2330,7 +2330,7 @@ printf '%s\n' "this fenced block should stay whole"
 The final sentence confirms that the follow-up path did not fall back to the X budget after the inbox file disappeared.
 TXT
 )
-  out=$(XO_HOME="$home" FMX_DRY_RUN=1 FMX_NOW_OVERRIDE=1700003600 \
+  out=$(XO_HOME="$home" XOX_DRY_RUN=1 XOX_NOW_OVERRIDE=1700003600 \
     "$ROOT/bin/xo-x-followup.sh" fix-discord - <<<"$reply" 2>/dev/null); rc=$?
   expect_code 0 "$rc" "Discord follow-up dry-run exit"
   [ "$out" = "req-discord-follow" ] || fail "Discord follow-up must echo the request_id (got: $out)"
@@ -2352,11 +2352,11 @@ test_link_resolves_platform_by_request_id_after_inbox_cleanup() {
   log="$home/curl.log"
   meta="$home/state/fix-after-cleanup.meta"
   printf 'window=w\nworktree=/wt\nkind=ship\nmode=no-mistakes\nyolo=off\n' > "$meta"
-  printf 'FMX_PAIRING_TOKEN=tok-reqctx\n' > "$home/.env"
+  printf 'XOX_PAIRING_TOKEN=tok-reqctx\n' > "$home/.env"
   # No inbox file at all: the ack reply already cleaned it up before the link.
   # The relay resolves the platform by request_id.
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
-    FMX_NOW_OVERRIDE=1700000000 FAKE_CURL_LOG="$log" \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
+    XOX_NOW_OVERRIDE=1700000000 FAKE_CURL_LOG="$log" \
     FAKE_REQCTX_CODE=200 FAKE_REQCTX_BODY='{"platform":"discord","reply_max_chars":1900}' \
     "$ROOT/bin/xo-x-link.sh" fix-after-cleanup req-after-cleanup); rc=$?
   expect_code 0 "$rc" "link after inbox cleanup exit"
@@ -2372,7 +2372,7 @@ test_link_resolves_platform_by_request_id_after_inbox_cleanup() {
 Aye captain, the sign-in redirect is patched and the change is up for review. The fix restores the callback path that was dropping the return URL, adds a regression guard so it cannot silently break again, and keeps the existing session handling untouched. This message is deliberately longer than a single X tweet so the test proves a Discord follow-up stays in one message instead of splitting into a numbered thread.
 TXT
 )
-  out=$(XO_HOME="$home" FMX_DRY_RUN=1 FMX_NOW_OVERRIDE=1700003600 \
+  out=$(XO_HOME="$home" XOX_DRY_RUN=1 XOX_NOW_OVERRIDE=1700003600 \
     "$ROOT/bin/xo-x-followup.sh" fix-after-cleanup - <<<"$reply" 2>/dev/null); rc=$?
   expect_code 0 "$rc" "Discord follow-up after relay lookup exit"
   [ "$out" = "req-after-cleanup" ] || fail "follow-up must echo the request_id (got: $out)"
@@ -2393,10 +2393,10 @@ test_link_warns_loudly_when_platform_unresolvable() {
   err="$home/err.txt"
   meta="$home/state/fix-unresolvable.meta"
   printf 'window=w\nkind=ship\n' > "$meta"
-  printf 'FMX_PAIRING_TOKEN=tok-unresolved\n' > "$home/.env"
+  printf 'XOX_PAIRING_TOKEN=tok-unresolved\n' > "$home/.env"
   # No inbox, and the relay cannot resolve the request (404).
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
-    FMX_NOW_OVERRIDE=1700000000 FAKE_REQCTX_CODE=404 \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
+    XOX_NOW_OVERRIDE=1700000000 FAKE_REQCTX_CODE=404 \
     "$ROOT/bin/xo-x-link.sh" fix-unresolvable req-unresolvable 2>"$err"); rc=$?
   expect_code 0 "$rc" "link with unresolvable platform still records the link"
   [ "$out" = "linked fix-unresolvable to X request req-unresolvable" ] \
@@ -2408,7 +2408,7 @@ test_link_warns_loudly_when_platform_unresolvable() {
   assert_no_grep "x_reply_max_chars=" "$meta" "no split budget must be recorded when none could be resolved"
   reply="Short follow-up."
   err="$home/fu-err.txt"
-  out=$(XO_HOME="$home" FMX_DRY_RUN=1 FMX_NOW_OVERRIDE=1700003600 \
+  out=$(XO_HOME="$home" XOX_DRY_RUN=1 XOX_NOW_OVERRIDE=1700003600 \
     "$ROOT/bin/xo-x-followup.sh" fix-unresolvable - <<<"$reply" 2>"$err"); rc=$?
   [ "$rc" -ne 0 ] || fail "an unresolvable follow-up must be held (non-zero), not posted"
   [ -z "$out" ] || fail "a held follow-up must not echo the request_id (got: $out)"
@@ -2424,7 +2424,7 @@ test_link_carry_count_and_ts_preserve_followup_binding() {
   home="$TMP_ROOT/link-carry"; mkdir -p "$home/state"
   meta="$home/state/successor-task.meta"
   printf 'window=w\nkind=ship\n' > "$meta"
-  XO_HOME="$home" FMX_NOW_OVERRIDE=1700999999 \
+  XO_HOME="$home" XOX_NOW_OVERRIDE=1700999999 \
     "$ROOT/bin/xo-x-link.sh" successor-task req-carry \
       --carry-count 2 --carry-ts 1700000000 --carry-platform x --carry-max 280 >/dev/null; rc=$?
   expect_code 0 "$rc" "link paired carry flags exit"
@@ -2441,7 +2441,7 @@ test_link_recovery_relink_carries_discord_context_after_inbox_drain() {
   home="$TMP_ROOT/link-carry-discord"; mkdir -p "$home/state"
   meta="$home/state/successor-discord.meta"
   printf 'window=w\nkind=ship\n' > "$meta"
-  XO_HOME="$home" FMX_NOW_OVERRIDE=1700999999 \
+  XO_HOME="$home" XOX_NOW_OVERRIDE=1700999999 \
     "$ROOT/bin/xo-x-link.sh" successor-discord req-discord-recovery \
       --carry-count 1 --carry-ts 1700000000 --carry-platform discord --carry-max 1900 >/dev/null; rc=$?
   expect_code 0 "$rc" "Discord recovery relink exit"
@@ -2457,7 +2457,7 @@ printf '%s\n' "the code fence should not force an unnecessary Discord split"
 The successor task must post this as one Discord follow-up even though the original inbox payload has already been drained.
 TXT
 )
-  out=$(XO_HOME="$home" FMX_DRY_RUN=1 FMX_NOW_OVERRIDE=1700003600 \
+  out=$(XO_HOME="$home" XOX_DRY_RUN=1 XOX_NOW_OVERRIDE=1700003600 \
     "$ROOT/bin/xo-x-followup.sh" successor-discord - <<<"$reply" 2>/dev/null); rc=$?
   expect_code 0 "$rc" "Discord recovery follow-up dry-run exit"
   [ "$out" = "req-discord-recovery" ] || fail "Discord recovery follow-up must echo the request_id (got: $out)"
@@ -2513,13 +2513,13 @@ test_meta_rewrites_do_not_depend_on_tmpdir() {
   badtmp="$home/missing-tmp"
   meta="$home/state/fix-meta-k4.meta"
   printf 'window=w\nkind=ship\n' > "$meta"
-  out=$(TMPDIR="$badtmp" XO_HOME="$home" FMX_NOW_OVERRIDE=1700000000 \
+  out=$(TMPDIR="$badtmp" XO_HOME="$home" XOX_NOW_OVERRIDE=1700000000 \
     "$ROOT/bin/xo-x-link.sh" fix-meta-k4 req-local 2>/dev/null); rc=$?
   expect_code 0 "$rc" "link with unusable TMPDIR exit"
   [ "$out" = "linked fix-meta-k4 to X request req-local" ] \
     || fail "link with unusable TMPDIR must still succeed (got: $out)"
   assert_grep "x_request=req-local" "$meta" "link must record request with an unusable TMPDIR"
-  out=$(TMPDIR="$badtmp" XO_HOME="$home" FMX_NOW_OVERRIDE=1700000001 FMX_FOLLOWUP_MAX_AGE_SECS=0 \
+  out=$(TMPDIR="$badtmp" XO_HOME="$home" XOX_NOW_OVERRIDE=1700000001 XOX_FOLLOWUP_MAX_AGE_SECS=0 \
     "$ROOT/bin/xo-x-followup.sh" --check fix-meta-k4 2>/dev/null); rc=$?
   expect_code 1 "$rc" "expired check with unusable TMPDIR exit"
   [ -z "$out" ] || fail "expired check must stay silent (got: $out)"
@@ -2553,7 +2553,7 @@ test_meta_helpers_refuse_a_symlinked_task_record() {
   printf '%s\n' 'window=w' 'kind=ship' 'mode=no-mistakes' 'yolo=off' > "$target"
   cp "$target" "$original"
   ln -s "$target" "$meta"
-  XO_HOME="$home" FMX_NOW_OVERRIDE=1700000000 \
+  XO_HOME="$home" XOX_NOW_OVERRIDE=1700000000 \
     "$ROOT/bin/xo-x-link.sh" sym-task req-sym >/dev/null 2>&1; rc=$?
   [ "$rc" -ne 0 ] || fail "link through a symlink record should refuse"
   assert_no_grep "x_request=" "$target" "link wrote an X request through the symlink"
@@ -2576,7 +2576,7 @@ test_meta_helpers_refuse_a_symlinked_task_record() {
   XO_HOME="$home" STATE="$home/state" ROOT="$ROOT" META="$meta" bash -c '
     . "$ROOT/bin/xo-x-lib.sh"
     . "$ROOT/bin/xo-wake-lib.sh"
-    fmx_meta_link_clear "$META"
+    xox_meta_link_clear "$META"
   ' >/dev/null 2>&1; rc=$?
   [ "$rc" -ne 0 ] || fail "the clear helper should refuse a dangling symlink record"
   [ -L "$meta" ] || fail "the clear helper replaced or removed the dangling symlink record"
@@ -2589,8 +2589,8 @@ test_meta_helpers_refuse_a_symlinked_task_record() {
     'x_platform=x' 'x_reply_max_chars=280' > "$target"
   cp "$target" "$original"
   fakebin=$(make_fake_curl "$home")
-  printf 'FMX_PAIRING_TOKEN=tok-sym\n' > "$home/.env"
-  XO_HOME="$home" FMX_DRY_RUN=1 FMX_NOW_OVERRIDE=1700003600 PATH="$fakebin:$BASE_PATH" \
+  printf 'XOX_PAIRING_TOKEN=tok-sym\n' > "$home/.env"
+  XO_HOME="$home" XOX_DRY_RUN=1 XOX_NOW_OVERRIDE=1700003600 PATH="$fakebin:$BASE_PATH" \
     "$ROOT/bin/xo-x-followup.sh" sym-task - <<<"milestone update" >/dev/null 2>&1; rc=$?
   [ "$rc" -ne 0 ] || fail "a follow-up through a symlink record should refuse"
   assert_absent "$home/state/x-outbox/req-sym.json" \
@@ -2661,7 +2661,7 @@ test_link_refuses_secondmate_routed_task_with_promised_final_pointer() {
   # The guardrail is scoped to the missing-record case: a task this home does own
   # still links normally with second mates registered.
   printf 'window=w\nworktree=/wt\nkind=ship\n' > "$main/state/local-k1.meta"
-  out=$(PATH="$BASE_PATH" XO_HOME="$main" FMX_NOW_OVERRIDE=1700000000 \
+  out=$(PATH="$BASE_PATH" XO_HOME="$main" XOX_NOW_OVERRIDE=1700000000 \
     "$ROOT/bin/xo-x-link.sh" local-k1 req-local 2>/dev/null); rc=$?
   expect_code 0 "$rc" "local link exit with second mates registered"
   assert_grep "x_request=req-local" "$main/state/local-k1.meta" \
@@ -2695,7 +2695,7 @@ mk_linked_task() { # <home> <id> <request_id> <link-epoch> [starting-count]
   mkdir -p "$home/state"
   meta="$home/state/$id.meta"
   printf 'window=w\nworktree=/wt\nkind=ship\nmode=no-mistakes\nyolo=off\n' > "$meta"
-  XO_HOME="$home" FMX_NOW_OVERRIDE="$ts" "$ROOT/bin/xo-x-link.sh" "$id" "$rid" \
+  XO_HOME="$home" XOX_NOW_OVERRIDE="$ts" "$ROOT/bin/xo-x-link.sh" "$id" "$rid" \
     --carry-count "${count:-0}" --carry-ts "$ts" --carry-platform x --carry-max 280 >/dev/null
 }
 
@@ -2704,7 +2704,7 @@ test_followup_check_states() {
   home="$TMP_ROOT/fu-check"; mkdir -p "$home/state"
   mk_linked_task "$home" task-a req-a 1700000000
   # Within window -> exit 0, prints the request_id.
-  out=$(XO_HOME="$home" FMX_NOW_OVERRIDE=1700003600 \
+  out=$(XO_HOME="$home" XOX_NOW_OVERRIDE=1700003600 \
     "$ROOT/bin/xo-x-followup.sh" --check task-a); rc=$?
   expect_code 0 "$rc" "check within-window exit"
   [ "$out" = "req-a" ] || fail "check within window must print the request_id (got: $out)"
@@ -2725,7 +2725,7 @@ test_followup_check_expired_prunes_link() {
   mk_linked_task "$home" task-e req-e 1700000000
   meta="$home/state/task-e.meta"
   # 8 days later: past the 7-day window -> exit 1, link pruned, other lines intact.
-  out=$(XO_HOME="$home" FMX_NOW_OVERRIDE=$((1700000000 + 8*86400)) \
+  out=$(XO_HOME="$home" XOX_NOW_OVERRIDE=$((1700000000 + 8*86400)) \
     "$ROOT/bin/xo-x-followup.sh" --check task-e 2>/dev/null); rc=$?
   expect_code 1 "$rc" "check expired exit"
   [ -z "$out" ] || fail "check on an expired link must be silent (got: $out)"
@@ -2740,7 +2740,7 @@ test_followup_check_cap_reached_prunes_link() {
   # Already at the cap (3 posted) even though well within the window.
   mk_linked_task "$home" task-cap req-cap 1700000000 3
   meta="$home/state/task-cap.meta"
-  out=$(XO_HOME="$home" FMX_NOW_OVERRIDE=1700003600 \
+  out=$(XO_HOME="$home" XOX_NOW_OVERRIDE=1700003600 \
     "$ROOT/bin/xo-x-followup.sh" --check task-cap 2>/dev/null); rc=$?
   expect_code 1 "$rc" "check cap-reached exit"
   [ -z "$out" ] || fail "check at the cap must be silent (got: $out)"
@@ -2754,12 +2754,12 @@ test_followup_post_increments_counter_keeps_link() {
   home="$TMP_ROOT/fu-post"; mkdir -p "$home/state"
   fakebin=$(make_fake_curl "$home")
   log="$home/curl.log"
-  printf 'FMX_PAIRING_TOKEN=tok-fu\n' > "$home/.env"
+  printf 'XOX_PAIRING_TOKEN=tok-fu\n' > "$home/.env"
   mk_linked_task "$home" task-p req-p 1700000000
   meta="$home/state/task-p.meta"
   printf 'Done, captain - build has started.' > "$home/reply.txt"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
-    FMX_NOW_OVERRIDE=1700003600 FAKE_CURL_LOG="$log" FAKE_FOLLOWUP_CODE=200 \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
+    XOX_NOW_OVERRIDE=1700003600 FAKE_CURL_LOG="$log" FAKE_FOLLOWUP_CODE=200 \
     "$ROOT/bin/xo-x-followup.sh" task-p --text-file "$home/reply.txt"); rc=$?
   expect_code 0 "$rc" "followup post exit"
   [ "$out" = "req-p" ] || fail "followup post must echo the request_id (got: $out)"
@@ -2779,11 +2779,11 @@ test_followup_post_final_clears_link_immediately() {
   local home fakebin out rc meta
   home="$TMP_ROOT/fu-post-final"; mkdir -p "$home/state"
   fakebin=$(make_fake_curl "$home")
-  printf 'FMX_PAIRING_TOKEN=tok-fu\n' > "$home/.env"
+  printf 'XOX_PAIRING_TOKEN=tok-fu\n' > "$home/.env"
   mk_linked_task "$home" task-final req-final 1700000000
   meta="$home/state/task-final.meta"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
-    FMX_NOW_OVERRIDE=1700003600 FAKE_FOLLOWUP_CODE=200 \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
+    XOX_NOW_OVERRIDE=1700003600 FAKE_FOLLOWUP_CODE=200 \
     "$ROOT/bin/xo-x-followup.sh" task-final --final - <<<"Shipped - all green."); rc=$?
   expect_code 0 "$rc" "followup --final post exit"
   [ "$out" = "req-final" ] || fail "followup --final post must echo the request_id (got: $out)"
@@ -2796,12 +2796,12 @@ test_followup_post_cap_reached_clears_link() {
   local home fakebin out rc meta
   home="$TMP_ROOT/fu-post-cap"; mkdir -p "$home/state"
   fakebin=$(make_fake_curl "$home")
-  printf 'FMX_PAIRING_TOKEN=tok-fu\n' > "$home/.env"
+  printf 'XOX_PAIRING_TOKEN=tok-fu\n' > "$home/.env"
   # Two follow-ups already posted; this third one reaches the cap.
   mk_linked_task "$home" task-cap3 req-cap3 1700000000 2
   meta="$home/state/task-cap3.meta"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
-    FMX_NOW_OVERRIDE=1700003600 FAKE_FOLLOWUP_CODE=200 \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
+    XOX_NOW_OVERRIDE=1700003600 FAKE_FOLLOWUP_CODE=200 \
     "$ROOT/bin/xo-x-followup.sh" task-cap3 - <<<"Third and final update."); rc=$?
   expect_code 0 "$rc" "followup cap-reaching post exit"
   [ "$out" = "req-cap3" ] || fail "followup cap-reaching post must echo the request_id (got: $out)"
@@ -2817,13 +2817,13 @@ test_followup_post_forwards_image_to_reply_client() {
   img="$home/followup.png"
   make_sample_image "$img"
   expected=$(base64 < "$img" | tr -d '\n\r')
-  printf 'FMX_PAIRING_TOKEN=tok-fu-img\n' > "$home/.env"
+  printf 'XOX_PAIRING_TOKEN=tok-fu-img\n' > "$home/.env"
   mk_linked_task "$home" task-img req-img 1700000000
   meta="$home/state/task-img.meta"
   printf 'Done - generated image attached.' > "$home/reply.txt"
   # --final keeps this test focused on image forwarding, not counter bookkeeping.
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
-    FMX_NOW_OVERRIDE=1700003600 FAKE_CURL_LOG="$log" FAKE_FOLLOWUP_CODE=200 \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
+    XOX_NOW_OVERRIDE=1700003600 FAKE_CURL_LOG="$log" FAKE_FOLLOWUP_CODE=200 \
     "$ROOT/bin/xo-x-followup.sh" task-img --image "$img" --final --text-file "$home/reply.txt"); rc=$?
   expect_code 0 "$rc" "followup wrapper image post exit"
   [ "$out" = "req-img" ] || fail "followup wrapper image post must echo the request_id (got: $out)"
@@ -2840,11 +2840,11 @@ test_followup_post_failure_keeps_link() {
   local home fakebin out rc meta
   home="$TMP_ROOT/fu-post-fail"; mkdir -p "$home/state"
   fakebin=$(make_fake_curl "$home")
-  printf 'FMX_PAIRING_TOKEN=tok-fu\n' > "$home/.env"
+  printf 'XOX_PAIRING_TOKEN=tok-fu\n' > "$home/.env"
   mk_linked_task "$home" task-f req-f 1700000000
   meta="$home/state/task-f.meta"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
-    FMX_NOW_OVERRIDE=1700003600 FAKE_FOLLOWUP_CODE=500 \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
+    XOX_NOW_OVERRIDE=1700003600 FAKE_FOLLOWUP_CODE=500 \
     "$ROOT/bin/xo-x-followup.sh" task-f - <<<"retry me" 2>/dev/null); rc=$?
   [ "$rc" -ne 0 ] || fail "a failed follow-up post must exit non-zero"
   [ -z "$out" ] || fail "a failed post must not echo the request_id (got: $out)"
@@ -2872,11 +2872,11 @@ fi
 exec /bin/mv "$@"
 SH
   chmod +x "$fakebin/mv"
-  printf 'FMX_PAIRING_TOKEN=tok-fu\n' > "$home/.env"
+  printf 'XOX_PAIRING_TOKEN=tok-fu\n' > "$home/.env"
   mk_linked_task "$home" task-rf req-rf 1700000000
   meta="$home/state/task-rf.meta"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
-    FMX_NOW_OVERRIDE=1700003600 FAKE_FOLLOWUP_CODE=200 FAKE_CURL_TOUCH_AFTER_POST="$flag" \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
+    XOX_NOW_OVERRIDE=1700003600 FAKE_FOLLOWUP_CODE=200 FAKE_CURL_TOUCH_AFTER_POST="$flag" \
     FAKE_MV_FAIL_AFTER_FLAG="$flag" FAKE_MV_FAILED_ONCE="$mvflag" \
     "$ROOT/bin/xo-x-followup.sh" task-rf - <<<"posted but local state write fails" 2>"$err"); rc=$?
   expect_code 0 "$rc" "followup post state-record failure exit"
@@ -2892,15 +2892,15 @@ test_followup_post_relay_rejection_degrades_gracefully() {
   home="$TMP_ROOT/fu-post-409"; mkdir -p "$home/state"
   fakebin=$(make_fake_curl "$home")
   err="$home/err.txt"
-  printf 'FMX_PAIRING_TOKEN=tok-fu\n' > "$home/.env"
+  printf 'XOX_PAIRING_TOKEN=tok-fu\n' > "$home/.env"
   mk_linked_task "$home" task-409 req-409 1700000000
   meta="$home/state/task-409.meta"
   # The relay's own cap/window rejection (HTTP 409) must be treated exactly like
   # a locally-detected expiry - not a transient failure worth retrying - so an
   # old single-follow-up relay or an already-exhausted binding degrades
   # gracefully instead of leaving a link nothing will ever clear.
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
-    FMX_NOW_OVERRIDE=1700003600 FAKE_FOLLOWUP_CODE=409 \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
+    XOX_NOW_OVERRIDE=1700003600 FAKE_FOLLOWUP_CODE=409 \
     "$ROOT/bin/xo-x-followup.sh" task-409 - <<<"rejected by relay" 2>"$err"); rc=$?
   expect_code 0 "$rc" "relay-rejected post exit"
   [ -z "$out" ] || fail "a relay-rejected post must echo nothing (got: $out)"
@@ -2913,11 +2913,11 @@ test_followup_post_expired_skips_and_clears() {
   local home fakebin out rc meta
   home="$TMP_ROOT/fu-post-exp"; mkdir -p "$home/state"
   fakebin=$(make_fake_curl "$home")
-  printf 'FMX_PAIRING_TOKEN=tok-fu\n' > "$home/.env"
+  printf 'XOX_PAIRING_TOKEN=tok-fu\n' > "$home/.env"
   mk_linked_task "$home" task-x req-x 1700000000
   meta="$home/state/task-x.meta"
-  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" FMX_RELAY_URL="https://relay.test" \
-    FMX_NOW_OVERRIDE=$((1700000000 + 8*86400)) FAKE_FOLLOWUP_CODE=200 \
+  out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
+    XOX_NOW_OVERRIDE=$((1700000000 + 8*86400)) FAKE_FOLLOWUP_CODE=200 \
     "$ROOT/bin/xo-x-followup.sh" task-x - <<<"too late" 2>/dev/null); rc=$?
   expect_code 0 "$rc" "expired post exit"
   [ -z "$out" ] || fail "an expired post must post nothing and echo nothing (got: $out)"
@@ -2942,7 +2942,7 @@ test_followup_post_dry_run_increments_counter_keeps_link() {
   home="$TMP_ROOT/fu-dry"; mkdir -p "$home/state"
   mk_linked_task "$home" task-d req-d 1700000000
   meta="$home/state/task-d.meta"
-  out=$(XO_HOME="$home" FMX_DRY_RUN=1 FMX_NOW_OVERRIDE=1700003600 \
+  out=$(XO_HOME="$home" XOX_DRY_RUN=1 XOX_NOW_OVERRIDE=1700003600 \
     "$ROOT/bin/xo-x-followup.sh" task-d - <<<"Shipped in dry run." 2>/dev/null); rc=$?
   expect_code 0 "$rc" "dry-run post exit"
   [ "$out" = "req-d" ] || fail "dry-run post must echo the request_id (got: $out)"
@@ -2961,7 +2961,7 @@ test_followup_post_dry_run_final_clears_link() {
   home="$TMP_ROOT/fu-dry-final"; mkdir -p "$home/state"
   mk_linked_task "$home" task-df req-df 1700000000
   meta="$home/state/task-df.meta"
-  out=$(XO_HOME="$home" FMX_DRY_RUN=1 FMX_NOW_OVERRIDE=1700003600 \
+  out=$(XO_HOME="$home" XOX_DRY_RUN=1 XOX_NOW_OVERRIDE=1700003600 \
     "$ROOT/bin/xo-x-followup.sh" task-df --final - <<<"Shipped in dry run, for real this time." 2>/dev/null); rc=$?
   expect_code 0 "$rc" "dry-run --final post exit"
   [ "$out" = "req-df" ] || fail "dry-run --final post must echo the request_id (got: $out)"

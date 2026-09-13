@@ -43,7 +43,7 @@ EOF
   out=$(XO_HOME="$env_home" "$MAIL" status 2>&1)
   assert_contains "$out" "mail account: fromfile@example.com" "status uses .env when environment is unset"
   # A single environment value wins for that key; the other keys still come
-  # from .env, matching the Relay/FMX "env wins over .env" contract.
+  # from .env, matching the Relay/XOX "env wins over .env" contract.
   out=$(XO_MAIL_USER=fromenv@example.com XO_HOME="$env_home" "$MAIL" status 2>&1)
   assert_contains "$out" "mail account: fromenv@example.com" "environment overrides .env for a direct invocation"
   pass "xo-mail: environment values override the .env file"

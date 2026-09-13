@@ -129,9 +129,9 @@ state/               runtime records and signals; gitignored
   reconcile-requests/ private open obligations to re-check a captain call whose board selection was `reconcile`; written only by bin/xo-captain-hold.sh, retired by its verify-then-decide outcomes or a normal answer that settles the call (section 13; docs/captain-hold-lifecycle.md)
   when/              private condition->action watch specs, their trust bindings, and single-fire markers; written only by bin/xo-procevent-when.sh (section 13's process-event-sources trigger)
   inbox/             captain notes captured out of band by bin/xo-inbox.sh, including the voice handover's queued requests; each note appends one `check` wake and stays pending until acknowledged with `bin/xo-inbox.sh drain --ack <id>`, which moves it to inbox/handled/ (docs/voice-relay.md)
-  x-inbox/           generated Relay pending mention payloads; fmx-respond drains it (section 14)
+  x-inbox/           generated Relay pending mention payloads; xox-respond drains it (section 14)
   x-context/         generated Relay durable per-request reply context and one-wake offer markers, keyed by request_id; survives inbox cleanup and expires within seven days (section 14; bin/xo-x-lib.sh)
-  x-outbox/          generated Relay dry-run reply and dismiss previews; inspect it when FMX_DRY_RUN is set (section 14)
+  x-outbox/          generated Relay dry-run reply and dismiss previews; inspect it when XOX_DRY_RUN is set (section 14)
   public-followup/   generated private transport for promised public replies: retained open-loop registrations, typed terminal-result inbox, results staged for an owning home on another machine, accepted/rejected ledgers, and retirement receipts (section 14; bin/xo-public-followup.sh)
   x-poll.error x-poll.claim-error  generated Relay and offer-claim diagnostic dedupe markers
   .startup-network.*  status, report, per-step elapsed timings, inline-print claim, and lock for the deferred startup stage that runs network checks and the inactive-outcome scan off the digest's blocking path; bin/xo-startup-network.sh
@@ -437,7 +437,7 @@ Handle actionable wakes as follows:
 4. For `heartbeat:`, review the whole fleet from the structured fleet view, reconcile suspicious tasks and PR state, update the backlog, and never report an unchanged fleet as progress.
 
 When any wake reports a merged PR for a project cloned in this home, refresh that clone through the guarded fleet-sync path.
-When Relay-linked work reaches a milestone or terminal state, load `fmx-respond`; before terminal teardown, use its promised-final reconciliation when a typed public commitment exists, otherwise post the final completion follow-up so the link clears even if earlier follow-ups were spent.
+When Relay-linked work reaches a milestone or terminal state, load `xox-respond`; before terminal teardown, use its promised-final reconciliation when a typed public commitment exists, otherwise post the final completion follow-up so the link clears even if earlier follow-ups were spent.
 
 A secondmate's idle endpoint is healthy, and parent supervision relies on its routed status rather than treating a quiet pane as stale.
 Waiting on a healthy supervision cycle is silent; empty polls, elapsed time, and no-change updates are not captain-facing progress.
@@ -571,7 +571,7 @@ These skills are not captain-invocable; load them only at their precise triggers
 - `breach` - load for an explicit ticket implementation request or a selected ticket routed by Overwatch.
 - `plane-missions` - load before working with tracker tickets, a task containing `data/<id>/plane.json`, or a request to implement a Pocock-created ticket.
 
-- `bootstrap-diagnostics` - load whenever the session-start digest's bootstrap or network-checks section prints an actionable diagnostic line (`MISSING:`, `MISSING_MANUAL:`, `PRESENTATION_UNAVAILABLE:`, `BACKEND_INVALID:`, `NEEDS_GH_AUTH`, `TANGLE:`, `STARTUP_MEMORY_BUDGET:`, `CREW_DISPATCH: invalid`, `FLEET_SYNC:`, `NETWORK_CHECKS:`, `HOME_SUMMARY:`, `BACKLOG_RECONCILE:`, `SECONDMATE_SYNC:`, `SECONDMATE_LIVENESS:`, `SECONDMATE_HANDOFF:`, `NUDGE_SECONDMATES:`, or `FMX:`), or when `BOOTSTRAP_INFO:` says an interrupted backlog cleanup may have left an endpoint or local copy; silence and other `BOOTSTRAP_INFO:` facts need no load.
+- `bootstrap-diagnostics` - load whenever the session-start digest's bootstrap or network-checks section prints an actionable diagnostic line (`MISSING:`, `MISSING_MANUAL:`, `PRESENTATION_UNAVAILABLE:`, `BACKEND_INVALID:`, `NEEDS_GH_AUTH`, `TANGLE:`, `STARTUP_MEMORY_BUDGET:`, `CREW_DISPATCH: invalid`, `FLEET_SYNC:`, `NETWORK_CHECKS:`, `HOME_SUMMARY:`, `BACKLOG_RECONCILE:`, `SECONDMATE_SYNC:`, `SECONDMATE_LIVENESS:`, `SECONDMATE_HANDOFF:`, `NUDGE_SECONDMATES:`, or `XOX:`), or when `BOOTSTRAP_INFO:` says an interrupted backlog cleanup may have left an endpoint or local copy; silence and other `BOOTSTRAP_INFO:` facts need no load.
 - `diagnostic-reasoning` - load before scoping a reported bug and before acting on a diagnostic report.
 - `ask-user-authority` - load before deciding any ask-user finding.
 - `quota-array-dispatch` - load before choosing among a matched crew-dispatch profile array from current quota-axi default TOON.
@@ -584,23 +584,23 @@ These skills are not captain-invocable; load them only at their precise triggers
 - `captain-hold-lifecycle` - load before treating an investigation or visual review as complete, before ending a visual review that exposed a captain decision, when recording or routing the captain's answer, and on any `RECORD DIVERGENCE` line from the wake drain.
 - `process-event-sources` - load before arming a long-polling source, before registering a deterministic condition->action watch (do X as soon as Y is true), on any `procevent <adapter> <source-id> <sequence>` check wake, and on any `process-event source stranded` or `process-event source failed to start` check wake.
   Never run a registered source's blocking command yourself in a conversational turn.
-- `fmx-respond` - load on an `x-mention <request_id>` `check:` wake to handle the mention, on an `x-mode-error ...` `check:` wake to report the Relay configuration blocker, on a `public-followup ...` `check:` wake or a startup-surfaced public commitment, and on any milestone or terminal wake for a Relay-linked task before posting its completion follow-up; relevant only when Relay is on.
+- `xox-respond` - load on an `x-mention <request_id>` `check:` wake to handle the mention, on an `x-mode-error ...` `check:` wake to report the Relay configuration blocker, on a `public-followup ...` `check:` wake or a startup-surfaced public commitment, and on any milestone or terminal wake for a Relay-linked task before posting its completion follow-up; relevant only when Relay is on.
 - `xo-codexapp` - load before coordinating a visible Codex Desktop thread, evaluating a Codex App backend request, or reconciling Codex Desktop host-tool smoke evidence for XO work.
 - `xo-coding-guidelines` - load before changing XO's shared, tracked material, as defined by section 1's list, whether editing directly or briefing a crewmate for an XO-repo task.
 
 ## 14. Relay
 
-Relay is the public-mention integration older docs and some emitted lines still call "X mode"; its identifiers keep the `FMX_`, `x-`, and `xo-x-` spellings.
-Relay ships inert and causes no behavior change until the home opts in by placing `FMX_PAIRING_TOKEN` in its gitignored `.env`.
+Relay is the public-mention integration older docs and some emitted lines still call "X mode"; its identifiers keep the `XOX_`, `x-`, and `xo-x-` spellings.
+Relay ships inert and causes no behavior change until the home opts in by placing `XOX_PAIRING_TOKEN` in its gitignored `.env`.
 That token is consent for public replies and normal reversible lifecycle actions from eligible mentions, not authority for destructive, irreversible, or security-sensitive action; those still require trusted-channel confirmation.
 `docs/configuration.md` owns activation, generated state, cadence, wire protocol, and opt-out mechanics.
 
 A Relay-only home still requires the live supervision cycle so mentions can wake it without fleet work.
-On an `x-mention <request_id>` or `x-mode-error ...` check wake, load `fmx-respond`, which owns classification, public-safety policy, reply or dismissal, task linking, and follow-ups.
+On an `x-mention <request_id>` or `x-mode-error ...` check wake, load `xox-respond`, which owns classification, public-safety policy, reply or dismissal, task linking, and follow-ups.
 For every Relay-linked terminal outcome, load that owner and use the promised-final reconciliation when a typed public commitment exists, otherwise post the final completion follow-up before teardown.
 
 A promised final public reply is durable state, never conversation memory.
-Load `fmx-respond` before promising one, on a `public-followup ...` check wake, and whenever the session-start digest lists a public commitment awaiting delivery or an open public loop.
+Load `xox-respond` before promising one, on a `public-followup ...` check wake, and whenever the session-start digest lists a public commitment awaiting delivery or an open public loop.
 Only the home holding the relay consent and thread binding ever posts it, so never ask a secondmate or crewmate to find the thread or send the reply, and never recover a terminal result by reading a `done:` sentence.
 
 ## Captain instruction precedence

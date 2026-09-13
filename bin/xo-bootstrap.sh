@@ -22,7 +22,7 @@
 #                 "BOOTSTRAP_INFO: nudged xo-<id> with '<message>'",
 #                 "SECONDMATE_LIVENESS: secondmate <id>: skipped: <reason>|respawn failed after <cause>: <reason>",
 #                 "SECONDMATE_HANDOFF: secondmate <id>: pending delivery: <n> item(s)",
-#                 "FMX: X mode on ..." or "FMX: X mode off ...".
+#                 "XOX: X mode on ..." or "XOX: X mode off ...".
 #          When a RUNNING secondmate home is fast-forwarded, its target is
 #          xo's own current default-branch commit. A local worktree uses
 #          a purely local fast-forward with no origin fetch; a remote route hands
@@ -75,8 +75,8 @@
 #          await the primary-authoritative inherited value instead of creating
 #          their own.
 #          X mode is OPTIONAL and inert unless XO_HOME/.env has a non-empty
-#          FMX_PAIRING_TOKEN. When opted in, bootstrap requires curl+jq, writes
-#          the relay poll shim and 30s cadence config, and prints an FMX line.
+#          XOX_PAIRING_TOKEN. When opted in, bootstrap requires curl+jq, writes
+#          the relay poll shim and 30s cadence config, and prints an XOX line.
 #          Fleet sync fetches, fast-forwards safe default-branch states, reports
 #          recovered and STUCK clone drift, and prunes gone local branches; it is
 #          bounded by XO_FLEET_SYNC_BOOTSTRAP_TIMEOUT when it is a non-empty
@@ -950,7 +950,7 @@ x_mode_write_if_changed() {
     parent_device=$(stat -c %d "$parent" 2>/dev/null) || return 1
   fi
   if [ -e "$dest" ] || [ -L "$dest" ]; then
-    fmx_single_link_file_valid "$dest" "$parent_device" || return 1
+    xox_single_link_file_valid "$dest" "$parent_device" || return 1
     if [ "$(uname)" = Darwin ]; then
       current_mode=$(/usr/bin/stat -f %Lp "$dest" 2>/dev/null) || return 1
     else
@@ -963,12 +963,12 @@ x_mode_write_if_changed() {
   tmp=$(umask 077; mktemp "$parent/.xo-x-mode.XXXXXX" 2>/dev/null) || return 1
   if ! printf '%s\n' "$content" > "$tmp" \
     || ! chmod "$mode" "$tmp" \
-    || ! fmx_single_link_file_mode_valid "$tmp" "$mode" "$parent_device"; then
+    || ! xox_single_link_file_mode_valid "$tmp" "$mode" "$parent_device"; then
     rm -f -- "$tmp"
     return 1
   fi
   if { [ -e "$dest" ] || [ -L "$dest" ]; } \
-    && ! fmx_single_link_file_valid "$dest" "$parent_device"; then
+    && ! xox_single_link_file_valid "$dest" "$parent_device"; then
     rm -f -- "$tmp"
     return 1
   fi
@@ -976,7 +976,7 @@ x_mode_write_if_changed() {
     rm -f -- "$tmp"
     return 1
   fi
-  if ! fmx_single_link_file_mode_valid "$dest" "$mode" "$parent_device" \
+  if ! xox_single_link_file_mode_valid "$dest" "$mode" "$parent_device" \
     || ! cmp -s "$dest" <(printf '%s\n' "$content"); then
     rm -f -- "$dest"
     return 1
@@ -995,7 +995,7 @@ x_mode_remove_artifact() {
   ! x_mode_artifact_present "$artifact"
 }
 
-# X mode (opt-in): when this home's .env carries a non-empty FMX_PAIRING_TOKEN,
+# X mode (opt-in): when this home's .env carries a non-empty XOX_PAIRING_TOKEN,
 # wire the relay poll into the existing authenticated watcher dispatch.
 # Drops two idempotent, gitignored artifacts:
 #   state/x-watch.check.sh - byte-static identity shim; the watcher validates
@@ -1016,7 +1016,7 @@ x_mode_setup() {
   cadence="$CONFIG/x-mode.env"
 
   token=
-  [ -f "$env_file" ] && token=$(fmx_env_get FMX_PAIRING_TOKEN "$env_file")
+  [ -f "$env_file" ] && token=$(xox_env_get XOX_PAIRING_TOKEN "$env_file")
 
   x_mode_remove_artifacts() {
     local failed=0
@@ -1037,9 +1037,9 @@ x_mode_setup() {
     # actually removed something.
     if x_mode_artifact_present "$shim" || x_mode_artifact_present "$cadence"; then
       if x_mode_remove_artifacts; then
-        echo "FMX: X mode off - removed relay poll shim and 30s cadence; default cadence applies on the next supervision cycle; $(x_mode_supervision_repair)"
+        echo "XOX: X mode off - removed relay poll shim and 30s cadence; default cadence applies on the next supervision cycle; $(x_mode_supervision_repair)"
       else
-        echo "FMX: X mode off - failed to remove relay poll shim or 30s cadence"
+        echo "XOX: X mode off - failed to remove relay poll shim or 30s cadence"
       fi
     fi
     return 0
@@ -1055,35 +1055,35 @@ x_mode_setup() {
   if [ "$missing" -ne 0 ]; then
     if x_mode_artifact_present "$shim" || x_mode_artifact_present "$cadence"; then
       if x_mode_remove_artifacts; then
-        echo "FMX: X mode off - missing relay poll dependencies; install them and rerun bootstrap"
+        echo "XOX: X mode off - missing relay poll dependencies; install them and rerun bootstrap"
       else
-        echo "FMX: X mode off - failed to remove relay poll shim or 30s cadence after missing relay poll dependencies"
+        echo "XOX: X mode off - failed to remove relay poll shim or 30s cadence after missing relay poll dependencies"
       fi
     fi
     return 0
   fi
 
-  fmx_arm_failed() {
+  xox_arm_failed() {
     if x_mode_remove_artifacts; then
-      echo "FMX: X mode off - failed to arm relay poll shim or 30s cadence"
+      echo "XOX: X mode off - failed to arm relay poll shim or 30s cadence"
     else
-      echo "FMX: X mode off - failed to arm relay poll shim or 30s cadence; stale artifacts remain"
+      echo "XOX: X mode off - failed to arm relay poll shim or 30s cadence; stale artifacts remain"
     fi
   }
 
-  mkdir -p "$STATE" "$CONFIG" 2>/dev/null || { fmx_arm_failed; return 0; }
+  mkdir -p "$STATE" "$CONFIG" 2>/dev/null || { xox_arm_failed; return 0; }
 
   case "$XO_HOME" in
     /*) shim_home=$XO_HOME ;;
     *)
       shim_home=$(CDPATH='' cd -- "$XO_HOME" 2>/dev/null && pwd -P) \
-        || { fmx_arm_failed; return 0; }
+        || { xox_arm_failed; return 0; }
       ;;
   esac
-  shim_body=$(fmx_poll_shim_content "$shim_home" "$XO_ROOT")
-  x_mode_write_if_changed "$shim" "$shim_body" 700 || { fmx_arm_failed; return 0; }
-  fmx_poll_shim_valid "$shim" "$shim_home" "$XO_ROOT" \
-    || { fmx_arm_failed; return 0; }
+  shim_body=$(xox_poll_shim_content "$shim_home" "$XO_ROOT")
+  x_mode_write_if_changed "$shim" "$shim_body" 700 || { xox_arm_failed; return 0; }
+  xox_poll_shim_valid "$shim" "$shim_home" "$XO_ROOT" \
+    || { xox_arm_failed; return 0; }
 
   cadence_body=$(cat <<'EOF'
 # Auto-generated by xo-bootstrap.sh - X mode watcher cadence.
@@ -1093,9 +1093,9 @@ x_mode_setup() {
 export XO_CHECK_INTERVAL=30
 EOF
 )
-  x_mode_write_if_changed "$cadence" "$cadence_body" 600 || { fmx_arm_failed; return 0; }
+  x_mode_write_if_changed "$cadence" "$cadence_body" 600 || { xox_arm_failed; return 0; }
 
-  echo "FMX: X mode on - relay poll armed via state/x-watch.check.sh; 30s watcher cadence in config/x-mode.env"
+  echo "XOX: X mode on - relay poll armed via state/x-watch.check.sh; 30s watcher cadence in config/x-mode.env"
 }
 
 crew_dispatch_validate() {

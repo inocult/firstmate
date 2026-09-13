@@ -41,7 +41,7 @@
 #
 # Deployment - credentials and endpoints are read from the environment,
 # filling missing keys from the gitignored $XO_HOME/.env (same convention
-# as the Relay/FMX token; env wins). Add these four required values, plus
+# as the Relay/XOX token; env wins). Add these four required values, plus
 # the optional ports and timeout:
 #   XO_MAIL_USER=<imap/smtp account>
 #   XO_MAIL_PASS=<password>
@@ -71,7 +71,7 @@ if [ -z "$XO_HOME" ]; then
 fi
 ENV_FILE="$XO_HOME/.env"
 # Load the home .env for keys not already set, so a direct invocation's
-# environment overrides .env exactly like the Relay/FMX contract (fmx_env_get:
+# environment overrides .env exactly like the Relay/XOX contract (xox_env_get:
 # "env wins over .env"). Tolerates a leading "export ", surrounding whitespace,
 # one layer of matching quotes, comments, and blank lines.
 if [ -f "$ENV_FILE" ]; then

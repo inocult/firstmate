@@ -27,7 +27,7 @@
 # relay lookup by request_id. If either axis remains missing, the link is still
 # recorded but a loud warning is printed and follow-ups fail closed.
 #
-# This is a separate step the fmx-respond skill runs AFTER xo-spawn.sh, so it
+# This is a separate step the xox-respond skill runs AFTER xo-spawn.sh, so it
 # never changes xo-spawn's interface. The follow-up itself - detection, the
 # window/cap check, the post, and clearing the link - is owned by
 # xo-x-followup.sh on the task's captain-relevant wakes. The meta read/write
@@ -184,7 +184,7 @@ if [ ! -f "$META" ]; then
 fi
 
 command -v jq >/dev/null 2>&1 || { echo "xo-x-link: jq not found" >&2; exit 1; }
-fmx_load_config
+xox_load_config
 REQ_PLATFORM=
 REQ_EXPLICIT_MAX=
 REQ_REPLY_MAX=
@@ -196,7 +196,7 @@ if [ -n "$CARRY_MAX" ]; then
 fi
 
 if [ -z "$CARRY_TS" ]; then
-  REPLY_CONTEXT=$(fmx_resolve_reply_context "$STATE" "$RID" 1) || {
+  REPLY_CONTEXT=$(xox_resolve_reply_context "$STATE" "$RID" 1) || {
     echo "xo-x-link: failed to resolve request reply context" >&2
     exit 1
   }
@@ -219,14 +219,14 @@ if [ -n "$CARRY_TS" ]; then
   LINK_TS=$CARRY_TS
   FOLLOWUPS=$CARRY_COUNT
 else
-  # FMX_NOW_OVERRIDE keeps tests deterministic; production uses the wall clock.
-  LINK_TS=${FMX_NOW_OVERRIDE:-$(date +%s)}
+  # XOX_NOW_OVERRIDE keeps tests deterministic; production uses the wall clock.
+  LINK_TS=${XOX_NOW_OVERRIDE:-$(date +%s)}
   case "$LINK_TS" in
     ''|*[!0-9]*) echo "xo-x-link: could not read the current time" >&2; exit 1 ;;
   esac
 fi
 
-if ! fmx_meta_link_set "$META" "$RID" "$LINK_TS" "$FOLLOWUPS" "$REQ_PLATFORM" "$REQ_REPLY_MAX"; then
+if ! xox_meta_link_set "$META" "$RID" "$LINK_TS" "$FOLLOWUPS" "$REQ_PLATFORM" "$REQ_REPLY_MAX"; then
   echo "xo-x-link: failed to record the link in state/$ID.meta" >&2
   exit 1
 fi

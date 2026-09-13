@@ -50,15 +50,15 @@
 # final milestone (shipped, failed) so a task never leaves a stale link lying
 # around waiting for a follow-up that will never come.
 #
-# Dry-run (FMX_DRY_RUN) flows through xo-x-reply.sh: the follow-up is recorded to
+# Dry-run (XOX_DRY_RUN) flows through xo-x-reply.sh: the follow-up is recorded to
 # state/x-outbox/<request_id>.json instead of posted, and the counter/link are
 # mutated exactly as a live post would (increment-and-keep, or clear on --final
 # / cap), so the full loop runs end to end without a public post. With --image,
 # the follow-up carries one local image attachment; if the reply text splits
 # into a thread, the relay attaches the image to the opener.
 #
-# The window is FMX_FOLLOWUP_MAX_AGE_SECS (default 604800, 7 days). The cap is
-# FMX_FOLLOWUP_MAX_COUNT (default 3). FMX_NOW_OVERRIDE pins "now" for
+# The window is XOX_FOLLOWUP_MAX_AGE_SECS (default 604800, 7 days). The cap is
+# XOX_FOLLOWUP_MAX_COUNT (default 3). XOX_NOW_OVERRIDE pins "now" for
 # deterministic tests. Meta read/write lives in xo-x-lib.sh.
 set -u
 
@@ -99,12 +99,12 @@ Options:
 EOF
 }
 
-MAX_AGE=${FMX_FOLLOWUP_MAX_AGE_SECS:-604800}
+MAX_AGE=${XOX_FOLLOWUP_MAX_AGE_SECS:-604800}
 case "$MAX_AGE" in
   ''|*[!0-9]*) MAX_AGE=604800 ;;
 esac
 
-MAX_COUNT=${FMX_FOLLOWUP_MAX_COUNT:-3}
+MAX_COUNT=${XOX_FOLLOWUP_MAX_COUNT:-3}
 case "$MAX_COUNT" in
   ''|*[!0-9]*) MAX_COUNT=3 ;;
 esac
@@ -174,21 +174,21 @@ if [ -e "$META" ] || [ -L "$META" ]; then
 fi
 if [ "$MODE" = clear ]; then
   if [ "$EXPECT_REQUEST_SET" -eq 1 ]; then
-    fmx_meta_link_clear "$META" "$EXPECT_REQUEST" \
+    xox_meta_link_clear "$META" "$EXPECT_REQUEST" \
       || { echo "xo-x-followup: could not clear the link in state/$ID.meta" >&2; exit 1; }
   else
-    fmx_meta_link_clear "$META" \
+    xox_meta_link_clear "$META" \
       || { echo "xo-x-followup: could not clear the link in state/$ID.meta" >&2; exit 1; }
   fi
   printf '%s\n' "$ID"
   exit 0
 fi
 
-RID=$(fmx_meta_get "$META" x_request)
-TS=$(fmx_meta_get "$META" x_request_ts)
-COUNT=$(fmx_meta_get "$META" x_followups)
-REQ_PLATFORM=$(fmx_meta_get "$META" x_platform)
-REQ_REPLY_MAX=$(fmx_meta_get "$META" x_reply_max_chars)
+RID=$(xox_meta_get "$META" x_request)
+TS=$(xox_meta_get "$META" x_request_ts)
+COUNT=$(xox_meta_get "$META" x_followups)
+REQ_PLATFORM=$(xox_meta_get "$META" x_platform)
+REQ_REPLY_MAX=$(xox_meta_get "$META" x_reply_max_chars)
 case "$COUNT" in
   ''|*[!0-9]*) COUNT=0 ;;
 esac
@@ -203,7 +203,7 @@ if [ -z "$RID" ]; then
   exit 0
 fi
 
-NOW=${FMX_NOW_OVERRIDE:-$(date +%s)}
+NOW=${XOX_NOW_OVERRIDE:-$(date +%s)}
 case "$NOW" in
   ''|*[!0-9]*) echo "xo-x-followup: could not read the current time" >&2; exit 1 ;;
 esac
@@ -223,7 +223,7 @@ if [ "$COUNT" -ge "$MAX_COUNT" ]; then
 fi
 
 if [ "$EXPIRED" = 1 ]; then
-  fmx_meta_link_clear "$META" || echo "xo-x-followup: warning: could not clear the elapsed link in state/$ID.meta" >&2
+  xox_meta_link_clear "$META" || echo "xo-x-followup: warning: could not clear the elapsed link in state/$ID.meta" >&2
   if [ "$MODE" = check ]; then
     exit 1
   fi
@@ -242,11 +242,11 @@ fi
 # recorded reply-platform context through.
 declare -a REPLY_ENV=()
 case "$REQ_PLATFORM" in
-  discord|x) REPLY_ENV+=("FMX_REPLY_PLATFORM=$REQ_PLATFORM") ;;
+  discord|x) REPLY_ENV+=("XOX_REPLY_PLATFORM=$REQ_PLATFORM") ;;
 esac
 case "$REQ_REPLY_MAX" in
   ''|*[!0-9]*) ;;
-  *) REPLY_ENV+=("FMX_REPLY_MAX_CHARS=$REQ_REPLY_MAX") ;;
+  *) REPLY_ENV+=("XOX_REPLY_MAX_CHARS=$REQ_REPLY_MAX") ;;
 esac
 if [ "${#REPLY_ENV[@]}" -gt 0 ]; then
   env "${REPLY_ENV[@]}" "$XO_ROOT/bin/xo-x-reply.sh" "$RID" --followup "${TS_ARGS[@]}" >/dev/null
@@ -259,12 +259,12 @@ case "$post_rc" in
   0)
     NEWCOUNT=$((COUNT + 1))
     if [ "$FINAL" = 1 ] || [ "$NEWCOUNT" -ge "$MAX_COUNT" ]; then
-      if ! fmx_meta_link_clear "$META"; then
+      if ! xox_meta_link_clear "$META"; then
         echo "xo-x-followup: error: posted but could not clear the link in state/$ID.meta" >&2
         exit 1
       fi
-    elif ! fmx_meta_followups_set "$META" "$NEWCOUNT"; then
-      if ! fmx_meta_link_clear "$META"; then
+    elif ! xox_meta_followups_set "$META" "$NEWCOUNT"; then
+      if ! xox_meta_link_clear "$META"; then
         echo "xo-x-followup: error: posted but could not record the follow-up count or clear the link in state/$ID.meta" >&2
         exit 1
       fi
@@ -289,7 +289,7 @@ case "$post_rc" in
     # graceful-degradation path against an old relay that only ever supported
     # one follow-up, or a binding the relay already considers exhausted for any
     # other reason - either way, retrying would never succeed.
-    fmx_meta_link_clear "$META" || echo "xo-x-followup: warning: could not clear the rejected link in state/$ID.meta" >&2
+    xox_meta_link_clear "$META" || echo "xo-x-followup: warning: could not clear the rejected link in state/$ID.meta" >&2
     echo "xo-x-followup: relay rejected the follow-up for $ID (cap or window exhausted); skipped and cleared the link" >&2
     exit 0
     ;;

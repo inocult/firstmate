@@ -339,7 +339,7 @@ Before the worktree is returned, teardown concludes the task's own no-mistakes r
 ## Optional Relay
 
 Relay is opt-in presence for the shared `@myxo` bot on both public surfaces it supports, X and Discord.
-A user enables it by putting `FMX_PAIRING_TOKEN` in the XO home's gitignored `.env`; `FMX_RELAY_URL` is optional and defaults to `https://myxo.io`.
+A user enables it by putting `XOX_PAIRING_TOKEN` in the XO home's gitignored `.env`; `XOX_RELAY_URL` is optional and defaults to `https://myxo.io`.
 That token is standing authorization for XO to answer public mentions and act autonomously on normal reversible mention requests.
 Destructive, irreversible, or security-sensitive asks are escalated for trusted-channel confirmation instead of being executed from a public mention.
 The relay uses owner-only routing: a mention delivered to a home is from that home's owner, while its surrounding conversation context may still include other public accounts.
@@ -347,7 +347,7 @@ On the locked session-start bootstrap step, that token creates the local polling
 Without the token, the locked session-start bootstrap step removes those artifacts on opt-out and otherwise stays silent, so non-Relay users see no behavior change.
 Newly offered mentions are stored as `state/x-inbox/<request_id>.json` and wake XO once per retained request ID; the [Relay configuration reference](configuration.md#relay-env) owns the durable offer-marker and re-offer contract.
 Attached media stays in that stashed payload as URLs the responding agent fetches and views with its own tools, so the polling path itself never downloads third-party content.
-The `fmx-respond` agent-only skill drains that inbox, uses the preserved Relay conversation context for continuity under the wire contract owned by the [Relay configuration reference](configuration.md#relay-env), classifies each mention as an actionable request, question, or pure acknowledgment, and submits public-safe replies through `bin/xo-x-reply.sh`.
+The `xox-respond` agent-only skill drains that inbox, uses the preserved Relay conversation context for continuity under the wire contract owned by the [Relay configuration reference](configuration.md#relay-env), classifies each mention as an actionable request, question, or pure acknowledgment, and submits public-safe replies through `bin/xo-x-reply.sh`.
 When a reply has a real visual artifact, `--image <path>` attaches one local PNG, JPEG, GIF, WebP, BMP, or TIFF to the relay's optional `{media_type,data_base64}` image object.
 Actionable reversible requests run through XO's normal intake, backlog, dispatch, investigation, or ship lifecycle.
 Work that completes in the answering turn gets one outcome reply.
@@ -363,7 +363,7 @@ Pure acknowledgments or mentions with nothing to answer are dismissed through `b
 Concise replies stay single unnumbered messages; genuinely long replies are split by the client into bounded, numbered threads using the target platform's reply budget, with `texts` carrying the ordered chunks for the relay.
 Splitting preserves fenced-code, paragraph, line, and word boundaries when possible.
 If an image is attached to a split reply, the relay puts it on the first/opener message only and leaves later chunks text-only.
-For preview testing, `FMX_DRY_RUN` makes `xo-x-reply.sh` and `xo-x-dismiss.sh` skip the public post or dismiss call and record the would-be payload under `state/x-outbox/`, including `texts` when the reply would be a thread and an `endpoint` marker when the preview is a completion follow-up or dismiss, while the rest of the poll -> compose -> would-post loop still succeeds.
+For preview testing, `XOX_DRY_RUN` makes `xo-x-reply.sh` and `xo-x-dismiss.sh` skip the public post or dismiss call and record the would-be payload under `state/x-outbox/`, including `texts` when the reply would be a thread and an `endpoint` marker when the preview is a completion follow-up or dismiss, while the rest of the poll -> compose -> would-post loop still succeeds.
 Attached images are recorded as compact `{media_type, bytes, source_path}` metadata in dry-run instead of base64 bytes.
 Relay remains layered on top of the existing check mechanism without changing its request-handling behavior.
 
@@ -378,7 +378,7 @@ Work routed to another home reports a *typed* terminal result through `bin/xo-pu
 When that home is a remote secondmate, no local path reaches the owning home, so the result is staged where the work runs and the owning home pulls it over the same SSH route with `bin/xo-public-followup-collect.sh`.
 Because a terminal event's id is derived from its identity tuple rather than generated, duplicate reports and restart replay converge without coordination.
 Reconciliation rides the existing relay poll and the session-start digest instead of a new watcher, daemon, or timer, and both are gated on the same `.env` activation contract so a home that never opted into the relay executes none of it.
-The [Relay configuration reference](configuration.md#promised-public-replies-statepublic-followup) owns the operator-facing contract, and the `fmx-respond` skill owns the procedure.
+The [Relay configuration reference](configuration.md#promised-public-replies-statepublic-followup) owns the operator-facing contract, and the `xox-respond` skill owns the procedure.
 
 ## Project memory belongs to projects
 
