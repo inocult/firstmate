@@ -1,0 +1,75 @@
+# Live adapter transcript: setup-stage configuration (no ready_label_id, pickup_state_ids or states)
+# Adapter: bin/fm-plane.py at fb59c33; MCP transport: local stdio fixture tests/plane_mcp_fixture.py
+
+$ cat setup-stage.json
+{
+  "plane_url": "https://plane.example.com",
+  "workspace_slug": "team",
+  "project_id": "project-1",
+  "repository_url": "https://github.com/example/product",
+  "coordination_remote": "<tmp>/shared.git",
+  "executor": "tester",
+  "mcp": {"command": "<venv>/bin/python", "args": ["<repo>/tests/plane_mcp_fixture.py"]}
+}
+
+$ bin/fm-plane.py --config setup-stage.json doctor
+{
+  "mcp_tools": [
+    "label",
+    "state",
+    "workitem",
+    "workitem_link",
+    "workitem_relation"
+  ],
+  "project": "project-1",
+  "states": [
+    {
+      "id": "ready",
+      "name": "Backlog",
+      "group": "backlog"
+    }
+  ],
+  "labels": [
+    {
+      "id": "other",
+      "name": "other"
+    },
+    {
+      "id": "label-ready",
+      "name": "ready-for-agent"
+    }
+  ],
+  "suggested_ready_label_id": "label-ready",
+  "suggested_pickup_state_ids": [
+    "ready"
+  ],
+  "executor": "tester",
+  "note": "MCP connected; no ticket or claim changed"
+}
+[exit 0]
+
+$ bin/fm-plane.py --config setup-stage.json ensure-label --name needs-triage
+{
+  "project": "project-1",
+  "name": "needs-triage",
+  "id": "label-3",
+  "created": true
+}
+[exit 0]
+
+$ bin/fm-plane.py --config setup-stage.json ensure-label --name needs-triage
+{
+  "project": "project-1",
+  "name": "needs-triage",
+  "id": "label-3",
+  "created": true
+}
+[exit 0]
+
+$ bin/fm-plane.py --config setup-stage.json list
+{"error": "configure implementing, review and done Plane state IDs"}
+[exit 1]
+
+$ bin/fm-plane.py --config missing.json doctor
+{"error": "adapter operation failed; claim retained; inspect connectivity/configuration"}
+[exit 1]

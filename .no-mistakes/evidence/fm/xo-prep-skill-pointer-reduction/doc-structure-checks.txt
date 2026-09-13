@@ -1,0 +1,15 @@
+# Structural consumers of the changed files at fb59c33
+
+$ bash tests/fm-skills-tree.test.sh
+ok - every skill sits in the category its frontmatter derives by precedence (30 skills)
+ok - the portable variant is the first C-sorted installer hit for every shared skill name (1 shared)
+ok - the Claude skills alias reaches every active skill through the activation links
+
+$ bin/fm-doc-audience-check.sh
+fm-doc-audience-check: ok surfaces=110 local_links=406
+
+$ git diff da0acc8 fb59c33 | grep -c $'\xe2\x80\x94'   # em dashes added
+0
+
+$ ls docs/plane-missions.md  # target of the new step-5 pointer from skills/in-progress/prep/SKILL.md
+docs/plane-missions.md
