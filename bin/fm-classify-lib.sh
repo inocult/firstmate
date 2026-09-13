@@ -1962,6 +1962,33 @@ signal_crew_provably_working() {  # <file> ...
   return 0
 }
 
+# task_held_for_merge_pr <id> <state>: prints the delivered PR URL and returns 0
+# when a ship task is held for merge by its own durable records - its metadata
+# records pr= (written only by bin/fm-pr-check.sh, which validated the URL) and
+# its merge poll is armed (state/<id>.check.sh exists; bin/fm-pr-lib.sh owns the
+# poll artifacts and their retirement after the merge lands). Such a task waits
+# on a merge decision, not on a worker, so a worker that exited after delivering
+# is its expected shape rather than a wedge: bin/fm-crew-state.sh reports that
+# gone endpoint as done, held for merge, and bin/fm-watch.sh keeps no stale or
+# wedge bookkeeping for it, because the armed merge poll is the only signal the
+# task still needs. This is the ONE statement of that record test. Returns 1
+# with no output for a scout or secondmate (neither delivers a PR), an absent
+# pr=, or a retired or never-armed poll, so every other task keeps its existing
+# classification; the endpoint-liveness half of the rule stays with each caller,
+# which already owns how it reads its backend.
+task_held_for_merge_pr() {  # <id> <state>
+  local id=$1 state=$2 meta kind pr
+  [ -n "$id" ] && [ -n "$state" ] || return 1
+  meta="$state/$id.meta"
+  [ -f "$meta" ] || return 1
+  kind=$(grep '^kind=' "$meta" 2>/dev/null | tail -1 | cut -d= -f2- || true)
+  [ "${kind:-ship}" = ship ] || return 1
+  pr=$(grep '^pr=' "$meta" 2>/dev/null | tail -1 | cut -d= -f2- || true)
+  [ -n "$pr" ] || return 1
+  [ -f "$state/$id.check.sh" ] || return 1
+  printf '%s' "$pr"
+}
+
 # 0 (terminal/actionable) if a stale window's last status line is
 # captain-relevant; 1 otherwise, including the no-status case. A 1 only means
 # "non-terminal"; the always-on watcher then applies crew_is_provably_working,

@@ -62,7 +62,12 @@
 #                          escalation count, and demand-deep-inspection marker,
 #                          for human inspection only - never an automatic
 #                          interrupt, signal, or restart of the worker or its
-#                          tool process.
+#                          tool process. A ship task held for merge - pr=
+#                          recorded, merge poll armed, and its agent confidently
+#                          gone (stale_held_for_merge) - is exempt from every
+#                          stale class above in both postures: its armed merge
+#                          poll is the only signal it still needs, so no stale
+#                          wake, wedge timer, or escalation count is kept for it.
 #   stale: <window> (unread firstmate instruction: ...)
 #                          the steering-inbox ladder spent its delivery-attempt
 #                          budget on an idle pane without an acknowledgement
@@ -965,6 +970,35 @@ busy_turn_over_age() {  # <task>
   progress="$STATE/$task.progress"
   if [ -f "$progress" ] && [ "$progress" -nt "$f" ]; then f="$progress"; fi
   [ "$(age_of "$f")" -ge "$BUSY_TURN_MAX_SECS" ]
+}
+
+# Absorb a stale pane whose task is held for merge, and only then: its metadata
+# records the delivered PR, its merge poll is armed (task_held_for_merge_pr in
+# fm-classify-lib.sh owns that record test), and the backend confidently reports
+# its agent gone. A delivered worker that exited is the expected shape of such a
+# task, not a wedge, and its wait is on the captain's merge decision, which the
+# armed merge poll already reports the instant it lands - so this keeps nothing
+# for the pane: the hash is recorded as classified, and the wedge timer, its
+# escalation count, and the write-deferral chain are dropped, exactly the reset a
+# declared pause performs, minus any re-surface cadence (the 2026-09 delivered-
+# task incident: five tasks in one day each re-escalated as a possible wedge every
+# FM_STALE_ESCALATE_SECS until the captain merged, because the absent agent
+# proved nothing and the timer restarted on every poll). Runs before the
+# posture split so an away daemon is never handed this stale either. Returns 1
+# and touches nothing for every other task: a live or ambiguously read agent
+# keeps its ordinary stale semantics, so a delivered worker steered into
+# follow-up work and then parked still surfaces, and a backend without a
+# recovery-grade classifier cannot confirm the agent gone and keeps alarming.
+stale_held_for_merge() {  # <window> <task> <hash>
+  local win=$1 task=$2 h=$3 key pr
+  pr=$(task_held_for_merge_pr "$task" "$STATE") || return 1
+  [ "$(fm_backend_agent_alive "$(window_backend "$win")" "$win" 2>/dev/null)" = dead ] || return 1
+  key=$(window_key "$win")
+  printf '%s' "$h" > "$STATE/.stale-$key"
+  rm -f "$STATE/.stale-since-$key" "$STATE/.wedge-escalations-$key"
+  clear_write_tracking "$key"
+  triage_log "absorbed stale (held for merge: $pr, merge poll armed, agent gone): $win"
+  return 0
 }
 
 # Absorb a stale pane under a declared external-wait pause (paused:) or a
@@ -2235,6 +2269,11 @@ EOF
             paused) handle_paused_stale "$w" "$task" "$h" ;;
             *)      clear_pause_tracking "$key" ;;
           esac
+        elif stale_held_for_merge "$w" "$task" "$h"; then
+          # Held for merge: absorbed above, in either posture, with no wake,
+          # timer, or escalation count; the armed merge poll owns this task's
+          # next signal.
+          :
         elif afk_present; then
           # Daemon owns triage: one-shot per distinct stale hash, as before,
           # except that a captain-held pane is never handed over while the
