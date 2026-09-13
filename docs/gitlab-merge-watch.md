@@ -181,7 +181,7 @@ armed: state/e6.check.sh
 ## Registration version
 
 The live registration tag is `xo-pr-poll-registration-v2`, which includes the provider tag.
-A `xo-pr-poll-registration-v1` record no longer parses.
+Every earlier tag no longer parses: the pre-provider v1 shape, and every registration written under the old project prefix before the xo rename.
 Arm a current watch with `bin/xo-pr-check.sh`.
 
 ## Merging a merge request
