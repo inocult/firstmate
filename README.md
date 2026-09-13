@@ -20,6 +20,8 @@
 
 <h3 align="center">One point of contact. A team of operatives.</h3>
 
+XO is the Executive Officer, second in command, who runs the crew and carries out the commander's intent without assuming the commander's authority.
+
 This fork uses a restrained hacker / heist-operative persona and adds [Plane mission intake](docs/plane-missions.md) for teams using repo-local Pocock engineering skills.
 Plane tickets remain the shared backlog, GitHub PRs carry implementation, and remote Git claims prevent duplicate pickup among participating XOs.
 Use `/sitrep` for status, `/debrief` for learnings, `/offgrid` for away supervision and `/refresh` for updates.
