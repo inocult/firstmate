@@ -1,0 +1,19 @@
+
+== W3 BASE: fresh base-commit fixture, non-terminal last line, wedge timer seeded 500s past threshold with 2 escalations (FM_STALE_ESCALATE_SECS=5)
+    [w3base] pr-check: armed: state/held-w3base.check.sh
+
+[w3-base.run1] watcher exited rc=0 after 1s with: signal: /tmp/fm-live-r2w.PmiL/w3base/state/held-w3base.status
+    [drain] 1789267309	2	signal	held-w3base.status	signal: /tmp/fm-live-r2w.PmiL/w3base/state/held-w3base.status
+    [drain] wake annotation: latest wake-EVENT observed at drain, not current state: held-w3base.status: resolved [key=nm-01RUN-review]: firstmate accepted the finding
+    [drain] acked through 2
+  seeded: .stale-fmlive_fm-held-w3base=9a0849e15c0e1ed2208354206d10ad67, .stale-since-fmlive_fm-held-w3base 500s old, .wedge-escalations-fmlive_fm-held-w3base=2
+[w3-base.run2] watcher exited rc=0 after 7s with: stale: fmlive:fm-held-w3base (idle 5s, possible wedge, escalation 1)
+  triage log (distinct messages x count):
+          1 absorbed non-terminal stale timer reset: fmlive:fm-held-w3base
+  stale rows in .wake-queue: 1
+  markers:
+    .count-fmlive_fm-held-w3base
+    .hash-fmlive_fm-held-w3base
+    .stale-fmlive_fm-held-w3base
+    .wedge-escalations-fmlive_fm-held-w3base
+  wedge escalation count after run2: 1

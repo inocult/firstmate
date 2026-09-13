@@ -1,0 +1,2 @@
+== crew-state, window present with shell remaining, claude Stop-hook idle record, FIXED:
+state: done · source: status-log · PR https://github.com/inocult/firstmate/pull/10 checks green

@@ -1,0 +1,12 @@
+== crew-state, tmux session gone (worker session/server dead), FIXED:
+state: unknown · source: pane · harness state unavailable (unknown missing)
+== same, BASE (before fix):
+state: unknown · source: pane · harness state unavailable (unknown missing)
+== session gone, pr= recorded but poll retired, FIXED:
+state: unknown · source: pane · harness state unavailable (unknown missing)
+== session gone, kind=scout with both records, FIXED:
+state: unknown · source: pane · harness state unavailable (unknown missing)
+== window closed in a live session (tmux display-message falls back to the default pane), FIXED:
+state: unknown · source: pane · harness state unavailable (unknown missing)
+== tmux unreachable (tmux absent from PATH), FIXED:
+state: unknown · source: none · backend unreachable (tmux endpoint state: unreadable)

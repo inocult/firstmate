@@ -1,0 +1,15 @@
+[run1] watcher exited rc=0 after 1s
+[run1] stdout:
+    signal: /tmp/fm-live.j7dSvz/state-wgone/feat-held.status
+[drain] rows:
+    1789266043	2	signal	feat-held.status	signal: /tmp/fm-live.j7dSvz/state-wgone/feat-held.status
+    wake annotation: latest wake-EVENT observed at drain, not current state: feat-held.status: done: PR https://github.com/inocult/firstmate/pull/10 checks green
+    STATUS OUTCOME BACKSTOP (newest captain-facing task event has no covering branch outcome):
+    feat-held done: PR https://github.com/inocult/firstmate/pull/10 checks green
+[drain] acked through 2
+[run2] watcher still supervising after 15s: no wake surfaced
+[run2] stdout:
+[state] triage log:
+    (none)
+[state] wake queue:
+[state] stale markers:

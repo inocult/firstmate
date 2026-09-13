@@ -1,0 +1,129 @@
+
+== W1 FIXED: dead agent (bare bash) + pr= + armed merge poll, attended posture
+    [w1] pr-check: armed: state/held-w1.check.sh
+
+    fm-held-w1 bash
+[w1-fixed.run1] watcher exited rc=0 after 1s with: signal: /tmp/fm-live-r2w.mPPS/w1/state/held-w1.status
+    [drain] 1789267205	2	signal	held-w1.status	signal: /tmp/fm-live-r2w.mPPS/w1/state/held-w1.status
+    [drain] wake annotation: latest wake-EVENT observed at drain, not current state: held-w1.status: done: PR https://github.com/inocult/firstmate/pull/10 checks green
+    [drain] STATUS OUTCOME BACKSTOP (newest captain-facing task event has no covering branch outcome):
+    [drain] acked through 2
+[w1-fixed.run2] watcher still supervising after 12s: no wake surfaced
+  triage log (distinct messages x count):
+          8 absorbed stale (held for merge: https://github.com/inocult/firstmate/pull/10, merge poll armed, agent gone): fmlive:fm-held-w1
+  stale rows in .wake-queue: 0
+  markers:
+    .count-fmlive_fm-held-w1
+    .hash-fmlive_fm-held-w1
+    .stale-fmlive_fm-held-w1
+
+== W1 BASE: same fixture at the base commit
+    [w1b] pr-check: armed: state/held-w1b.check.sh
+
+[w1-base.run1] watcher exited rc=0 after 1s with: signal: /tmp/fm-live-r2w.mPPS/w1b/state/held-w1b.status
+    [drain] 1789267221	2	signal	held-w1b.status	signal: /tmp/fm-live-r2w.mPPS/w1b/state/held-w1b.status
+    [drain] wake annotation: latest wake-EVENT observed at drain, not current state: held-w1b.status: done: PR https://github.com/inocult/firstmate/pull/10 checks green
+    [drain] STATUS OUTCOME BACKSTOP (newest captain-facing task event has no covering branch outcome):
+    [drain] acked through 2
+[w1-base.run2] watcher exited rc=0 after 3s with: stale: fmlive:fm-held-w1b
+  triage log (distinct messages x count):
+    (none)
+  stale rows in .wake-queue: 1
+  markers:
+    .count-fmlive_fm-held-w1b
+    .hash-fmlive_fm-held-w1b
+    .stale-fmlive_fm-held-w1b
+
+== W2 FIXED: away posture (.afk) - nothing queued for the daemon
+    [w2] pr-check: armed: state/held-w2.check.sh
+
+[w2-afk.run1] watcher exited rc=0 after 1s with: signal: /tmp/fm-live-r2w.mPPS/w2/state/held-w2.status
+    [drain] 1789267226	2	signal	held-w2.status	signal: /tmp/fm-live-r2w.mPPS/w2/state/held-w2.status
+    [drain] wake annotation: latest wake-EVENT observed at drain, not current state: held-w2.status: done: PR https://github.com/inocult/firstmate/pull/10 checks green
+    [drain] STATUS OUTCOME BACKSTOP (newest captain-facing task event has no covering branch outcome):
+    [drain] acked through 2
+[w2-afk.run2] watcher still supervising after 12s: no wake surfaced
+  triage log (distinct messages x count):
+          8 absorbed stale (held for merge: https://github.com/inocult/firstmate/pull/10, merge poll armed, agent gone): fmlive:fm-held-w2
+  stale rows in .wake-queue: 0
+  markers:
+    .count-fmlive_fm-held-w2
+    .hash-fmlive_fm-held-w2
+    .stale-fmlive_fm-held-w2
+
+== W3: non-terminal last line, wedge timer seeded 500s past threshold with 2 escalations
+    [w3] pr-check: armed: state/held-w3.check.sh
+
+[w3.run1] watcher exited rc=0 after 1s with: signal: /tmp/fm-live-r2w.mPPS/w3/state/held-w3.status
+    [drain] 1789267242	2	signal	held-w3.status	signal: /tmp/fm-live-r2w.mPPS/w3/state/held-w3.status
+    [drain] wake annotation: latest wake-EVENT observed at drain, not current state: held-w3.status: resolved [key=nm-01RUN-review]: firstmate accepted the finding
+    [drain] acked through 2
+  seeded on both copies: .stale-fmlive_fm-held-w3=9a0849e15c0e1ed2208354206d10ad67 (already classified), .stale-since-fmlive_fm-held-w3 500s old, .wedge-escalations-fmlive_fm-held-w3=2
+[w3-fixed.run2] watcher still supervising after 12s: no wake surfaced
+  triage log (distinct messages x count):
+          8 absorbed stale (held for merge: https://github.com/inocult/firstmate/pull/10, merge poll armed, agent gone): fmlive:fm-held-w3
+  stale rows in .wake-queue: 0
+  markers:
+    .count-fmlive_fm-held-w3
+    .hash-fmlive_fm-held-w3
+    .stale-fmlive_fm-held-w3
+  -- BASE on the same seeded state (FM_STALE_ESCALATE_SECS=5):
+[w3-base.run2] watcher exited rc=0 after 1s with: signal: /tmp/fm-live-r2w.mPPS/w3b/state/held-w3.status
+  triage log (distinct messages x count):
+    (none)
+  stale rows in .wake-queue: 0
+  markers:
+    .stale-fmlive_fm-held-w3
+    .stale-since-fmlive_fm-held-w3
+    .wedge-escalations-fmlive_fm-held-w3
+
+== W4 guard FIXED: same records but the agent is alive (foreground command named claude)
+    [w4] pr-check: armed: state/held-w4.check.sh
+
+    fm-held-w4 claude
+[w4-live.run1] watcher exited rc=0 after 1s with: signal: /tmp/fm-live-r2w.mPPS/w4/state/held-w4.status
+    [drain] 1789267260	2	signal	held-w4.status	signal: /tmp/fm-live-r2w.mPPS/w4/state/held-w4.status
+    [drain] wake annotation: latest wake-EVENT observed at drain, not current state: held-w4.status: done: PR https://github.com/inocult/firstmate/pull/10 checks green
+    [drain] STATUS OUTCOME BACKSTOP (newest captain-facing task event has no covering branch outcome):
+    [drain] acked through 2
+[w4-live.run2] watcher exited rc=0 after 3s with: stale: fmlive:fm-held-w4
+  triage log (distinct messages x count):
+    (none)
+  stale rows in .wake-queue: 1
+  markers:
+    .count-fmlive_fm-held-w4
+    .hash-fmlive_fm-held-w4
+    .stale-fmlive_fm-held-w4
+
+== W5 guard FIXED: dead agent, pr= recorded, merge poll retired (no check.sh)
+    [w5] pr-check: armed: state/held-w5.check.sh
+
+    (no check.sh)
+[w5-retired.run1] watcher exited rc=0 after 1s with: signal: /tmp/fm-live-r2w.mPPS/w5/state/held-w5.status
+    [drain] 1789267266	2	signal	held-w5.status	signal: /tmp/fm-live-r2w.mPPS/w5/state/held-w5.status
+    [drain] wake annotation: latest wake-EVENT observed at drain, not current state: held-w5.status: done: PR https://github.com/inocult/firstmate/pull/10 checks green
+    [drain] STATUS OUTCOME BACKSTOP (newest captain-facing task event has no covering branch outcome):
+    [drain] acked through 2
+[w5-retired.run2] watcher exited rc=0 after 3s with: stale: fmlive:fm-held-w5
+  triage log (distinct messages x count):
+    (none)
+  stale rows in .wake-queue: 1
+  markers:
+    .count-fmlive_fm-held-w5
+    .hash-fmlive_fm-held-w5
+    .stale-fmlive_fm-held-w5
+
+== W6 FIXED: task window closed after delivery (session alive)
+    [w6] pr-check: armed: state/held-w6.check.sh
+
+[w6-gone.run1] watcher exited rc=0 after 1s with: signal: /tmp/fm-live-r2w.mPPS/w6/state/held-w6.status
+    [drain] 1789267271	2	signal	held-w6.status	signal: /tmp/fm-live-r2w.mPPS/w6/state/held-w6.status
+    [drain] wake annotation: latest wake-EVENT observed at drain, not current state: held-w6.status: done: PR https://github.com/inocult/firstmate/pull/10 checks green
+    [drain] STATUS OUTCOME BACKSTOP (newest captain-facing task event has no covering branch outcome):
+    [drain] acked through 2
+[w6-gone.run2] watcher still supervising after 12s: no wake surfaced
+  triage log (distinct messages x count):
+    (none)
+  stale rows in .wake-queue: 0
+  markers:
+  reader on the same task: state: done · source: status-log · PR held for merge (worker exited, merge poll armed): https://github.com/inocult/firstmate/pull/10

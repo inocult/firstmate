@@ -1,0 +1,4 @@
+1789265999	2	signal	feat-held.status	signal: /tmp/fm-live.j7dSvz/state-retired/feat-held.status
+wake annotation: latest wake-EVENT observed at drain, not current state: feat-held.status: done: PR https://github.com/inocult/firstmate/pull/10 checks green
+STATUS OUTCOME BACKSTOP (newest captain-facing task event has no covering branch outcome):
+feat-held done: PR https://github.com/inocult/firstmate/pull/10 checks green

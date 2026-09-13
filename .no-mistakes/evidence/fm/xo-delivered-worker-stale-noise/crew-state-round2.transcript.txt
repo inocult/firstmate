@@ -1,0 +1,62 @@
+
+== fixture: throwaway worktree on fm/feat-held, task window with the worker exited (bare bash)
+
+== bin/fm-pr-check.sh records pr= and arms the merge poll
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+armed: state/feat-held.check.sh
+rc=0
+meta:
+    window=fmlive:fm-feat-held
+    worktree=/tmp/fm-live-r2.w3zB/wt
+    kind=ship
+    harness=claude
+    backend=tmux
+    pr=https://github.com/inocult/firstmate/pull/10
+    pr_head=0cbe378e812bf961febfa05a28558a2450e105ed
+    -rw------- 1 inocult inocult 3905 Sep 12 22:35 /tmp/fm-live-r2.w3zB/state/feat-held.check.sh
+tmux windows:
+    keepalive sleep
+    fm-feat-held bash
+
+== window still open, worker exited (pane shell remains), no idle record - FIXED
+[FIXED] state: unknown · source: pane · harness state unavailable (unknown missing)
+
+== S1: task window closed, session and server alive (the 2026-09 incident shape)
+tmux windows:
+    keepalive
+probe: tmux display-message -p -t fmlive:fm-feat-held -> %0 rc=0
+probe: tmux list-panes -t fmlive:fm-feat-held -> can't find window: fm-feat-held rc=1
+[FIXED] state: done · source: status-log · PR held for merge (worker exited, merge poll armed): https://github.com/inocult/firstmate/pull/10
+[BASE] state: unknown · source: pane · harness state unavailable (unknown missing)
+
+== S1-guard: window closed, pr= recorded but merge poll retired (check.sh gone)
+[FIXED] state: unknown · source: none · backend target gone: fmlive:fm-feat-held
+
+== S1-guard: window closed, merge poll armed but no pr= recorded
+[FIXED] state: unknown · source: none · backend target gone: fmlive:fm-feat-held
+
+== S1-guard: window closed, both records but kind=scout
+[FIXED] state: unknown · source: none · backend target gone: fmlive:fm-feat-held
+
+== S2: whole task session gone while the server still serves another session
+tmux sessions:
+    other
+[FIXED] state: done · source: status-log · PR held for merge (worker exited, merge poll armed): https://github.com/inocult/firstmate/pull/10
+[BASE] state: unknown · source: pane · harness state unavailable (unknown missing)
+
+== S3: tmux server down
+probe: no server running on /tmp/fm-live-r2.w3zB/tmuxtmp/tmux-1000/default
+[FIXED] state: done · source: status-log · PR held for merge (worker exited, merge poll armed): https://github.com/inocult/firstmate/pull/10
+[BASE] state: unknown · source: none · backend target gone: fmlive:fm-feat-held
+
+== S4-guard: tmux unreachable (absent from PATH) with both records
+[FIXED] state: unknown · source: none · backend unreachable (tmux endpoint state: unreadable)
+
+== S5: window present, shell remaining, claude Stop-hook idle record (live pane path unchanged)
+[FIXED] state: done · source: status-log · PR https://github.com/inocult/firstmate/pull/10 checks green

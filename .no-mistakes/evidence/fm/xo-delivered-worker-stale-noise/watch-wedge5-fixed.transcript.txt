@@ -1,0 +1,24 @@
+[run1] watcher exited rc=0 after 1s
+[run1] stdout:
+    signal: /tmp/fm-live.j7dSvz/state-wedge5-fixed/feat-held.status
+[drain] rows:
+    1789266169	2	signal	feat-held.status	signal: /tmp/fm-live.j7dSvz/state-wedge5-fixed/feat-held.status
+    wake annotation: unread wake-EVENT since last drain, not current state: feat-held.status: done: PR https://github.com/inocult/firstmate/pull/10 checks green
+    wake annotation: latest wake-EVENT observed at drain, not current state: feat-held.status: resolved [key=nm-01RUN-review]: firstmate accepted the finding
+[drain] acked through 2
+[run2] watcher still supervising after 15s: no wake surfaced
+[run2] stdout:
+[state] triage log:
+    [2026-09-12T22:22:53-0400] absorbed stale (held for merge: https://github.com/inocult/firstmate/pull/10, merge poll armed, agent gone): fmlive:fm-feat-held
+    [2026-09-12T22:22:54-0400] absorbed stale (held for merge: https://github.com/inocult/firstmate/pull/10, merge poll armed, agent gone): fmlive:fm-feat-held
+    [2026-09-12T22:22:55-0400] absorbed stale (held for merge: https://github.com/inocult/firstmate/pull/10, merge poll armed, agent gone): fmlive:fm-feat-held
+    [2026-09-12T22:22:57-0400] absorbed stale (held for merge: https://github.com/inocult/firstmate/pull/10, merge poll armed, agent gone): fmlive:fm-feat-held
+    [2026-09-12T22:22:58-0400] absorbed stale (held for merge: https://github.com/inocult/firstmate/pull/10, merge poll armed, agent gone): fmlive:fm-feat-held
+    [2026-09-12T22:22:59-0400] absorbed stale (held for merge: https://github.com/inocult/firstmate/pull/10, merge poll armed, agent gone): fmlive:fm-feat-held
+    [2026-09-12T22:23:01-0400] absorbed stale (held for merge: https://github.com/inocult/firstmate/pull/10, merge poll armed, agent gone): fmlive:fm-feat-held
+    [2026-09-12T22:23:02-0400] absorbed stale (held for merge: https://github.com/inocult/firstmate/pull/10, merge poll armed, agent gone): fmlive:fm-feat-held
+    [2026-09-12T22:23:03-0400] absorbed stale (held for merge: https://github.com/inocult/firstmate/pull/10, merge poll armed, agent gone): fmlive:fm-feat-held
+    [2026-09-12T22:23:05-0400] absorbed stale (held for merge: https://github.com/inocult/firstmate/pull/10, merge poll armed, agent gone): fmlive:fm-feat-held
+[state] wake queue:
+[state] stale markers:
+    .stale-fmlive_fm-feat-held

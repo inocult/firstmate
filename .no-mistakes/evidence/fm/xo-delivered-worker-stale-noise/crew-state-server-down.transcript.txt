@@ -1,0 +1,10 @@
+== tmux probe with the worker's tmux server down:
+error connecting to /tmp/tmux-1000/fm-live-noserver-2213663 (No such file or directory)
+== crew-state, tmux server down, both records, FIXED:
+state: done · source: status-log · PR held for merge (worker exited, merge poll armed): https://github.com/inocult/firstmate/pull/10
+== same, BASE (before fix):
+state: unknown · source: none · backend target gone: fmlive:fm-feat-held
+== server down, pr= recorded but poll retired, FIXED:
+state: unknown · source: none · backend target gone: fmlive:fm-feat-held
+== server down, kind=scout with both records, FIXED:
+state: unknown · source: none · backend target gone: fmlive:fm-feat-held

@@ -1,0 +1,17 @@
+[run1] watcher exited rc=0 after 1s
+[run1] stdout:
+    signal: /tmp/fm-live.j7dSvz/state-wedge-base/feat-held.status
+[drain] rows:
+    1789266023	2	signal	feat-held.status	signal: /tmp/fm-live.j7dSvz/state-wedge-base/feat-held.status
+    wake annotation: unread wake-EVENT since last drain, not current state: feat-held.status: done: PR https://github.com/inocult/firstmate/pull/10 checks green
+    wake annotation: latest wake-EVENT observed at drain, not current state: feat-held.status: resolved [key=nm-01RUN-review]: firstmate accepted the finding
+[drain] acked through 2
+[run2] watcher still supervising after 15s: no wake surfaced
+[run2] stdout:
+[state] triage log:
+    [2026-09-12T22:20:26-0400] absorbed non-terminal stale timer reset: fmlive:fm-feat-held
+[state] wake queue:
+[state] stale markers:
+    .stale-fmlive_fm-feat-held
+    .stale-since-fmlive_fm-feat-held
+    .stale-since-fmlive_fm-feat-held = 1789266026

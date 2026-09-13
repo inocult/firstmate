@@ -1,0 +1,3 @@
+1789266023	2	signal	feat-held.status	signal: /tmp/fm-live.j7dSvz/state-wedge-base/feat-held.status
+wake annotation: unread wake-EVENT since last drain, not current state: feat-held.status: done: PR https://github.com/inocult/firstmate/pull/10 checks green
+wake annotation: latest wake-EVENT observed at drain, not current state: feat-held.status: resolved [key=nm-01RUN-review]: firstmate accepted the finding
