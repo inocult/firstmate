@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # xo-pending-reply-lib.sh - parent-owned secondmate missed-report guards.
 #
-# When the main xo delivers a reply-bearing marked from-xo request
+# When the main xo delivers a reply-bearing marked from-primary request
 # to a secondmate, this library records a durable parent-owned pending-reply
 # expectation BEFORE delivery, embeds a privacy-safe correlation id in the
 # outbound message, and later resolves that expectation only from a correlated
@@ -189,7 +189,7 @@ xo_pending_reply_summarize() {  # <text>
   local text=$1 cleaned
   cleaned=$(printf '%s' "$text" | tr '\t\r\n' '   ' | tr -cd '\11\12\15\40-\176' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
   # Drop an already-present marker/corr prefix so the durable summary stays short.
-  cleaned=${cleaned#"$XO_FROMFIRST_MARK"}
+  cleaned=${cleaned#"$XO_FROMPRIMARY_MARK"}
   cleaned=$(printf '%s' "$cleaned" | sed -E "s/^corr=[A-Fa-f0-9]{16}[[:space:]]*//")
   if [ "${#cleaned}" -gt 120 ]; then
     cleaned="${cleaned:0:117}..."
@@ -268,7 +268,7 @@ xo_pending_reply_set() {  # <record-path> <key> <value>
   mv -f "$tmp" "$rec"
 }
 
-# Embed or replace a correlation token after the from-xo marker.
+# Embed or replace a correlation token after the from-primary marker.
 # Idempotent for the same corr; replaces a different leading corr token.
 # Result is assigned to <result-var>.
 # Trailing newlines in the request body are preserved: never strip via bare
@@ -278,7 +278,7 @@ xo_pending_reply_embed_corr() {  # <message> <corr_id> <result-var>
   [ -n "$result_var" ] || return 2
   token=$(xo_pending_reply_corr_token "$corr")
   xo_message_mark_from_xo "$message" marked
-  body=${marked#"$XO_FROMFIRST_MARK"}
+  body=${marked#"$XO_FROMPRIMARY_MARK"}
   # Strip a leading corr=<16hex> plus following blanks (space/tab only).
   existing=${body:0:21}
   case "$existing" in
@@ -288,7 +288,7 @@ xo_pending_reply_embed_corr() {  # <message> <corr_id> <result-var>
       while [ "${body#$'\t'}" != "$body" ]; do body=${body#$'\t'}; done
       ;;
   esac
-  printf -v "$result_var" '%s' "${XO_FROMFIRST_MARK}${token} ${body}"
+  printf -v "$result_var" '%s' "${XO_FROMPRIMARY_MARK}${token} ${body}"
 }
 
 # Create a durable pending-reply expectation. Prints corr_id on success.

@@ -71,7 +71,7 @@ The shared no-mistakes gate refusal for fleet lifecycle entrypoints is summarize
 | `xo-project-mode.sh`     | Resolve a project's registered delivery posture from `data/projects.md` for fleet sync and home seeding |
 | `xo-merge-local.sh`      | Fast-forward a `local-only` project's local default branch after approval            |
 | `xo-review-diff.sh`      | Review a crewmate branch or resolved PR head against the authoritative base          |
-| `xo-marker-lib.sh`       | Compatibility entry point for the from-xo carrier owned by `xo-operational-input.sh` |
+| `xo-marker-lib.sh`       | Compatibility entry point for the from-primary carrier owned by `xo-operational-input.sh` |
 | `xo-task-inbox-lib.sh`   | Single owner of durable steering-inbox records, acknowledgement, doorbells, and the delivery-attempt ladder |
 | `xo-pending-reply-lib.sh` | Parent-owned secondmate pending-reply expectations, recovery, and keyed escalation lifecycle |
 | `xo-secondmate-report.sh` | Optional helper that resolves the parent channel itself and appends a correlated status or document-pointer report |

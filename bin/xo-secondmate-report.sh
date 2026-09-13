@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # xo-secondmate-report.sh - optional helper to append a correlated parent report.
 #
-# A secondmate answering a marked from-xo request must report on the
+# A secondmate answering a marked from-primary request must report on the
 # parent status channel with the request's corr=<id> token. This helper makes
 # that easy, but correctness must not depend on using it: a plain echo of a
 # status line that includes the same corr token is equally valid

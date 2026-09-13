@@ -186,7 +186,7 @@ Every other audited class is policy-hidden when Pi exposes a supported presentat
 The home-local persistence schema is owned by [`docs/configuration.md`](configuration.md#pi-calm-preference-configcalm).
 
 Current session-start, watcher, turn-end guard, away supervisor, and launch-brief inputs retain their versioned U+2063 static envelopes.
-The established leading `[xo-from-xo]` plus U+2063 routing carrier remains current so running secondmate charters remain compatible.
+The established leading `[xo-from-primary]` plus U+2063 routing carrier remains current so running secondmate charters remain compatible.
 An exact current static envelope remains sufficient provenance without nonce, source-authentication, replay-prevention, secondary-token, blocking, redaction, or private-retrieval machinery.
 Calm classifies only at Pi's transcript-presentation owner through the canonical parser and never replaces, reorders, or weakens those messages.
 
@@ -273,7 +273,7 @@ grok 0.2.106 (bde89716f679)
 
 These conclusions are deliberately limited to the named versions and supported surfaces.
 They do not claim that a harness can never add the missing renderer API.
-For the duplicate-turn fix and the latest presentation change, the launch templates for Claude, Codex, OpenCode, Pi, and Grok and the watcher, turn-end, session-start, away-supervisor, and from-xo producers were re-inspected.
+For the duplicate-turn fix and the latest presentation change, the launch templates for Claude, Codex, OpenCode, Pi, and Grok and the watcher, turn-end, session-start, away-supervisor, and from-primary producers were re-inspected.
 The canonical encoder and every non-Pi delivery path remain unchanged, and the tmux, Herdr, Zellij, Orca, and cmux runtime surfaces continue to transport the same input selected by the harness adapter.
 Only Pi's Calm presentation implementation changed; every producer and non-Pi transport remains unchanged.
 

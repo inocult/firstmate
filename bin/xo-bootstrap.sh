@@ -31,7 +31,7 @@
 #          its loaded instruction surface
 #          (AGENTS.md, bin/, or .agents/skills/), bootstrap immediately nudges it
 #          via XO_HOME=<active-home> bin/xo-send.sh xo-<id> so meta resolves the
-#          current route and the standard from-xo marker is applied. A
+#          current route and the standard from-primary marker is applied. A
 #          successful send prints one BOOTSTRAP_INFO line with the exact target
 #          and message sent; a failed send leaves an idempotent retry marker
 #          under state/.secondmate-nudge-pending/ and prints an actionable

@@ -440,7 +440,7 @@ test_bootstrap_sweep_nudges_only_instruction_change() {
   assert_not_contains "$out" "sm-current" "already-current secondmate is not nudged"
   # The nudge rides xo-send's durable inbox plane: the marked message lands in
   # the secondmate task's steering-inbox record while only the doorbell is typed.
-  assert_contains "$(cat "$w/home/state/sm-instr.inbox/001.msg")" "[xo-from-xo]" \
+  assert_contains "$(cat "$w/home/state/sm-instr.inbox/001.msg")" "[xo-from-primary]" \
     "nudge send should use the marked xo-send secondmate path"
   assert_contains "$(cat "$w/home/state/sm-instr.inbox/001.msg")" "xo was updated to the latest - please re-read your AGENTS.md" \
     "nudge send should enqueue the exact re-read message"
@@ -479,7 +479,7 @@ test_bootstrap_nudge_send_uses_state_override() {
     "nudge send should resolve xo-sm-instr through the effective state dir"
   assert_not_contains "$out" "NUDGE_SECONDMATES:" \
     "effective-state nudge should not fail through XO_HOME/state"
-  assert_contains "$(cat "$override_state/sm-instr.inbox/001.msg")" "[xo-from-xo]" \
+  assert_contains "$(cat "$override_state/sm-instr.inbox/001.msg")" "[xo-from-primary]" \
     "effective-state nudge should still use secondmate marker metadata"
   marker="$override_state/.secondmate-nudge-pending/sm-instr.pending"
   assert_absent "$marker" "successful effective-state nudge should clear its retry marker"

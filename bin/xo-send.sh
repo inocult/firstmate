@@ -90,7 +90,7 @@
 #
 # From-xo marker: when the resolved target is a task selector whose meta
 # records kind=secondmate, the message uses the live-charter-compatible
-# from-xo carrier owned by bin/xo-operational-input.sh so the secondmate
+# from-primary carrier owned by bin/xo-operational-input.sh so the secondmate
 # routes its reply via its status file or a status-pointed doc instead of
 # stranding it in chat the main xo never reads. On the inbox plane the
 # marker travels verbatim inside the recorded body. A crewmate/scout target,
@@ -497,12 +497,12 @@ if [ "$TARGET_BACKEND" != remote ]; then
   xo_backend_validate "$TARGET_BACKEND" || exit 1
 fi
 
-# Classify a from-xo -> secondmate request. Only a task selector resolved
+# Classify a from-primary -> secondmate request. Only a task selector resolved
 # through this home's meta whose authoritative kind is secondmate is marked: the
 # secondmate then routes its reply via the status path (see xo-marker-lib.sh).
 # An explicit backend target (the escape hatch for endpoints outside this home)
 # and any crewmate/scout target are left unmarked, and so is the --key path.
-MARK_FROM_XO=0
+MARK_FROM_PRIMARY=0
 PENDING_REPLY_CORR=
 PENDING_REPLY_CREATED=0
 TARGET_TASK_ID=
@@ -515,7 +515,7 @@ xo_send_known_undelivered_cleanup() {
   fi
 }
 if [ -n "$TARGET_SELECTOR" ] && [ -n "$TARGET_META" ] && [ "$(xo_meta_get "$TARGET_META" kind)" = secondmate ]; then
-  MARK_FROM_XO=1
+  MARK_FROM_PRIMARY=1
   TARGET_TASK_ID=$(xo_send_id_from_meta "$TARGET_META")
 fi
 
@@ -571,7 +571,7 @@ xo_send_resolve_close_note() {  # <key> <excerpt>
 if [ -n "$FIRE_AND_FORGET_ID" ]; then
   printf '%s' "$FIRE_AND_FORGET_ID" | grep -Eq '^[a-f0-9]{16}$' \
     || { echo "error: --fire-and-forget delivery id must be 16 lowercase hex characters" >&2; exit 1; }
-  [ "$MARK_FROM_XO" = 1 ] \
+  [ "$MARK_FROM_PRIMARY" = 1 ] \
     || { echo "error: --fire-and-forget requires a recorded secondmate task selector" >&2; exit 1; }
   [ -z "$RESOLVE_KEYS" ] \
     || { echo "error: --fire-and-forget cannot accompany --resolve-key" >&2; exit 1; }
@@ -735,11 +735,11 @@ else
   # The pre-marker answer text, kept for the closing resolved note so the
   # durable ledger records the plain answer without marker or corr bytes.
   RESOLVE_ANSWER_TEXT=$MESSAGE
-  if [ "$MARK_FROM_XO" = 1 ] && [ -n "$FIRE_AND_FORGET_ID" ]; then
+  if [ "$MARK_FROM_PRIMARY" = 1 ] && [ -n "$FIRE_AND_FORGET_ID" ]; then
     xo_message_mark_from_xo "$MESSAGE" MESSAGE
-    MESSAGE="${XO_FROMFIRST_MARK}delivery=${FIRE_AND_FORGET_ID} ${MESSAGE#"$XO_FROMFIRST_MARK"}"
+    MESSAGE="${XO_FROMPRIMARY_MARK}delivery=${FIRE_AND_FORGET_ID} ${MESSAGE#"$XO_FROMPRIMARY_MARK"}"
     XO_SEND_IDEMPOTENT=1
-  elif [ "$MARK_FROM_XO" = 1 ]; then
+  elif [ "$MARK_FROM_PRIMARY" = 1 ]; then
     # Reuse an existing correlation id for recovery resends; otherwise create a
     # durable parent expectation before delivery. Transport success never
     # resolves that expectation (see xo-pending-reply-lib.sh).

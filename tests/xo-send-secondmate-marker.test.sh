@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# xo-send from-xo marker for secondmate targets.
+# xo-send from-primary marker for secondmate targets.
 #
 # A secondmate is itself an xo, so a request relayed to it lands in its own
 # chat - which the main xo never reads (the only channel back is the terse
-# status file). xo-send therefore prepends a from-xo marker
+# status file). xo-send therefore prepends a from-primary marker
 # (bin/xo-marker-lib.sh) when, and only when, the resolved target is a task
 # selector whose meta records kind=secondmate, so the secondmate can recognize
 # the request and route its reply via the status path. The marker now travels
@@ -110,7 +110,7 @@ test_secondmate_target_is_marked() {
   expect_code 0 "$rc" "send to a secondmate target should succeed"
   got=$(record_body "$home/state/domain.inbox/001.msg")
   case "$got" in
-    "$XO_FROMFIRST_MARK"corr=[a-f0-9][a-f0-9]*) : ;;
+    "$XO_FROMPRIMARY_MARK"corr=[a-f0-9][a-f0-9]*) : ;;
     *) fail "secondmate send: the recorded steer should be marker+corr+text"$'\n'"--- bytes ---"$'\n'"$(printf '%s' "$got" | od -An -c)" ;;
   esac
   case "$got" in
@@ -118,14 +118,14 @@ test_secondmate_target_is_marked() {
     *) fail "secondmate send lost the request body"$'\n'"$got" ;;
   esac
   case "$(cat "$log")" in
-    *"$XO_FROMFIRST_MARK"*) fail "the marker must ride the record, never the typed doorbell" ;;
+    *"$XO_FROMPRIMARY_MARK"*) fail "the marker must ride the record, never the typed doorbell" ;;
   esac
   # shellcheck source=/dev/null
   . "$ROOT/bin/xo-pending-reply-lib.sh"
   corr=$(xo_pending_reply_extract_corr "$got")
   [ -f "$(xo_pending_reply_path "$home/state" "$corr")" ] \
     || fail "marked secondmate send should create a parent pending-reply record"
-  pass "xo-send: a kind=secondmate target gets the from-xo marker and corr prepended"
+  pass "xo-send: a kind=secondmate target gets the from-primary marker and corr prepended"
 }
 
 test_exact_secondmate_task_id_is_marked() {
@@ -138,19 +138,19 @@ test_exact_secondmate_task_id_is_marked() {
   expect_code 0 "$rc" "send to an exact secondmate task id should succeed"
   got=$(record_body "$home/state/domain.inbox/001.msg")
   case "$got" in
-    "$XO_FROMFIRST_MARK"corr=[a-f0-9]*) : ;;
+    "$XO_FROMPRIMARY_MARK"corr=[a-f0-9]*) : ;;
     *) fail "exact secondmate send: the recorded steer should be marker+corr+text"$'\n'"--- bytes ---"$'\n'"$(printf '%s' "$got" | od -An -c)" ;;
   esac
   # shellcheck source=/dev/null
   . "$ROOT/bin/xo-pending-reply-lib.sh"
   corr=$(xo_pending_reply_extract_corr "$got")
   # Resend with the same corr already present: embed is idempotent for that corr.
-  already_marked="${XO_FROMFIRST_MARK}corr=${corr} already routed"
+  already_marked="${XO_FROMPRIMARY_MARK}corr=${corr} already routed"
   run_send "$fb" "$home" "$log" "domain" "$already_marked"; rc=$?
   expect_code 0 "$rc" "send of already-marked exact-id content should succeed"
   got=$(record_body "$home/state/domain.inbox/002.msg")
   case "$got" in
-    "${XO_FROMFIRST_MARK}corr=${corr} already routed") : ;;
+    "${XO_FROMPRIMARY_MARK}corr=${corr} already routed") : ;;
     *) fail "exact secondmate send altered already-correlated content"$'\n'"--- bytes ---"$'\n'"$(printf '%s' "$got" | od -An -tx1)" ;;
   esac
   pass "xo-send: an exact kind=secondmate task id is marked with corr exactly once"
@@ -218,20 +218,20 @@ test_key_path_is_not_marked() {
 test_marker_is_label_plus_invisible_separator() {
   local separator hex
   separator=$(printf '\342\201\243')
-  [ "$XO_FROMFIRST_MARK" = "[xo-from-xo]$separator" ] \
-    || fail "marker is not the expected label + U+2063 sequence"$'\n'"--- bytes ---"$'\n'"$(printf '%s' "$XO_FROMFIRST_MARK" | od -An -tx1)"
-  hex=$(printf '%s' "$XO_FROMFIRST_MARK" | od -An -tx1 | tr -d ' \n')
+  [ "$XO_FROMPRIMARY_MARK" = "[xo-from-primary]$separator" ] \
+    || fail "marker is not the expected label + U+2063 sequence"$'\n'"--- bytes ---"$'\n'"$(printf '%s' "$XO_FROMPRIMARY_MARK" | od -An -tx1)"
+  hex=$(printf '%s' "$XO_FROMPRIMARY_MARK" | od -An -tx1 | tr -d ' \n')
   case "$hex" in
     *e281a3) : ;;
     *) fail "marker does not end in UTF-8 U+2063 bytes e2 81 a3; bytes were: $hex" ;;
   esac
-  xo_message_from_xo "${XO_FROMFIRST_MARK}do the work" \
+  xo_message_from_xo "${XO_FROMPRIMARY_MARK}do the work" \
     || fail "detector should recognize a marked message"
   xo_message_from_xo "do the work" \
     && fail "direct captain input must remain unmarked"
-  xo_message_from_xo "[xo-from-xo]do the work" \
+  xo_message_from_xo "[xo-from-primary]do the work" \
     && fail "detector must reject the label without U+2063"
-  pass "xo-send: the marker is '[xo-from-xo]' + terminal-safe U+2063, while direct captain text stays unmarked"
+  pass "xo-send: the marker is '[xo-from-primary]' + terminal-safe U+2063, while direct captain text stays unmarked"
 }
 
 test_marker_transformation_is_idempotent() {
@@ -240,9 +240,9 @@ test_marker_transformation_is_idempotent() {
   xo_message_mark_from_xo "$once" twice
   [ "$once" = "$twice" ] \
     || fail "already-marked content was double-prefixed"$'\n'"--- once ---"$'\n'"$(printf '%s' "$once" | od -An -tx1)"$'\n'"--- twice ---"$'\n'"$(printf '%s' "$twice" | od -An -tx1)"
-  [ "$once" = "${XO_FROMFIRST_MARK}do the work" ] \
+  [ "$once" = "${XO_FROMPRIMARY_MARK}do the work" ] \
     || fail "marker transformation did not prefix bare content exactly once"
-  pass "xo-marker: from-xo transformation is idempotent"
+  pass "xo-marker: from-primary transformation is idempotent"
 }
 
 test_marked_send_preserves_trailing_newlines() {

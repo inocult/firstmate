@@ -37,7 +37,7 @@
 #   delivery=fire-and-forget   present only when the re-ring ladder must ignore it
 #   --
 #   <exact message text; newlines are legal; a marked secondmate request keeps
-#    its from-xo marker and corr token verbatim in this body>
+#    its from-primary marker and corr token verbatim in this body>
 #
 # Sequence numbers are never reused within a task: allocation scans both the
 # inbox root and handled/, so a message is processed at most once per worker

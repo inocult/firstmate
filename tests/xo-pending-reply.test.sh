@@ -866,7 +866,7 @@ test_xo_send_marked_secondmate_creates_pending_and_embeds_corr() {
   expect_code 0 "$rc" "secondmate send should succeed"
   got=$(latest_record_body "$home" hibit)
   case "$got" in
-    "$XO_FROMFIRST_MARK"corr=*) : ;;
+    "$XO_FROMPRIMARY_MARK"corr=*) : ;;
     *) fail "secondmate steer record must embed marker+corr"$'\n'"$(printf '%s' "$got" | od -An -c)" ;;
   esac
   corr=$(xo_pending_reply_extract_corr "$got")
@@ -1115,7 +1115,7 @@ test_correlations_reuse_only_for_matching_open_task() {
     || fail "cross-task expectation must belong to the new target"
   printf 'done [corr=%s]: complete\n' "$corr1" > "$state/domain.status"
   xo_pending_reply_try_resolve "$state" "$corr1" || fail "first expectation should resolve"
-  run_send "$fb" "$home" "$log" domain "${XO_FROMFIRST_MARK}corr=${corr1} follow-up" \
+  run_send "$fb" "$home" "$log" domain "${XO_FROMPRIMARY_MARK}corr=${corr1} follow-up" \
     || fail "resolved-correlation follow-up failed"
   corr3=$(xo_pending_reply_extract_corr "$(latest_record_body "$home" domain)")
   [ -n "$corr3" ] && [ "$corr3" != "$corr1" ] \

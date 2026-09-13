@@ -10,7 +10,7 @@
 #
 # The landed U+2063 + "XO_OP: " prefix is permanent compatibility.
 # The version and kind header make current inputs structurally typed without
-# deriving provenance from body prose. The established from-xo routing
+# deriving provenance from body prose. The established from-primary routing
 # marker remains a current compatibility carrier because already-running
 # secondmates have its leading label in their charter context.
 #
@@ -34,11 +34,11 @@ XO_OPERATIONAL_KINDS='session-start watcher turn-end-guard away-supervisor launc
 # shellcheck disable=SC2034 # Public source-library variable used by callers.
 XO_INJECT_MARK=$XO_OPERATIONAL_MARK
 
-# The from-xo carrier stays byte-compatible with live secondmate charter
+# The from-primary carrier stays byte-compatible with live secondmate charter
 # context while this owner supplies its construction and structural kind.
-XO_FROMFIRST_LABEL='[xo-from-xo]'
-XO_FROMFIRST_SEPARATOR=$XO_OPERATIONAL_MARK
-XO_FROMFIRST_MARK="${XO_FROMFIRST_LABEL}${XO_FROMFIRST_SEPARATOR}"
+XO_FROMPRIMARY_LABEL='[xo-from-primary]'
+XO_FROMPRIMARY_SEPARATOR=$XO_OPERATIONAL_MARK
+XO_FROMPRIMARY_MARK="${XO_FROMPRIMARY_LABEL}${XO_FROMPRIMARY_SEPARATOR}"
 
 xo_operational_kind_is_current() {  # <kind>
   case " $XO_OPERATIONAL_KINDS " in
@@ -58,7 +58,7 @@ xo_operational_input_encode() {  # <generic-kind> <body> <result-var>
 xo_operational_input_construct() {  # <kind> <body> <result-var>
   local kind=${1-} body=${2-} result_var=${3-}
   [ -n "$result_var" ] && [ -n "$body" ] || return 2
-  if [ "$kind" = from-xo ]; then
+  if [ "$kind" = from-primary ]; then
     xo_message_mark_from_xo "$body" "$result_var"
     return
   fi
@@ -88,8 +88,8 @@ xo_operational_input_kind() {  # <message> <result-var>
     return 0
   fi
   case "$message" in
-    "$XO_FROMFIRST_MARK"?*)
-      printf -v "$result_var" '%s' from-xo
+    "$XO_FROMPRIMARY_MARK"?*)
+      printf -v "$result_var" '%s' from-primary
       return 0
       ;;
   esac
@@ -105,8 +105,8 @@ xo_operational_input_body() {  # <current-message> <result-var>
     return 0
   fi
   case "$message" in
-    "$XO_FROMFIRST_MARK"?*)
-      parsed_body=${message#"$XO_FROMFIRST_MARK"}
+    "$XO_FROMPRIMARY_MARK"?*)
+      parsed_body=${message#"$XO_FROMPRIMARY_MARK"}
       printf -v "$result_var" '%s' "$parsed_body"
       return 0
       ;;
@@ -172,7 +172,7 @@ xo_operational_input_classify() {  # <message> <result-var>
 
 xo_message_from_xo() {  # <message>
   local kind
-  xo_operational_input_kind "${1-}" kind && [ "$kind" = from-xo ]
+  xo_operational_input_kind "${1-}" kind && [ "$kind" = from-primary ]
 }
 
 xo_message_mark_from_xo() {  # <message> <result-var>
@@ -181,7 +181,7 @@ xo_message_mark_from_xo() {  # <message> <result-var>
   if xo_message_from_xo "$message"; then
     transformed=$message
   else
-    transformed="${XO_FROMFIRST_MARK}${message}"
+    transformed="${XO_FROMPRIMARY_MARK}${message}"
   fi
   printf -v "$result_var" '%s' "$transformed"
 }
@@ -203,10 +203,10 @@ Usage:
   bin/xo-operational-input.sh body           # current input on stdin
 
 Current construction kinds:
-  session-start watcher turn-end-guard away-supervisor from-xo launch-brief
+  session-start watcher turn-end-guard away-supervisor from-primary launch-brief
   branch-outcome
 
-The from-xo kind uses its established live-charter-compatible carrier.
+The from-primary kind uses its established live-charter-compatible carrier.
 EOF
 }
 

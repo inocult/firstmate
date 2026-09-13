@@ -22,7 +22,7 @@
 #   --secondmate writes a persistent secondmate charter. The project list
 #   is cloned into the secondmate home, while the natural-language scope
 #   tells the main xo when to route work there; routine churn stays in its own home;
-#   captain-relevant escalations and marked from-xo replies append to this
+#   captain-relevant escalations and marked from-primary replies append to this
 #   home's status file.
 #   --no-projects writes a project-less charter for a domain whose subject is the
 #   xo repo itself (its home is an xo worktree, its crews take pooled
@@ -269,7 +269,7 @@ What only you can append is judgement: the answer to a marked request below, a r
 # Requests from the main xo
 You are an xo in your own home, so an incoming message reaches you in your own chat.
 You must distinguish who it is from, because the answer goes to a different place.
-A request relayed to you by the main xo is tagged with a leading \`$XO_FROMFIRST_LABEL\` marker followed by an invisible system separator; this marker is untypable, so a human never produces it.
+A request relayed to you by the main xo is tagged with a leading \`$XO_FROMPRIMARY_LABEL\` marker followed by an invisible system separator; this marker is untypable, so a human never produces it.
 When a message carries that marker, do the work, then respond via the STATUS/ESCALATION path below, never only in this chat: the main xo does not read your chat, so a chat-only reply is lost.
 Marked requests also carry a privacy-safe \`corr=<id>\` token after the marker; include that exact token in your parent status reply (or in the status pointer to a detailed doc) so the parent can correlate the answer.
 Optional helper: \`bin/xo-secondmate-report.sh <verb> <corr_id> <note>\` appends that correlated line to the parent channel itself - do not pass a status path, and do not write a hand path under this home.
@@ -290,7 +290,7 @@ States: working, needs-decision, blocked, $PAUSED_VERB, done, failed.
 Use \`$PAUSED_VERB: {why}\` (distinct from \`blocked:\`) only when your domain is deliberately idling on a known external wait you expect to clear on its own, naming when it clears with \`until <YYYY-MM-DDTHH:MMZ>\` (UTC) when you know; use \`blocked:\` when you are stuck and need xo to act.
 Use this only for material phase changes, a captain decision, a real blocker, a failure, work ready for review, or work you landed.
 Work you landed includes a merge you performed yourself under standing merge authority and one the captain merged on the forge: under that authority nothing is ever \"ready for review\", so a landed merge that goes unreported reaches the captain as silence.
-This is also how you return the answer to a marked from-xo request above.
+This is also how you return the answer to a marked from-primary request above.
 A marked request requires one correlated answer after the work; it does not require a separate receipt or start acknowledgement.
 Never append \`working:\` merely to acknowledge receipt or announce that a marked request has started.
 When a routed-work phase has a supervisor-actionable material change worth reporting under the rule above, give that reported phase a stable key.

@@ -160,10 +160,10 @@ PATH="$FAKEBIN:$ORIGINAL_PATH" XO_GATE_REFUSE_BYPASS=1 XO_HOME="$SENDER_HOME" \
   "$ROOT/bin/xo-send.sh" "$ID" "$REQUEST" >/dev/null
 wait_for_prompt "$REQUEST" || fail "real Pi did not receive the exact-id xo-send request"
 GOT=$(jq -r --arg needle "$REQUEST" 'select(.prompt | contains($needle)) | .prompt' "$CAPTURE" | tail -1)
-[ "$GOT" = "${XO_FROMFIRST_MARK}${REQUEST}" ] \
+[ "$GOT" = "${XO_FROMPRIMARY_MARK}${REQUEST}" ] \
   || fail "real Pi exact-id prompt did not contain exactly one terminal-safe marker"$'\n'"--- bytes ---"$'\n'"$(printf '%s' "$GOT" | od -An -tx1)"
 printf 'evidence: exact-id received-hex=%s\n' "$(printf '%s' "$GOT" | od -An -tx1 | tr -d ' \n')"
-pass "real Pi/Herdr: exact-id XO_HOME send delivers exactly one from-xo marker"
+pass "real Pi/Herdr: exact-id XO_HOME send delivers exactly one from-primary marker"
 wait_for_idle || fail "real Pi did not become idle after the exact-id capture"
 
 # Direct terminal input bypasses xo-send's metadata-routed transformation and
@@ -174,7 +174,7 @@ wait_for_prompt "$DIRECT" || fail "real Pi did not receive direct terminal input
 GOT=$(jq -r --arg needle "$DIRECT" 'select(.prompt | contains($needle)) | .prompt' "$CAPTURE" | tail -1)
 [ "$GOT" = "$DIRECT" ] || fail "direct captain input was changed or marked"$'\n'"--- bytes ---"$'\n'"$(printf '%s' "$GOT" | od -An -tx1)"
 if xo_message_from_xo "$GOT"; then
-  fail "direct captain input was classified as from-xo"
+  fail "direct captain input was classified as from-primary"
 fi
 printf 'evidence: direct-input received-hex=%s\n' "$(printf '%s' "$GOT" | od -An -tx1 | tr -d ' \n')"
 pass "real Pi/Herdr: direct captain terminal input stays unmarked"

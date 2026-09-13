@@ -237,8 +237,8 @@ test_secondmate_marker_and_enqueue_delivery() {
     || fail "a secondmate steer should succeed"
   body=$(record_body _ "$dir/home/state/domain.inbox/001.msg")
   case "$body" in
-    "$XO_FROMFIRST_MARK"corr=*) : ;;
-    *) fail "the recorded body lost the from-xo marker/corr framing:"$'\n'"$body" ;;
+    "$XO_FROMPRIMARY_MARK"corr=*) : ;;
+    *) fail "the recorded body lost the from-primary marker/corr framing:"$'\n'"$body" ;;
   esac
   corr=$(printf '%s' "$body" | grep -oE 'corr=[a-f0-9]{16}' | head -1 | cut -d= -f2)
   [ -n "$corr" ] || fail "no corr token in the recorded body"
@@ -284,7 +284,7 @@ SH
     || fail "the delivered steer was duplicated:"$'\n'"$(ls "$dir/home/state/domain.inbox")"
   body=$(record_body _ "$rec")
   case "$body" in
-    "$XO_FROMFIRST_MARK"corr=*) : ;;
+    "$XO_FROMPRIMARY_MARK"corr=*) : ;;
     *) fail "bookkeeping failure test lost the secondmate marker: $body" ;;
   esac
   assert_contains "$(cat "$err")" "reply-tracking-degraded" \

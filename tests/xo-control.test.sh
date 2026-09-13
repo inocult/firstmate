@@ -15,7 +15,7 @@
 #   5. Lifecycle states: busy interrupts first, idle does not, already-stopped
 #      is idempotent success, and an agent that does not stop fails closed.
 #   6. Marker non-regression: a control command to a kind=secondmate task
-#      carries NO from-xo marker and opens no pending-reply expectation,
+#      carries NO from-primary marker and opens no pending-reply expectation,
 #      while xo-send's marking of the same task is untouched.
 set -u
 
@@ -849,7 +849,7 @@ test_secondmate_control_command_carries_no_marker() {
   [ "$typed" = "/exit" ] \
     || fail "a secondmate control command must be the bare exit command, got: $typed"
   case "$typed" in
-    *"$XO_FROMFIRST_MARK"*) fail "a control command must never carry the from-xo marker" ;;
+    *"$XO_FROMPRIMARY_MARK"*) fail "a control command must never carry the from-primary marker" ;;
   esac
   case "$typed" in
     *corr=*) fail "a control command must never carry a pending-reply correlation id" ;;
@@ -873,10 +873,10 @@ test_xo_send_still_marks_the_same_secondmate_task() {
   # typed, so the marker is asserted on the recorded body.
   case "$(bash -c '. "$1"; xo_task_inbox_body "$2"' _ "$ROOT/bin/xo-task-inbox-lib.sh" \
     "$dir/home/state/domain.inbox/001.msg")" in
-    "$XO_FROMFIRST_MARK"*) : ;;
+    "$XO_FROMPRIMARY_MARK"*) : ;;
     *) fail "xo-send must still mark a kind=secondmate target: $(literals "$dir")" ;;
   esac
-  pass "xo-control's arrival leaves xo-send's from-xo marking untouched"
+  pass "xo-control's arrival leaves xo-send's from-primary marking untouched"
 }
 
 test_exit_types_each_harness_verified_command

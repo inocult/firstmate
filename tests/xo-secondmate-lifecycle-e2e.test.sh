@@ -145,12 +145,12 @@ other-session:xo-design" \
     "$ROOT/bin/xo-send.sh" xo-design 'route this work' >/dev/null 2>&1 \
     || fail "xo-send failed for a bare xo window with home metadata"
   # design is a kind=secondmate target, so the durable inbox record carries the
-  # from-xo marker and original payload. The terminal receives only the
+  # from-primary marker and original payload. The terminal receives only the
   # constant doorbell, routed through this home's authoritative meta window.
   local record="$HOME_DIR/state/design.inbox/001.msg" body
   assert_present "$record" "send did not enqueue the secondmate request"
   body=$(bash -c '. "$1"; xo_task_inbox_body "$2"' _ "$ROOT/bin/xo-task-inbox-lib.sh" "$record")
-  assert_contains "$body" '[xo-from-xo]' "the inbox request was not marked as from-xo"
+  assert_contains "$body" '[xo-from-primary]' "the inbox request was not marked as from-primary"
   assert_contains "$body" 'route this work' "the original request text did not survive the marker"
   assert_grep 'send-keys -t xo:xo-design -l : XO instruction waiting:' "$LOG" "send did not ring the window recorded in this home's meta"
   assert_no_grep 'route this work' "$LOG" "send typed the payload instead of only the doorbell"

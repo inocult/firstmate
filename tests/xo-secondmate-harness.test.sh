@@ -1619,7 +1619,7 @@ test_config_push_propagates_reports_without_ff_or_nudge() {
   assert_contains "$(cat "$instruction")" $'-----BEGIN config/backend-----\ntmux\n-----END config/backend-----' \
     "config-push reread must include exact backend bytes"
   [ ! -s "$err" ] || fail "clean config push wrote unexpected stderr: $(cat "$err")"
-  assert_contains "$(inbox_stream "$w/home/state" sm)" "[xo-from-xo]" \
+  assert_contains "$(inbox_stream "$w/home/state" sm)" "[xo-from-primary]" \
     "config reread must use the marked routed secondmate path"
 
   : > "$log"
@@ -1851,11 +1851,11 @@ test_config_reread_per_home_changed_sets_and_exact_bytes() {
   assert_not_contains "$(cat "$instr_b")" $'pi\n' \
     "beta instruction must not leak alpha-only stale harness bytes as a standalone scalar block incorrectly"
 
-  # Routed send used the from-xo marker and carried only the pointer,
+  # Routed send used the from-primary marker and carried only the pointer,
   # read from alpha's durable steer records (the typed channel now carries only
   # the constant doorbell, which never inlines message content).
   pointer="CONFIG_REREAD: $(reread_instruction_path "$w/alpha")"
-  assert_contains "$(inbox_stream "$w/home/state" alpha)" "[xo-from-xo]" "reread send must be marked"
+  assert_contains "$(inbox_stream "$w/home/state" alpha)" "[xo-from-primary]" "reread send must be marked"
   assert_contains "$(inbox_stream "$w/home/state" alpha)" "$pointer" "reread send must point to the durable instruction file"
   assert_not_contains "$(inbox_stream "$w/home/state" alpha)" '"harness": "grok"' "sent message must not inline multiline JSON"
   assert_not_contains "$(inbox_stream "$w/home/state" alpha)" "Default worker" "sent message must not summarize"
@@ -2451,7 +2451,7 @@ test_config_reread_bootstrap_path_and_spawn_flexibility() {
   [ "$(cat "$w/sm/config/crew-harness")" = codex ] || fail "bootstrap did not push harness"
   instr=$(reread_instruction_path "$w/sm") || fail "bootstrap reread instruction missing"
   assert_present "$instr" "bootstrap must write a config reread instruction when config changed"
-  assert_contains "$(inbox_stream "$w/home/state" sm)" "[xo-from-xo]" \
+  assert_contains "$(inbox_stream "$w/home/state" sm)" "[xo-from-primary]" \
     "bootstrap config reread must use routed secondmate send"
   assert_contains "$(cat "$instr")" \
     $'-----BEGIN config/crew-harness-----\ncodex\n-----END config/crew-harness-----' \

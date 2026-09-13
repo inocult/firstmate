@@ -52,7 +52,7 @@ export const XO_SYNTHETIC_KINDS = [
   "watcher",
   "turn-end-guard",
   "away-supervisor",
-  "from-xo",
+  "from-primary",
   "launch-brief",
   "legacy-operational",
 ] as const;

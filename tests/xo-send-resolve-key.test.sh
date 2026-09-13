@@ -370,8 +370,8 @@ test_local_secondmate_answer_marked_and_closed() {
   got=$(bash -c '. "$1"; xo_task_inbox_body "$2"' _ "$ROOT/bin/xo-task-inbox-lib.sh" \
     "$home/state/domain.inbox/001.msg")
   case "$got" in
-    "$XO_FROMFIRST_MARK"corr=*) : ;;
-    *) fail "the secondmate answer's record lost its from-xo marker/corr framing: $got" ;;
+    "$XO_FROMPRIMARY_MARK"corr=*) : ;;
+    *) fail "the secondmate answer's record lost its from-primary marker/corr framing: $got" ;;
   esac
   closing=$(grep -F 'resolved [key=fleet-split]' "$home/state/domain.status" || true)
   [ -n "$closing" ] || fail "the secondmate decision was not closed: $(cat "$home/state/domain.status")"
@@ -379,7 +379,7 @@ test_local_secondmate_answer_marked_and_closed() {
     *corr=*) fail "the closing line leaked the corr token: $closing" ;;
   esac
   case "$closing" in
-    *"$XO_FROMFIRST_SEPARATOR"*) fail "the closing line leaked marker bytes" ;;
+    *"$XO_FROMPRIMARY_SEPARATOR"*) fail "the closing line leaked marker bytes" ;;
   esac
   assert_contains "$closing" "shard by team" "the closing line should carry the plain answer"
   out=$(drain_out "$home")

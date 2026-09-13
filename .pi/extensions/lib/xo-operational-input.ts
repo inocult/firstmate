@@ -11,7 +11,7 @@ export const XO_CURRENT_OPERATIONAL_KINDS = [
   "watcher",
   "turn-end-guard",
   "away-supervisor",
-  "from-xo",
+  "from-primary",
   "launch-brief",
   "branch-outcome",
 ] as const;

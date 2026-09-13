@@ -7,7 +7,7 @@
 # always routing-marked for a kind=secondmate target so the reply comes back
 # through the status path. That marking is exactly right for a message and
 # exactly wrong for a lifecycle command: a marked "/quit" arrives as ordinary
-# chat ("[xo-from-xo] /quit") that the agent reasons ABOUT instead of
+# chat ("[xo-from-primary] /quit") that the agent reasons ABOUT instead of
 # executing. bin/xo-control.sh is the CONTROL plane: allowlisted lifecycle
 # verbs addressed to an exact task id, with the per-harness mechanics owned
 # here rather than improvised per harness in agent prose.

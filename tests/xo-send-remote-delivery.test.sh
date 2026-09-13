@@ -241,8 +241,8 @@ test_remote_steer_lands_in_remote_inbox() {
   printf '%s' "$body" | grep -Eq 'corr=[a-f0-9]{16}' \
     || fail "the remote record must carry the marked request's corr token: $body"
   case "$body" in
-    *"$XO_FROMFIRST_MARK"*) : ;;
-    *) fail "the remote record must carry the from-xo marker: $body" ;;
+    *"$XO_FROMPRIMARY_MARK"*) : ;;
+    *) fail "the remote record must carry the from-primary marker: $body" ;;
   esac
   # The doorbell could not reach the fixture pane (no herdr CLI here); that
   # never fails the send, and the notice still names the durable record.

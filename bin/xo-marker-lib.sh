@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# xo-marker-lib.sh - compatibility entry point for from-xo routing.
+# xo-marker-lib.sh - compatibility entry point for from-primary routing.
 #
 # bin/xo-operational-input.sh owns current operational-input construction,
-# parsing, marker bytes, and the established from-xo compatibility
+# parsing, marker bytes, and the established from-primary compatibility
 # carrier. Existing callers source this path so they do not need a flag-day
 # migration. No side effects on source. set -u / set -e safe.
 

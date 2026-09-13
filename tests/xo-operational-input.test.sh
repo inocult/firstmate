@@ -52,15 +52,15 @@ test_current_from_xo_carrier() {
   local encoded parsed separator
   separator=$(printf '\342\201\243')
   xo_message_mark_from_xo "corr=0123456789abcdef inspect the report" encoded
-  [ "${encoded#"[xo-from-xo]$separator"}" != "$encoded" ] \
-    || fail "from-xo lost its live-charter-compatible leading carrier"
+  [ "${encoded#"[xo-from-primary]$separator"}" != "$encoded" ] \
+    || fail "from-primary lost its live-charter-compatible leading carrier"
   xo_operational_input_kind "$encoded" parsed \
-    || fail "from-xo current carrier did not parse"
-  [ "$parsed" = from-xo ] \
-    || fail "from-xo current carrier became $parsed"
-  [ "$(classify_cli "$encoded")" = from-xo ] \
-    || fail "cross-language classifier lost from-xo"
-  pass "operational input: the established from-xo carrier remains structurally typed and byte-compatible"
+    || fail "from-primary current carrier did not parse"
+  [ "$parsed" = from-primary ] \
+    || fail "from-primary current carrier became $parsed"
+  [ "$(classify_cli "$encoded")" = from-primary ] \
+    || fail "cross-language classifier lost from-primary"
+  pass "operational input: the established from-primary carrier remains structurally typed and byte-compatible"
 }
 
 test_landed_untyped_prefix_is_explicitly_legacy() {
@@ -119,7 +119,7 @@ ${XO_LEGACY_SESSIONSTART} Please explain this sentence.
 XO WATCHER WAKE: can you explain this phrase?
 TURN WOULD END BLIND - can you make this warning friendlier?
 Supervisor escalate (1 event(s)): is this wording clear?
-[xo-from-xo] inspect this visible label
+[xo-from-primary] inspect this visible label
 EOF
   pass "operational input: quoted, ASCII-only, arbitrary-U+2063, altered-legacy, and label-only near misses stay genuine"
 }
