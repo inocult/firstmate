@@ -77,57 +77,35 @@ test_landed_untyped_prefix_is_explicitly_legacy() {
   pass "operational input: untyped landed XO_OP transcripts are explicit legacy-operational input"
 }
 
+# The pre-protocol transcripts this matrix covers are a persisted byte contract:
+# their payloads carry no typed header, and the ones that named the project were
+# written before the firstmate-to-xo rename. Every fixture is written out
+# literally rather than interpolated from the constants under test, so a change
+# to those bytes fails here instead of silently passing.
 test_isolated_legacy_matrix() {
-  local watcher turnend away parsed
-  watcher="${XO_LEGACY_WATCHER_PREFIX}signal: legacy${XO_LEGACY_WATCHER_SUFFIX}"
-  turnend="${XO_LEGACY_TURNEND_PREFIX}watcher: FAILED - legacy"
-  away="${XO_LEGACY_AWAY_PREFIX}1 event(s)): done: legacy"
-
-  for fixture in \
-    "session-start|$XO_LEGACY_SESSIONSTART" \
-    "watcher|$watcher" \
-    "turn-end-guard|$turnend" \
-    "away-supervisor|$away"
-  do
-    expected=${fixture%%|*}
-    message=${fixture#*|}
-    ! xo_operational_input_kind "$message" parsed \
-      || fail "legacy $expected fixture leaked into the current parser"
-    xo_legacy_operational_input_kind "$message" parsed \
-      || fail "legacy $expected fixture was not recognized"
-    [ "$parsed" = "$expected" ] \
-      || fail "legacy $expected fixture became $parsed"
-  done
-  pass "operational input: historical prose compatibility is isolated from current parsing"
-}
-
-# Transcripts persisted before the firstmate-to-xo rename are a byte contract
-# this owner still has to read: their untyped payloads spell the old project
-# name, and misreading one as captain dialog mirrors supervision traffic to the
-# branch. The bytes are written out literally, never interpolated from the
-# constants under test.
-test_prerename_transcripts_still_classify() {
   local marker expected message parsed
   marker=$XO_OPERATIONAL_MARK
   # shellcheck disable=SC2016 # Backticks are literal persisted prompt markup.
   set -- \
     session-start 'Run `bin/fm-session-start.sh` now, exactly once, before executing any other instructions.' \
-    watcher $'FIRSTMATE WATCHER WAKE: signal: done\n\nRun bin/fm-wake-drain.sh first and handle the queued wake. Watcher continuity is extension-owned.' \
+    watcher $'FIRSTMATE WATCHER WAKE: signal: legacy\n\nRun bin/fm-wake-drain.sh first and handle the queued wake. Watcher continuity is extension-owned.' \
+    turn-end-guard $'TURN WOULD END BLIND - supervision is off. The watcher cycle is missing, failed, or unhealthy. Follow the harness recovery instruction below before ending the turn.\n\nwatcher: FAILED - legacy' \
+    away-supervisor "${marker}Supervisor escalate (1 event(s)): done: legacy" \
     legacy-operational "${marker}FIRSTMATE_OP: body whose historical subtype is unknowable"
   while [ "$#" -gt 0 ]; do
     expected=$1
     message=$2
     shift 2
     ! xo_operational_input_kind "$message" parsed \
-      || fail "pre-rename $expected transcript leaked into the current parser"
-    xo_operational_input_classify "$message" parsed \
-      || fail "pre-rename $expected transcript was not recognized"
+      || fail "legacy $expected fixture leaked into the current parser"
+    xo_legacy_operational_input_kind "$message" parsed \
+      || fail "legacy $expected fixture was not recognized"
     [ "$parsed" = "$expected" ] \
-      || fail "pre-rename $expected transcript became $parsed"
+      || fail "legacy $expected fixture became $parsed"
     [ "$(classify_cli "$message")" = "$expected" ] \
-      || fail "cross-language CLI lost the pre-rename $expected transcript"
+      || fail "cross-language CLI lost the legacy $expected fixture"
   done
-  pass "operational input: transcripts persisted before the xo rename still classify"
+  pass "operational input: historical prose compatibility is isolated from current parsing"
 }
 
 test_genuine_near_misses_remain_unclassified() {
@@ -145,7 +123,7 @@ XO_OP: v1 watcher
 $marker arbitrary captain text
 Captain quote: $XO_LEGACY_SESSIONSTART
 ${XO_LEGACY_SESSIONSTART} Please explain this sentence.
-XO WATCHER WAKE: can you explain this phrase?
+FIRSTMATE WATCHER WAKE: can you explain this phrase?
 TURN WOULD END BLIND - can you make this warning friendlier?
 Supervisor escalate (1 event(s)): is this wording clear?
 [xo-from-primary] inspect this visible label
@@ -184,7 +162,6 @@ test_current_generic_matrix
 test_current_from_xo_carrier
 test_landed_untyped_prefix_is_explicitly_legacy
 test_isolated_legacy_matrix
-test_prerename_transcripts_still_classify
 test_genuine_near_misses_remain_unclassified
 test_cross_language_adapter_uses_the_owner
 test_invalid_current_encodings_are_rejected

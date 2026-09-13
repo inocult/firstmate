@@ -28,11 +28,11 @@ PI_VERSION=$(pi --version)
 # shellcheck source=/dev/null
 . "$ROOT/bin/xo-operational-input.sh"
 # shellcheck disable=SC2016 # Backticks are literal prompt markup.
-LEGACY_START='Run `bin/xo-session-start.sh` now, exactly once, before executing any other instructions.'
+LEGACY_START='Run `bin/fm-session-start.sh` now, exactly once, before executing any other instructions.'
 LEGACY_AWAY=$'\xE2\x81\xA3Supervisor escalate (1 event(s)): done: legacy rollout'
 MARKER_NEAR_MISS=$'\xE2\x81\xA3Captain note: this invisible separator is intentional.'
 # shellcheck disable=SC2016 # Backticks are literal prompt markup.
-START_NEAR_MISS='Captain quote: Run `bin/xo-session-start.sh` now, exactly once, before executing any other instructions.'
+START_NEAR_MISS='Captain quote: Run `bin/fm-session-start.sh` now, exactly once, before executing any other instructions.'
 xo_operational_input_encode watcher "CURRENT_AHOY_WATCHER_BODY" CURRENT_WATCHER \
   || fail "could not construct current Ahoy watcher fixture"
 QUOTED_CURRENT="Captain quote: $CURRENT_WATCHER"
