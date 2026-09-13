@@ -1,0 +1,88 @@
+XO rename - live crew lifecycle, isolated tmux socket (-L xo-live-lab) + temp XO homes under /tmp
+=================================================================================================
+LAB=/tmp/xo-live-PnkvpF   (a fresh `git clone` of the change, checked out as the home directory `xo`)
+
+$ bin/xo-home-seed.sh ops $LAB/xo-ops-seeded --no-projects
+scaffolded: /tmp/xo-live-PnkvpF/xo/data/ops/brief.md (secondmate charter)
+home=/tmp/xo-live-PnkvpF/xo-ops-seeded
+
+$ ls -a $LAB/xo-ops-seeded | grep -E '^\.(xo|fm)'
+.xo-secondmate-home
+.xo-secondmate-parent
+
+$ cat $LAB/xo-ops-seeded/.xo-secondmate-parent
+schema=xo-secondmate-parent.v1
+route=local
+parent_home=/tmp/xo-live-PnkvpF/xo
+
+$ cat $LAB/xo/data/secondmates.md
+- ops - Ops secondmate: owns operational runbooks for the xo repo itself. (home: /tmp/xo-live-PnkvpF/xo-ops-seeded; scope: ...; projects: ; added 2026-09-13)
+
+$ bin/xo-home-seed.sh validate
+(silent)   exit 0
+
+--- adversarial: the gate-agent fleet guard -------------------------------------------------
+$ bin/xo-spawn.sh ops $LAB/xo-ops-seeded --secondmate --harness '<stub>'
+error: no-mistakes gate agent must not drive the fleet (NO_MISTAKES_GATE set)
+exit 3, no window created, no state/ops.meta written
+
+--- spawn with the repo's sanctioned test-harness escape hatch -------------------------------
+$ XO_GATE_REFUSE_BYPASS=1 bin/xo-spawn.sh ops $LAB/xo-ops-seeded --secondmate --harness 'bash -lc "echo STUB-SECONDMATE-AGENT-READY; exec cat"'
+spawned ops harness=bash kind=secondmate mode=secondmate yolo=off window=xo:xo-ops worktree=/tmp/xo-live-PnkvpF/xo-ops-seeded
+
+$ tmux -L xo-live-lab list-windows -a -F '#{session_name}:#{window_name}'
+xo:xo
+xo:xo-ops
+
+$ cat $LAB/xo/state/ops.meta
+window=xo:xo-ops
+endpoint_task_id=ops
+worktree=/tmp/xo-live-PnkvpF/xo-ops-seeded
+project=/tmp/xo-live-PnkvpF/xo-ops-seeded
+harness=bash
+kind=secondmate
+mode=secondmate
+yolo=off
+tasktmp=/tmp/xo-ops
+...
+home=/tmp/xo-live-PnkvpF/xo-ops-seeded
+
+$ tmux -L xo-live-lab capture-pane -p -t '=xo:=xo-ops'    (the crewmate's real launch environment)
+[inocult@eye xo-ops-seeded]$ XO_ROOT_OVERRIDE= XO_STATE_OVERRIDE= XO_DATA_OVERRIDE= XO_PROJECTS_OVERRIDE= \
+  XO_CONFIG_OVERRIDE= XO_PUBLIC_FOLLOWUP_PRIMARY_HOME='/tmp/xo-live-PnkvpF/xo' \
+  XO_HOME='/tmp/xo-live-PnkvpF/xo-ops-seeded' XO_TRACE_CONTEXT=off XO_SUPERVISION_MODEL=persistent \
+  bash -lc "echo STUB-SECONDMATE-AGENT-READY; exec cat"
+STUB-SECONDMATE-AGENT-READY
+: XO instruction waiting: list '/tmp/xo-live-PnkvpF/xo/state/ops.inbox'/*.msg and, in numeric order,
+  read and act on each, then mv each handled file to '.../ops.inbox'/handled/.
+
+--- the primary sends the crewmate a message -------------------------------------------------
+$ bin/xo-send.sh xo-ops 'status report please'
+$ cat -v $LAB/xo/state/ops.inbox/001.msg
+schema=xo-task-inbox.v1
+at=2026-09-13T12:07:11Z
+--
+[xo-from-primary]M-bM-^AM-#corr=62f2df428ada74e6 status report please
+                 ^^^^^^^^^^^ = U+2063
+
+$ printf '%s' '<that delivered payload>' | bin/xo-operational-input.sh classify
+from-primary
+
+--- fleet view -------------------------------------------------------------------------------
+$ bin/xo-fleet-view.sh
+# Fleet View
+Schema: xo-fleet-snapshot.v1
+Home: /tmp/xo-live-PnkvpF/xo
+## Under Way
+| ID | Current | Kind | Repo/Project | Backend | Endpoint | ... | Watch / return channel |
+| ops | unknown / none | secondmate | /tmp/xo-live-PnkvpF/xo-ops-seeded | tmux | present / unknown | ... | bin/xo-send.sh xo-ops '<request>' ... |
+
+--- teardown ---------------------------------------------------------------------------------
+$ bin/xo-teardown.sh ops
+teardown ops complete (window xo:xo-ops, worktree /tmp/xo-live-PnkvpF/xo-ops-seeded)
+
+$ tmux -L xo-live-lab list-windows -a -F '#{session_name}:#{window_name}'
+xo:xo
+
+$ ls $LAB/xo/state/ops.*
+ls: cannot access '/tmp/xo-live-PnkvpF/xo/state/ops.*': No such file or directory

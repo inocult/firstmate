@@ -1,0 +1,15 @@
+encode watcher                                            -> ⁣XO_OP:\ v1\ watcher:\ watcher\ body\ here
+kind(current watcher)                                      -> rc=0 out=watcher
+classify(current watcher)                                  -> rc=0 out=watcher
+body(current watcher)                                      -> rc=0 out=watcher\ body\ here
+classify(U+2063 FIRSTMATE_OP: v1 watcher: x)               -> rc=0 out=legacy-operational
+classify(U+2063 XO_OP: untyped legacy)                     -> rc=0 out=legacy-operational
+classify(legacy fm-session-start literal)                  -> rc=0 out=session-start
+classify(legacy FIRSTMATE WATCHER WAKE)                    -> rc=0 out=watcher
+classify([xo-from-primary] marker)                         -> rc=0 out=from-primary
+kind([xo-from-primary] marker)                             -> rc=0 out=from-primary
+ADV classify(ASCII-only FIRSTMATE_OP:, no U+2063)          -> rc=1 out=''
+ADV classify(ASCII-only XO_OP:, no U+2063)                 -> rc=1 out=''
+ADV classify(plain captain message)                        -> rc=1 out=''
+ADV classify(old [fm-from-primary] marker)                 -> rc=1 out=''
+ADV kind(unknown kind in typed header)                     -> rc=1 out=''

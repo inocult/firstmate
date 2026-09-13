@@ -1,0 +1,34 @@
+XO rename - XO_HOME is the home selector; the pre-rename FM_HOME is not honoured
+===============================================================================
+
+$ XO_HOME=$LAB/xo            bin/xo-session-start.sh | head -3
+
+================================================================================
+SESSION START - /tmp/xo-live-PnkvpF/xo
+
+$ XO_HOME=$LAB/xo-ops        bin/xo-session-start.sh | head -3     (a second, independent home)
+
+================================================================================
+SESSION START - /tmp/xo-live-PnkvpF/xo-ops
+
+$ XO_HOME=$LAB/xo-ops-seeded bin/xo-session-start.sh | head -3     (a seeded secondmate home)
+
+================================================================================
+SESSION START - /tmp/xo-live-PnkvpF/xo-ops-seeded
+
+--- adversarial ---------------------------------------------------------------
+$ env -u XO_HOME FM_HOME=/tmp/definitely-not-a-home bin/xo-session-start.sh | head -3
+
+================================================================================
+SESSION START - /tmp/xo-live-PnkvpF/xo          <- the checkout, NOT FM_HOME
+================================================================================
+
+$ XO_HOME=$LAB/xo-ops FM_HOME=$LAB/xo bin/xo-session-start.sh | head -3
+
+================================================================================
+SESSION START - /tmp/xo-live-PnkvpF/xo-ops      <- XO_HOME wins
+================================================================================
+
+--- residual pre-rename identifiers in the emitted digest ----------------------
+$ grep -iE 'fm-|firstmate|FM_HOME|not found|No such file' <each digest>
+(none)

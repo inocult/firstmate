@@ -1,0 +1,26 @@
+XO rename - live supervision loop (watcher -> durable wake queue -> drain)
+=========================================================================
+
+$ bin/xo-watch-arm.sh          # armed as a tracked background task against the lab home
+watcher: started pid=450256 (beacon fresh)
+
+# a crewmate writes a captain-facing status line:
+$ printf 'needs-decision [key=rename-check]: should the ops runbook keep the old naming?\n' >> $XO_HOME/state/w1.status
+
+$ cat $LAB/watch-arm.txt        # the watcher woke and exited with its reason line
+watcher: started pid=450256 (beacon fresh)
+signal: /tmp/xo-live-PnkvpF/xo/state/w1.status
+ARM_EXIT=0
+
+$ cat $XO_HOME/state/.wake-queue
+1789301411	1	signal	w1.status	needs-decision: /tmp/xo-live-PnkvpF/xo/state/w1.status
+1789301411	2	signal	w1.status	needs-decision: /tmp/xo-live-PnkvpF/xo/state/w1.status
+
+$ bin/xo-wake-drain.sh
+1789301411	2	signal	w1.status	needs-decision: /tmp/xo-live-PnkvpF/xo/state/w1.status
+WAKE_ACK_REQUIRED: after handling completes run bin/xo-wake-drain.sh --ack-through 2 --recovery-generation 461847.1789301411.0vwU4l
+wake annotation: latest wake-EVENT observed at drain, not current state: w1.status: needs-decision [key=rename-check]: should the ops runbook keep the old naming?
+OPEN DECISIONS (still open, folded from the durable status logs - not just the latest line):
+w1 [key=rename-check] needs-decision: should the ops runbook keep the old naming?
+OPEN DECISIONS: close one by answering it: bin/xo-send.sh <task> --resolve-key <key> '<answer>'
+WARNING: queued wakes pending - drain them with bin/xo-wake-drain.sh before anything else.

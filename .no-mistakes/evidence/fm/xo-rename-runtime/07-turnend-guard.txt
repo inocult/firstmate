@@ -1,0 +1,18 @@
+XO rename - the Claude turn-end guard hook (bin/xo-turnend-guard.sh --claude)
+===========================================================================
+
+# no work under way -> silent allow
+$ echo '{"hook_event_name":"Stop",...}' | bin/xo-turnend-guard.sh --claude
+(no output)   exit 0
+
+# one secondmate in flight and no live watcher -> the guard blocks the blind stop
+$ bin/xo-spawn.sh g1 $LAB/xo-g1 --secondmate --harness '<stub>'
+spawned g1 harness=bash kind=secondmate mode=secondmate yolo=off window=xo:xo-g1 worktree=/tmp/xo-live-PnkvpF/xo-g1
+$ echo '{"hook_event_name":"Stop",...}' | bin/xo-turnend-guard.sh --claude   ; echo $?
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  TURN WOULD END BLIND - SUPERVISION IS OFF
+●  1 task(s) in flight, but no live watcher holds this home lock (last beat: 495s ago).
+●  The Stop-owned auto-arm did not claim this home either, so recovery is NOT already under way.
+●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+exit 2
