@@ -108,9 +108,13 @@ SH
   cat > "$fb/tmux" <<'SH'
 #!/usr/bin/env bash
 set -u
-# FM_FAKE_TMUX_MISSING: the window is authoritatively gone - every addressed
-# call fails, but the session inventory still answers successfully and simply
-# omits the window, which is what proves absence.
+# FM_FAKE_TMUX_MISSING: the window is authoritatively gone while the server and
+# session stay up, modelled on real tmux (3.x): the strict-target commands
+# (list-panes, capture-pane) fail, the session inventory still answers
+# successfully and simply omits the window, which is what proves absence, and
+# display-message -t still answers - tmux lets that command's target lookup
+# fail silently and falls back to a default pane - so a probe built on it can
+# never see the window gone.
 # FM_FAKE_TMUX_UNREADABLE: tmux itself cannot answer - it fails to execute (a
 # trimmed PATH) or errors non-definitively - so even the inventory fails, with
 # a message that is NOT one of the definitive no-session/no-server/no-socket
@@ -120,10 +124,12 @@ case "${1:-}" in
   list-windows)
     # A successful but empty inventory: it omits the crew's window, so absence
     # is proved by the answer rather than by an addressed call failing. Only
-    # reached once display-message has already failed.
+    # reached once the strict pane probe has already failed.
     ;;
+  list-panes)
+    [ "${FM_FAKE_TMUX_MISSING:-0}" = 1 ] && { printf "can't find window: %s\n" "${3:-}" >&2; exit 1; }
+    printf '%%1\n' ;;
   display-message)
-    [ "${FM_FAKE_TMUX_MISSING:-0}" = 1 ] && exit 1
     printf '%%1\n' ;;
   capture-pane)
     [ "${FM_FAKE_TMUX_MISSING:-0}" = 1 ] && exit 1
