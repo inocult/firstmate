@@ -1,0 +1,20 @@
+$ bin/fm-doc-audience-check.sh
+fm-doc-audience-check: ok surfaces=110 local_links=405
+exit=0
+
+$ bash tests/fm-skills-tree.test.sh
+ok - every activation link is a committed relative symlink to a same-named skill in a known category (29 links)
+ok - every canonical skill lives in a known category, repeating a name only as one portable and one internal audience variant (30 skills)
+ok - every skill sits in the category its frontmatter derives by precedence (30 skills)
+ok - the portable variant is the first C-sorted installer hit for every shared skill name (1 shared)
+ok - the Claude skills alias reaches every active skill through the activation links
+exit=0
+
+$ python3 tests/fm_plane_test.py AdapterTests.test_label_required_and_active_or_done_tickets_excluded AdapterTests.test_setup_can_discover_states_before_mapping
+test_label_required_and_active_or_done_tickets_excluded (__main__.AdapterTests.test_label_required_and_active_or_done_tickets_excluded) ... ok
+test_setup_can_discover_states_before_mapping (__main__.AdapterTests.test_setup_can_discover_states_before_mapping) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.039s
+
+OK

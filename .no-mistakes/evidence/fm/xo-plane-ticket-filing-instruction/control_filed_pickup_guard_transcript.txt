@@ -1,0 +1,61 @@
+== Doctor output for this project (what prep is told to choose from)
+  suggested_pickup_state_ids = ['backlog', 'todo', 'blocked'] (Blocked is suggested from the unstarted group; the guide says never configure it)
+
+== Kind 1: filed for the planning team, pickup state, needs-triage only
+planning-team ticket, no readiness label
+  labels=['label-needs-triage'] state=backlog pickup_state_ids=['backlog', 'todo'] command=claim
+  -> REFUSED: ticket lacks the ready-for-agent label; tracker state now=backlog; claim record=none
+
+== Kind 2: commissioned, dispatch now, filed directly in implementing
+commissioned ticket in implementing, needs-triage only
+  labels=['label-needs-triage'] state=active pickup_state_ids=['backlog', 'todo'] command=claim
+  -> REFUSED: ticket lacks the ready-for-agent label; tracker state now=active; claim record=none
+
+adversarial: readiness label applied while in implementing
+  labels=['label-needs-triage', 'label-ready'] state=active pickup_state_ids=['backlog', 'todo'] command=claim
+  -> REFUSED: ticket is not in an eligible pickup state; tracker state now=active; claim record=none
+
+== Kind 3: commissioned but queued, filed in Blocked
+queued commissioned ticket in Blocked, needs-triage only
+  labels=['label-needs-triage'] state=blocked pickup_state_ids=['backlog', 'todo'] command=claim
+  -> REFUSED: ticket lacks the ready-for-agent label; tracker state now=blocked; claim record=none
+
+adversarial: planning team applies readiness label while in Blocked
+  labels=['label-needs-triage', 'label-ready'] state=blocked pickup_state_ids=['backlog', 'todo'] command=claim
+  -> REFUSED: ticket is not in an eligible pickup state; tracker state now=blocked; claim record=none
+
+== Adversarial: Blocked wrongly configured as a pickup state (the misconfiguration docs/plane-missions.md forbids)
+Blocked in pickup_state_ids and readiness label applied
+  labels=['label-needs-triage', 'label-ready'] state=active pickup_state_ids=['backlog', 'todo', 'blocked'] command=claim
+  -> ALLOWED -> {"phase": "implementing", "pickup_state": "blocked"}; tracker state now=active; claim record=implementing
+
+== Control: the readiness label is the only thing that makes a pickup-state ticket claimable
+planning team applies readiness label in a pickup state
+  labels=['label-needs-triage', 'label-ready'] state=active pickup_state_ids=['backlog', 'todo'] command=claim
+  -> ALLOWED -> {"phase": "implementing", "pickup_state": "backlog"}; tracker state now=active; claim record=implementing
+
+== Binding-document claim: no adapter lifecycle command moves a ticket with no claim record
+adapter sync on an unclaimed Control-filed ticket
+  labels=['label-needs-triage'] state=blocked pickup_state_ids=['backlog', 'todo'] command=sync
+  -> REFUSED: execution ownership changed or belongs to another operative; tracker state now=blocked; claim record=none
+
+adapter resume on an unclaimed Control-filed ticket
+  labels=['label-needs-triage'] state=blocked pickup_state_ids=['backlog', 'todo'] command=resume
+  -> REFUSED: execution ownership changed or belongs to another operative; tracker state now=blocked; claim record=none
+
+adapter review on an unclaimed Control-filed ticket
+  labels=['label-needs-triage'] state=blocked pickup_state_ids=['backlog', 'todo'] command=review
+  -> REFUSED: execution ownership changed or belongs to another operative; tracker state now=blocked; claim record=none
+
+adapter complete on an unclaimed Control-filed ticket
+  labels=['label-needs-triage'] state=blocked pickup_state_ids=['backlog', 'todo'] command=complete
+  -> REFUSED: execution ownership changed or belongs to another operative; tracker state now=blocked; claim record=none
+
+== Summary
+  [ok] kind1 planning-team ticket refused on label
+  [ok] kind2 implementing ticket refused on state
+  [ok] kind3 Blocked ticket refused on label
+  [ok] kind3 Blocked ticket refused on state even with readiness label
+  [ok] misconfigured Blocked pickup state makes it claimable (why the never-configure rule exists)
+  [ok] readiness label in a pickup state is claimable (planning team's call)
+  [ok] no adapter lifecycle move without a claim record
