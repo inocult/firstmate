@@ -36,7 +36,7 @@ Control performs these steps directly and reports the verified result.
 2. Collect the connection facts from the captain: the tracker URL, workspace slug, project UUID, implementation repository URL, coordination remote, the tracker transport the configuration schema names, and this instance's executor name.
    Credentials are named in the configuration and sourced from the captain's existing secrets system, never stored in it.
 3. Write the connection half of `FM_HOME/config/plane.json` from those facts, then run `doctor`.
-   `doctor` reads that file and fails without it, and it tolerates the label, pickup and lifecycle identifiers still being absent, as the binding document records.
+   `doctor` reads that file and fails without it, but setup-mode commands load the configuration before the label, pickup and lifecycle identifiers exist, and the binding document owns which commands those are.
 4. Provision the vocabulary, then complete the configuration.
    Compare all five canonical names against every label the latest `doctor` run returned, and settle that whole comparison before writing anything.
    Entering this step always compares against a current `doctor`, never against output from before someone changed the project's labels.
@@ -61,8 +61,7 @@ Control performs these steps directly and reports the verified result.
 5. Verify, then report exactly how far that verification reaches.
    First confirm all five canonical names appear exactly in the `labels` array of the most recent `doctor` run, whoever created the labels.
    The completion gate covers the whole set while only the readiness label identifier is stored, so verifying stored identifiers alone would leave four roles unchecked: a create that failed, was rate-limited, or returned something read as "already exists" would reach the project's committed docs as a role the tracker does not carry.
-   Then check every identifier written in step 4 against the `states` and `labels` arrays, matching on name rather than mere presence: the readiness label identifier must be the id of the label named exactly `ready-for-agent`, and each pickup and lifecycle state id must be the id of the state the captain confirmed by name.
-   `doctor` returns every name beside its id, so this costs nothing and catches an id transcribed off a neighbouring row - a readiness label identifier holding the `needs-info` id clears a presence check and `list` alike, then surfaces only as a queue that is permanently empty.
+   Then check every identifier written in step 4 against those same `states` and `labels` arrays by the rule [`docs/plane-missions.md`](../../../docs/plane-missions.md) fixes for every configured identifier.
    What that cannot catch is narrower: a state whose name the captain confirmed but whose behaviour does not match the lifecycle position it was configured for, and any change made in the tracker after prep completes.
    Then run `list`, not `doctor`: the binding document records that `doctor` runs on the setup-stage configuration that skips the identifier checks step 4 satisfied, while `list` loads the completed configuration under full validation and reads one page of tickets without writing.
    Both of those reach the tracker only.
