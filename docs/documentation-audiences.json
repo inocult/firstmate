@@ -126,6 +126,10 @@
     {
       "source": "skills/in-progress/prep/SKILL.md",
       "target": "docs/tracker-binding.md"
+    },
+    {
+      "source": "docs/plane-missions.md",
+      "target": "docs/tracker-binding.md"
     }
   ],
   "surfaces": [

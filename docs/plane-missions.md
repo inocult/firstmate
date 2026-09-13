@@ -100,6 +100,7 @@ This public Firstmate fork is not an appropriate default for private team execut
 ## Lifecycle
 
 `bin/fm-plane.py --help` and its subcommand help own the command syntax.
+[Tracker binding](tracker-binding.md) owns which surface performs each operation below and the boundary of each command, so this list carries only the order of the flow.
 
 1. `list` returns a page of Plane tickets including pagination metadata.
    Control selects an eligible ticket from the authorized scope and reads its requirements.
@@ -109,7 +110,8 @@ This public Firstmate fork is not an appropriate default for private team execut
    Control still files the local execution-ledger entry and uses normal `fm-spawn.sh` dispatch with the chosen delivery mode and approval posture.
 4. The operative uses repo-local engineering skills and validates affected monorepo consumers.
    `fm-spawn.sh` checks the bound claim before launching or relaunching on any backend.
-5. `pr` records the canonical PR URL and adds it to the Plane ticket without changing ticket contents or assignment.
+5. `pr` records the canonical PR URL on the Plane ticket without changing ticket contents or assignment.
+   It is not link-only: the binding document records that it also re-applies the implementing lifecycle state, so run it once and before `review`.
    Direct-PR work can register a draft early; no-mistakes work lets its pipeline own PR creation.
 6. `review` moves the Plane ticket to In review while preserving the claim.
    `resume` returns it to implementation when corrections are needed.
