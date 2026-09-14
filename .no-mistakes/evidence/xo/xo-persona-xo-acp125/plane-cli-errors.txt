@@ -1,0 +1,5 @@
+$ xo-plane.py transfer --item item-1 --execution <live> --to-executor rhea --reason 'handoff'
+  (without --previous-stopped)
+{"error": "stop the previous worker and record a handoff before transfer"}
+$ xo-plane.py sync --item item-1 --execution <stale-execution-id>
+{"error": "execution ownership changed or belongs to another worker"}

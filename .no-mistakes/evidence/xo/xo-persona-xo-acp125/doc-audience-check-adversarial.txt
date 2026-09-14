@@ -1,0 +1,5 @@
+# Adversarial: run the same consumer against the PRE-CHANGE inventory,
+# which still classifies docs/control-delivery-workflow.md.
+$ bin/xo-doc-audience-check.sh --inventory /tmp/xo-doc-adv.KOUvnj/old-inventory.json
+xo-doc-audience-check: unclassified: docs/xo-delivery-workflow.md; not tracked/in scope: docs/control-delivery-workflow.md
+exit=1

@@ -1,0 +1,8 @@
+# Captain-facing reply path, dry-run: the XO answer as it would be delivered.
+$ XO_HOME=<home> XOX_DRY_RUN=1 bin/xo-x-reply.sh req-42 "WILCO. Export fix is on branch xo/export-rows; PR opens in about ten minutes."
+xo-x-reply: DRY RUN - would POST to https://myfirstmate.io/connector/answer (recorded: state/x-outbox/req-42.json): WILCO. Export fix is on branch xo/export-rows; PR opens in about ten minutes.
+req-42
+exit=0
+
+$ cat state/x-outbox/req-42.json
+{"request_id":"req-42","text":"WILCO. Export fix is on branch xo/export-rows; PR opens in about ten minutes."}

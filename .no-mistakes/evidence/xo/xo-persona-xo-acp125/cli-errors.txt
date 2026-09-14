@@ -1,0 +1,7 @@
+$ env -u XO_HOME python3 bin/xo-overwatch.py on
+Overwatch operation failed: inspect configuration and registered check state.
+exit=1
+
+$ env -u XO_HOME python3 bin/xo-plane.py list
+{"error": "XO_HOME must explicitly identify this worker's home"}
+exit=1

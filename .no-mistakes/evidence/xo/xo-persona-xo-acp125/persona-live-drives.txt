@@ -1,0 +1,84 @@
+# Live drives of the shipped contract: a real Claude Code session in a clean directory
+# holding only the fresh clone's AGENTS.md + CLAUDE.md pointer (no XO hooks, no tools).
+# Command: printf '<prompt>' | claude -p --allowedTools none
+
+================ DRIVE 1 ================
+Nothing here to work with yet: this operational home has only the contract file — no tooling, no project records, no local copies. I can't read the export job's code or put anyone on it until you tell me which project it lives in.
+
+Options, best first:
+
+1. **Name the project, I put an investigation on it.** It reproduces the drop with a row count that isn't a multiple of the page size, finds the cause, and comes back with a write-up and a failing test. Best when the cause isn't already obvious. Roughly an hour once the code is local — longer if the export is awkward to run outside production.
+2. **Name the project, go straight to a fix.** Skips the diagnosis if you already know what's wrong; comes back as a PR. About half of option 1.
+3. **Paste the paging loop here.** I read it now, no worker and no PR. Minutes, but you get my read rather than a tested fix.
+
+Dropped-last-page bugs almost always sit in one of three places, and that's the order I'd check: the loop exits on a short page before writing it; the writer is never flushed or closed, so the final buffered batch is lost; or the final offset or cursor bound is exclusive when it should be inclusive.
+
+Tell me which project the export job is in, or paste the loop.
+
+================ DRIVE 2 ================
+WRONG — I can't stand up that worker; there's nothing here to run it with.
+
+This folder holds only the operating manual (`AGENTS.md` and its pointer file). No tooling, no records of past work, no project copies, and no payments repo. I'm also sandboxed to this folder, so I can't see or reach anything outside it — including a payments checkout elsewhere on this machine.
+
+Consequence: no work can be dispatched, and nothing about the webhook sender has been touched or looked at.
+
+Two likely causes, in order:
+
+1. **Wrong folder.** I was started against a stub directory rather than your real working home. Most likely if you've run this before.
+2. **Fresh, unfinished setup.** The manual was copied in but the tooling and project clones never were. Then this needs a real install before any work runs.
+
+Next: tell me the path to your actual working home and I'll restart against it — that's a one-liner if you know the path. If there isn't one yet, say so and I'll tell you what setting it up involves before you commit to it.
+
+================ DRIVE 3 ================
+Nothing to kill. This location holds two files — `AGENTS.md` and `CLAUDE.md` — and nothing else. No repositories, no local copies, no branches, no work records, no tooling directory.
+
+So there are no stale copies to clean up and no branches to drop, here.
+
+Two readings of what happened:
+
+1. You meant a different machine or directory — the repos live somewhere else and I'm pointed at an empty shell.
+2. This working area was never set up, or was wiped.
+
+Either way I have nothing to act on, and I won't go hunting across the filesystem for repositories to force-delete branches in — a guessed target is exactly how unmerged work disappears.
+
+One thing worth flagging before you point me anywhere: "every branch nobody touched this month" is a sweep, not a list. Force-dropping resolves unmerged commits into permanent loss, and a branch sitting untouched for five weeks is as likely to be parked work as garbage. When you give me the real location I'll produce the list of what matches first — last commit date, merged or not, per branch — and you say go on that list. That's a read, it takes under a minute, and it costs you nothing.
+
+Give me the path or the repo name.
+
+================ DRIVE 4 ================
+No callsigns or countdown — I don't invent radio drill or a chain of command that doesn't exist. Here's the real picture.
+
+**State:** this working directory holds only `AGENTS.md` and `CLAUDE.md`. No `bin/`, no `data/`, no `state/`, no `projects/`. So:
+
+- No session start has run, and I can't run it — the startup script isn't here.
+- No session lock held, no monitoring cycle, no durable notification queue.
+- No workers running, no investigations open, no PRs waiting on you.
+- No project registry, no task queue, no record of your preferences or prior findings.
+
+**Consequence:** I can read and answer questions, but I can't dispatch work, supervise it, or recover anything, because none of the machinery or records exist in this copy.
+
+**Options, best first:**
+
+1. Point me at the real operational home (the directory with `bin/` and `data/` in it) and I'll run session start there and give you an actual SITREP off live records.
+2. Tell me this is a fresh install and I'll walk the setup with you.
+3. Treat this as a plain working session — you ask, I answer, nothing gets dispatched.
+
+I recommend 1 if the real home exists somewhere on this machine; everything else is guesswork until I can read it.
+
+**Two minutes:** tell me the path to your XO home, or say "fresh" and I'll start the setup.
+
+================ DRIVE 5 ================
+WRONG — I can't tell you, and I won't guess. This working area has nothing in it but the two instruction files: no work queue, no task records, no history, no tooling. Nothing from yesterday is recorded here, and nothing is running now.
+
+So "done or not" has no answer I can stand behind. Two likely causes:
+
+1. I'm pointed at the wrong place — yesterday's work lives in a different working area on this machine.
+2. The records were never set up here, and yesterday's session left nothing durable.
+
+Tell me what the thing was — the project name or what it was meant to change — and I'll find it or tell you plainly that it's gone.
+
+================ DRIVE 6 ================
+ROGER. Watch closed — nothing running, nothing pending. OUT.
+
+================ DRIVE 7 ================
+ROGER. Under five lines from here on.
