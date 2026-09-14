@@ -1,6 +1,6 @@
-# Plane missions in the Control edition
+# Plane missions in XO
 
-Plane is the shared backlog; each person's Control instance executes selected tickets through the existing XO lifecycle.
+Plane is the shared backlog; each person's XO instance executes selected tickets through the existing XO lifecycle.
 This adapter replaces the orchestration role of Pocock's `implement` workflow for Plane tickets while retaining repo-local engineering disciplines.
 The bundled `breach` skill adapts Pocock's small `implement` entrypoint with attribution; repo-local engineering disciplines remain project-owned.
 
@@ -9,20 +9,20 @@ The bundled `breach` skill adapts Pocock's small `implement` entrypoint with att
 | Surface | Responsibility |
 | --- | --- |
 | Plane | Requirements, readiness, dependencies and final ticket status |
-| Control | Ticket selection, filing the work it discovers or commissions as `needs-triage` tickets, worker dispatch, supervision and delivery reconciliation |
+| XO | Ticket selection, filing the work it discovers or commissions as `needs-triage` tickets, worker dispatch, supervision and delivery reconciliation |
 | Project skills | Design, TDD, debugging and review practices |
 | GitHub PR | Implementation, checks, review and merge evidence |
-| Shared Git claim | One active implementation across participating Control instances |
+| Shared Git claim | One active implementation across participating XO instances |
 
 The Plane assignee is independent of execution ownership and is never modified.
-The operative's existing GitHub credentials determine PR authorship: your XO normally opens your PRs, while a colleague reviews under their own identity.
+The worker's existing GitHub credentials determine PR authorship: your XO normally opens your PRs, while a colleague reviews under their own identity.
 Agent self-review does not count as independent approval.
 An authorized human or configured merge process merges under the existing project policy.
-Control then verifies acceptance and the merged PR before moving the ticket to Done.
+XO then verifies acceptance and the merged PR before moving the ticket to Done.
 
-For the full planning, implementation and separate-review flow, read [Control delivery workflow](control-delivery-workflow.md).
+For the full planning, implementation and separate-review flow, read [XO delivery workflow](xo-delivery-workflow.md).
 
-## Control skills
+## XO skills
 
 Use `/prep` to prepare this home and a repository for missions before the first one is dispatched.
 Use `/operation` for an effort too big for one mission: it charts the effort as a map of decision tickets on the shared tracker and resolves them one at a time, until the cleared route becomes the ready-for-agent implementation tickets that `/overwatch` and `/breach` deliver.
@@ -32,7 +32,7 @@ Codex uses the same skill names with `$` instead of `/`.
 The [Overwatch skill](../skills/in-progress/overwatch/SKILL.md) owns the pickup policy, recovery and watcher integration.
 The [Breach skill](../skills/in-progress/breach/SKILL.md) owns the attributed adaptation of Pocock's implementation entrypoint.
 `bin/xo-overwatch.py --help` owns timer and policy command syntax.
-The timer only wakes Control; selection, reasoning and dispatch require a live supported XO agent session.
+The timer only wakes XO; selection, reasoning and dispatch require a live supported XO agent session.
 No new daemon is installed and no idle heartbeat behavior is changed.
 
 ## Setup
@@ -89,7 +89,7 @@ Every identifier written here must be the id of the state or label whose name it
 The label is the planning team's promise that the ticket has sufficient scope and acceptance criteria.
 Pickup requires both this label and an eligible Backlog/Todo state, plus the existing dependency and shared-claim checks.
 In Progress, In Review, Done and cancelled states must never be configured as pickup states.
-The Blocked state must never be among `pickup_state_ids` either, even when `doctor` suggests it from the unstarted group, because it is the state Control files queued commissioned work in.
+The Blocked state must never be among `pickup_state_ids` either, even when `doctor` suggests it from the unstarted group, because it is the state XO files queued commissioned work in.
 The adapter preserves labels and assignees throughout delivery; the shared claim and lifecycle state prevent duplicate pickup even while the label remains.
 Old configurations using `states.ready` must migrate to these two fields; the label is not a workflow state.
 
@@ -104,12 +104,12 @@ This public XO fork is not an appropriate default for private team execution rec
 [Tracker binding](tracker-binding.md) owns which surface performs each operation below and the boundary of each command, so this list carries only the order of the flow.
 
 1. `list` returns a page of Plane tickets including pagination metadata.
-   Control selects an eligible ticket from the authorized scope and reads its requirements.
+   XO selects an eligible ticket from the authorized scope and reads its requirements.
 2. `claim` uses the ticket UUID and a unique request ID, verifies readiness and dependencies, reserves it remotely, then updates Plane to In progress.
    Retries use the same request ID.
 3. `bind` creates the ordinary XO brief and a private execution receipt for a local task.
-   Control still files the local execution-ledger entry and uses normal `xo-spawn.sh` dispatch with the chosen delivery mode and approval posture.
-4. The operative uses repo-local engineering skills and validates affected monorepo consumers.
+   XO still files the local execution-ledger entry and uses normal `xo-spawn.sh` dispatch with the chosen delivery mode and approval posture.
+4. The worker uses repo-local engineering skills and validates affected monorepo consumers.
    `xo-spawn.sh` checks the bound claim before launching or relaunching on any backend.
 5. `pr` records the canonical PR URL on the Plane ticket without changing ticket contents or assignment.
    It is not link-only: the binding document records that it also re-applies the implementing lifecycle state, so run it once and before `review`.
@@ -120,7 +120,7 @@ This public XO fork is not an appropriate default for private team execution rec
    Configure `GH_TOKEN` or `GITHUB_TOKEN` for private PR verification.
    This command never merges the PR itself.
 
-Control performs lifecycle synchronization on the existing supervision events; no new always-running polling service is installed.
+XO performs lifecycle synchronization on the existing supervision events; no new always-running polling service is installed.
 `sync` repairs a Plane link/state projection after an interrupted update.
 External moves to canceled, closed or another unrelated state stop routine synchronization for reconciliation.
 Implementation waiting for review remains reserved even when its worker exits.
@@ -140,16 +140,16 @@ Exclude `xo-plane/**` branches from product deployment workflows and protect the
 
 The registry is coordination among trusted collaborators, not an authorization boundary against someone who can independently rewrite Git refs or modify Plane.
 Plane and Git are separate systems; synchronization is recoverable but is not a distributed transaction.
-A failed Plane update retains the claim, and Control must retry or reconcile before dispatch.
-Lifecycle operations for one execution should be serialized by its owning Control instance.
+A failed Plane update retains the claim, and XO must retry or reconcile before dispatch.
+Lifecycle operations for one execution should be serialized by its owning XO instance.
 Remote transport failures may leave a successful write without its response; reread the record before retrying.
 
 The adapter checks the configured readiness label, eligible pickup state, description, existing PR links and native blocked-by/start-after/finish-after prerequisites.
 Temporal prerequisites are conservatively required to be complete.
 Custom relations and cross-project dependencies require explicit review and a supported mapping before automatic pickup.
-The adapter cannot infer dependencies mentioned only in prose; the planning workflow must encode them or Control must stop and clarify.
+The adapter cannot infer dependencies mentioned only in prose; the planning workflow must encode them or XO must stop and clarify.
 Manual PRs that were never linked to Plane cannot be discovered by reading the ticket; teammates should attach their PR before starting implementation.
-The claim alone does not detect overlapping changes across different tickets; Control must compare shared interfaces and validate downstream packages.
+The claim alone does not detect overlapping changes across different tickets; XO must compare shared interfaces and validate downstream packages.
 
 ## Recovery
 
@@ -158,7 +158,7 @@ After a crash, use `status` and inspect the branch/PR before resuming.
 `release` is restricted to executions without a registered PR and requires a preservation acknowledgement and reason.
 Keep the reason and preserved-work location in the team handoff before releasing.
 Release restores the original Backlog/Todo state recorded at pickup and leaves labels unchanged; removing the readiness label prevents a later new claim.
-`transfer` requires confirmation that the previous operative stopped and returns a new execution token for the destination executor.
+`transfer` requires confirmation that the previous worker stopped and returns a new execution token for the destination executor.
 It retains PR history and invalidates the old token for adapter checks.
 It does not revoke a previous worker's independent Git credentials.
 

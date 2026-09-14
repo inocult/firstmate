@@ -7,7 +7,7 @@ Usage: xo-overwatch.py on [--slots 2] [--interval 300] [--max-pickups 10]
 
 Requires XO_HOME and its configured Plane adapter. No Plane/GitHub writes or
 worker launches occur here. The Overwatch skill owns selection and dispatch.
-The registered check emits a due event until Control records an outcome.
+The registered check emits a due event until XO records an outcome.
 """
 import argparse
 import fcntl
@@ -48,7 +48,7 @@ def main():
     parser.add_argument('--outcome', choices=['picked', 'empty', 'busy', 'error'])
     args = parser.parse_args()
     if not os.environ.get('XO_HOME'):
-        raise AdapterError('XO_HOME must explicitly identify the Control home')
+        raise AdapterError('XO_HOME must explicitly identify the XO home')
     home = Path(os.environ['XO_HOME']).resolve()
     state = Path(os.environ.get('XO_STATE_OVERRIDE', str(home / 'state')))
     if state.is_symlink():

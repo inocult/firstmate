@@ -8,8 +8,8 @@ metadata:
 # Prep
 
 Prepping has two halves with different owners, and they are never mixed.
-Control performs the home half directly because it is this home's private operational state.
-A worker performs the project half through the project's selected delivery path, because Control never writes to a project.
+XO performs the home half directly because it is this home's private operational state.
+A worker performs the project half through the project's selected delivery path, because XO never writes to a project.
 
 [`docs/tracker-binding.md`](../../../docs/tracker-binding.md) fixes which tracker this home uses and which surface performs each operation below; do not offer another tracker.
 This skill owns the canonical triage vocabulary and provisions it, so every prepared environment carries the same five roles instead of whatever a given project happens to have:
@@ -29,7 +29,7 @@ Read them rather than restating their contents here.
 
 ## Home half
 
-Control performs these steps directly and reports the verified result.
+XO performs these steps directly and reports the verified result.
 
 1. Confirm Python 3.10+ and create the adapter's virtual environment from `bin/requirements-plane.txt`.
    `docs/plane-missions.md` owns where that interpreter belongs: `XO_PLANE_PYTHON` is read from the environment XO is launched with, so exporting it only in this session's shell loses it at the next launch and every later adapter command fails on the missing SDK.
@@ -86,7 +86,7 @@ When it is not, report that as the outstanding blocker and stop short of commiss
 
 Commission this through the project's selected delivery path once the home half completes, and never before.
 The brief carries the captain's answer to the single repository question.
-Ask it every time; Control may recommend an answer and give its reason, but never decides it and never skips asking.
+Ask it every time; XO may recommend an answer and give its reason, but never decides it and never skips asking.
 
 Nothing in the brief, and nothing in any document the worker writes, carries the home's tracker configuration: not the tracker URL, workspace slug or project UUID, not a label or state identifier, and not text read back out of the tracker.
 That configuration is private to this home and the project repository may be public.
@@ -95,7 +95,7 @@ The worker creates:
 
 - The domain layout: `CONTEXT.md` plus `docs/adr/` for single-context, or a root `CONTEXT-MAP.md` pointing at per-context files for multi-context.
   `CONTEXT.md` records the project's domain vocabulary and the terms agents must use; `docs/adr/` records dated decisions, each as context, decision and consequences.
-- `docs/agents/issue-tracker.md`, recording which tracker the issues live in as the binding document names it, that Control's surfaces own every read and write, that selection requires the `ready-for-agent` label together with an eligible pickup state, and that GitHub holds pull requests only.
+- `docs/agents/issue-tracker.md`, recording which tracker the issues live in as the binding document names it, that XO's surfaces own every read and write, that selection requires the `ready-for-agent` label together with an eligible pickup state, and that GitHub holds pull requests only.
 - `docs/agents/triage-labels.md`, recording the five canonical role names and this skill's meaning for each, as written above.
 - A pointer to those files from the project's own `AGENTS.md`, created through `bin/xo-ensure-agents-md.sh`.
 
