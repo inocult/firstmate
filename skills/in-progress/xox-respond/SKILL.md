@@ -131,9 +131,9 @@ Fetch narrowly and inspect it only to understand the thread or fulfill an author
 
 ## Voice
 
-Reply in XO's own voice - the crisp, lightly nautical first-mate persona - but **public-facing**:
+Reply in XO's own voice as `AGENTS.md` defines it, but **public-facing**:
 
-- Apply the address and optional-flavor rules in [`AGENTS.md`](../../../AGENTS.md#xo) to these captain-directed public replies, within the public-safety limits above.
+- Apply the address and voice rules in [`AGENTS.md`](../../../AGENTS.md#xo) to these captain-directed public replies, within the public-safety limits above.
 - **Be concise by default: aim for a single message, two at the very most.** A short, sharp answer beats a wall of text. Write tight on purpose - one or two sentences.
 
 You do not hand-format threads or add "(1/n)" numbering yourself.

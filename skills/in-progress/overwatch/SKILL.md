@@ -18,7 +18,7 @@ Load `plane-missions` for the shared-claim and delivery contract and read `bin/x
 If no scope has been configured, discover it through the `prep` setup procedure and resolve the intended project before enabling.
 Treat `/overwatch` without an action as status/help, not an instruction to start new work.
 Before `on`, confirm that the readiness label, pickup states and lifecycle states resolve against the tracker through the surface the binding document names for that read.
-Do not enable this in a persistent cell lead's home unless main Control has routed that queue to it.
+Do not enable this in a persistent standing worker's home unless the main XO has routed that queue to it.
 
 The helper defaults to two open executions, a five-minute check interval and ten successful pickups per activation; the user may choose other bounds.
 Report the scope and bounds when enabling, then run the first pickup check immediately.

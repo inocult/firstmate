@@ -1,6 +1,6 @@
 ---
 name: breach
-description: Implement a selected ticket through a claimed XO operative, adapting Matt Pocock's implement workflow to isolated worktrees and supervised PR delivery.
+description: Implement a selected ticket through a claimed XO worker, adapting Matt Pocock's implement workflow to isolated worktrees and supervised PR delivery.
 metadata:
   internal: true
 ---

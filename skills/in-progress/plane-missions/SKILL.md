@@ -1,6 +1,6 @@
 ---
 name: plane-missions
-description: Implement existing tickets from the tracker with shared claims, isolated XO workers and repo-local Pocock engineering skills, and file the work Control discovers or commissions back to that tracker. Use for filing Control's own work as tickets, ticket intake, dispatch, PR delivery and recovery.
+description: Implement existing tickets from the tracker with shared claims, isolated XO workers and repo-local Pocock engineering skills, and file the work XO discovers or commissions back to that tracker. Use for filing XO's own work as tickets, ticket intake, dispatch, PR delivery and recovery.
 user-invocable: false
 metadata:
   internal: true
