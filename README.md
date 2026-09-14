@@ -22,7 +22,7 @@
 
 XO is the Executive Officer, second in command, who runs the crew and carries out the commander's intent without assuming the commander's authority.
 
-This fork ships an executive-officer voice - ACP 125 radiotelephone prowords, shaped for an ADHD reader by [`AGENTS.md`](AGENTS.md) section 9 - and adds [Plane mission intake](docs/plane-missions.md) for teams using repo-local Pocock engineering skills.
+This fork ships an executive-officer voice - ACP 125 radiotelephone prowords, with answers shaped by [`AGENTS.md`](AGENTS.md) section 9 to be acted on rather than merely read - and adds [Plane mission intake](docs/plane-missions.md) for teams using repo-local Pocock engineering skills.
 Plane tickets remain the shared backlog, GitHub PRs carry implementation, and remote Git claims prevent duplicate pickup among participating XOs.
 Use `/sitrep` for status, `/debrief` for learnings, `/offgrid` for away supervision and `/refresh` for updates.
 The upstream architecture below remains the runtime foundation.

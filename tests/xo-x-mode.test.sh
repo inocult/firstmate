@@ -632,7 +632,7 @@ test_reply_success_posts_request_bound_only() {
   printf 'XOX_PAIRING_TOKEN=tok-r\n' > "$home/.env"
   out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     FAKE_CURL_LOG="$log" FAKE_ANSWER_CODE=200 \
-    "$ROOT/bin/xo-x-reply.sh" "req-7" "Aye, charting a couple of fixes."); rc=$?
+    "$ROOT/bin/xo-x-reply.sh" "req-7" "WILCO, charting a couple of fixes."); rc=$?
   expect_code 0 "$rc" "reply success exit"
   [ "$out" = "req-7" ] || fail "reply must echo only the request_id (got: $out)"
   assert_grep "url=https://relay.test/connector/answer" "$log" "reply must POST /connector/answer"
@@ -644,7 +644,7 @@ test_reply_success_posts_request_bound_only() {
   local data
   data=$(grep '^data=' "$log" | tail -1 | sed 's/^data=//')
   [ "$(printf '%s' "$data" | jq -r .request_id)" = "req-7" ] || fail "reply body request_id"
-  [ "$(printf '%s' "$data" | jq -r .text)" = "Aye, charting a couple of fixes." ] || fail "reply body text"
+  [ "$(printf '%s' "$data" | jq -r .text)" = "WILCO, charting a couple of fixes." ] || fail "reply body text"
   keys=$(printf '%s' "$data" | jq -r 'keys|join(",")')
   [ "$keys" = "request_id,text" ] || fail "reply body must carry only request_id,text (got: $keys)"
   pass "xo-x-reply posts a request-bound answer and echoes only the request_id"
@@ -925,7 +925,7 @@ test_reply_text_file_and_stdin() {
   # expansion) because it never touches a shell command line.
   log="$home/file.log"
   # shellcheck disable=SC2016  # single quotes are deliberate: the metacharacters must stay literal
-  printf '%s' 'Aye $(whoami) & "fixes" `now`' > "$home/reply.txt"
+  printf '%s' 'ROGER $(whoami) & "fixes" `now`' > "$home/reply.txt"
   out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     FAKE_CURL_LOG="$log" FAKE_ANSWER_CODE=200 \
     "$ROOT/bin/xo-x-reply.sh" "req-1" --text-file "$home/reply.txt"); rc=$?
@@ -933,7 +933,7 @@ test_reply_text_file_and_stdin() {
   [ "$out" = "req-1" ] || fail "reply --text-file must echo only the request_id (got: $out)"
   data=$(grep '^data=' "$log" | tail -1 | sed 's/^data=//')
   # shellcheck disable=SC2016  # single quotes are deliberate: comparing against the literal text
-  [ "$(printf '%s' "$data" | jq -r .text)" = 'Aye $(whoami) & "fixes" `now`' ] \
+  [ "$(printf '%s' "$data" | jq -r .text)" = 'ROGER $(whoami) & "fixes" `now`' ] \
     || fail "reply --text-file must send the text verbatim, unexpanded"
   # stdin form.
   log="$home/stdin.log"
@@ -1000,13 +1000,13 @@ test_reply_dry_run_records_not_posts() {
   printf 'XOX_PAIRING_TOKEN=tok-d\n' > "$home/.env"
   out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
     XOX_DRY_RUN=1 FAKE_CURL_LOG="$log" \
-    "$ROOT/bin/xo-x-reply.sh" "req-1" "Aye, a couple of fixes underway." 2>"$home/err"); rc=$?
+    "$ROOT/bin/xo-x-reply.sh" "req-1" "WILCO, a couple of fixes underway." 2>"$home/err"); rc=$?
   expect_code 0 "$rc" "dry-run reply exit"
   [ "$out" = "req-1" ] || fail "dry-run must still echo the request_id (got: $out)"
   # It must NOT have posted: the fake curl is never invoked, so no POST is logged.
   [ -f "$log" ] && grep -q "method=POST" "$log" && fail "dry-run must not POST to the relay"
   assert_present "$home/state/x-outbox/req-1.json" "dry-run must record the would-be reply"
-  [ "$(jq -r .text "$home/state/x-outbox/req-1.json")" = "Aye, a couple of fixes underway." ] \
+  [ "$(jq -r .text "$home/state/x-outbox/req-1.json")" = "WILCO, a couple of fixes underway." ] \
     || fail "outbox record must hold the would-be reply text"
   [ "$(jq -r .request_id "$home/state/x-outbox/req-1.json")" = "req-1" ] \
     || fail "outbox record must hold the request_id"
@@ -1136,9 +1136,9 @@ test_split_thread_lib() {
   . "$ROOT/bin/xo-x-lib.sh"
   local out n last rejoin maxlen txt
   # A reply that fits one tweet stays a single, UNNUMBERED chunk.
-  out=$(printf 'Aye, all shipshape.' | xox_split_thread 280 25)
+  out=$(printf 'ROGER, all clear.' | xox_split_thread 280 25)
   [ "$(printf '%s' "$out" | jq 'length')" = "1" ] || fail "short reply must be one chunk"
-  [ "$(printf '%s' "$out" | jq -r '.[0]')" = "Aye, all shipshape." ] || fail "short reply must be verbatim and unnumbered"
+  [ "$(printf '%s' "$out" | jq -r '.[0]')" = "ROGER, all clear." ] || fail "short reply must be verbatim and unnumbered"
   # A long reply splits on word boundaries; every chunk within the limit; lossless.
   txt="alpha bravo charlie delta echo foxtrot golf hotel india juliet kilo lima mike november"
   out=$(printf '%s' "$txt" | xox_split_thread 30 25)
@@ -1604,7 +1604,7 @@ test_reply_followup_dry_run_marks_endpoint() {
     || fail "followup dry-run preview must hold the reply text"
   assert_grep "/connector/followup" "$home/err" "followup dry-run summary must name the followup endpoint"
   # An answer dry-run must remain unchanged: no endpoint marker.
-  out=$(XO_HOME="$home" XOX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" "req-ans" "Aye." 2>/dev/null)
+  out=$(XO_HOME="$home" XOX_DRY_RUN=1 "$ROOT/bin/xo-x-reply.sh" "req-ans" "ROGER." 2>/dev/null)
   jq -e 'has("endpoint")|not' "$home/state/x-outbox/req-ans.json" >/dev/null \
     || fail "an answer dry-run preview must not gain an endpoint marker"
   pass "xo-x-reply --followup dry-run marks the endpoint without changing the answer path"
@@ -1967,7 +1967,7 @@ test_regression_discord_followup_survives_inbox_cleanup() {
   # 3. The delayed milestone follow-up is posted DIRECTLY by request_id, with no
   #    task link at all - the exact path that regressed.
   reply=$(cat <<'TXT'
-Aye captain, the sign-in redirect is patched and up for review. The fix restores the callback path that was dropping the return URL, adds a regression guard so it cannot silently break again, and keeps the existing session handling untouched. This message deliberately runs well past a single X tweet so it proves a Discord follow-up stays one message after the inbox is gone.
+Captain, the sign-in redirect is patched and up for review. The fix restores the callback path that was dropping the return URL, adds a regression guard so it cannot silently break again, and keeps the existing session handling untouched. This message deliberately runs well past a single X tweet so it proves a Discord follow-up stays one message after the inbox is gone.
 TXT
 )
   [ "$(printf '%s' "$reply" | wc -m | tr -d '[:space:]')" -gt 280 ] \
@@ -2048,7 +2048,7 @@ test_followup_partial_registry_uses_relay_budget_live() {
     > "$home/state/x-context/req-relay.json"
   private_artifact_file "$home/state/x-context/req-relay.json"
   reply=$(cat <<'TXT'
-Aye captain, that one is shipped and green. The change is landed, the regression guard is in place, and nothing else was disturbed along the way. This confirmation deliberately runs past a single X tweet so it proves the relay-recovered Discord budget keeps it one message.
+Captain, that one is shipped and green. The change is landed, the regression guard is in place, and nothing else was disturbed along the way. This confirmation deliberately runs past a single X tweet so it proves the relay-recovered Discord budget keeps it one message.
 TXT
 )
   out=$(PATH="$fakebin:$BASE_PATH" XO_HOME="$home" XOX_RELAY_URL="https://relay.test" \
@@ -2369,7 +2369,7 @@ test_link_resolves_platform_by_request_id_after_inbox_cleanup() {
   # The follow-up (still with the inbox gone) must post the ~470-char reply as ONE
   # Discord message, not an X-length thread.
   reply=$(cat <<'TXT'
-Aye captain, the sign-in redirect is patched and the change is up for review. The fix restores the callback path that was dropping the return URL, adds a regression guard so it cannot silently break again, and keeps the existing session handling untouched. This message is deliberately longer than a single X tweet so the test proves a Discord follow-up stays in one message instead of splitting into a numbered thread.
+Captain, the sign-in redirect is patched and the change is up for review. The fix restores the callback path that was dropping the return URL, adds a regression guard so it cannot silently break again, and keeps the existing session handling untouched. This message is deliberately longer than a single X tweet so the test proves a Discord follow-up stays in one message instead of splitting into a numbered thread.
 TXT
 )
   out=$(XO_HOME="$home" XOX_DRY_RUN=1 XOX_NOW_OVERRIDE=1700003600 \

@@ -1319,7 +1319,7 @@ if (requests()[2].options.deliverAs !== "nextTurn" || requests()[2].options.trig
 await fire("agent_settled", {});
 if (requests().length !== 3) throw new Error("a duplicate next-turn copy was queued");
 // The captain's next prompt consumes that copy; settling unacknowledged queues one more.
-await runOf(() => mainEntries.push({ type: "message", message: { role: "assistant", content: "Captain, shipshape." } }));
+await runOf(() => mainEntries.push({ type: "message", message: { role: "assistant", content: "Captain, understood." } }));
 if (requests().length !== 4 || requests()[3].options.deliverAs !== "nextTurn") throw new Error("the outcome stopped being re-presented on later prompts");
 if (JSON.stringify(unprocessedSeqs()) !== JSON.stringify([seq])) throw new Error("a paraphrase advanced the processed marker");
 
@@ -2322,7 +2322,7 @@ import { existsSync, readFileSync } from "node:fs";
 
 const entries = [
   { type: "message", message: { role: "user", content: `never merge task-7 without my word ${"h".repeat(5000)} old-history-tail` } },
-  { type: "message", message: { role: "assistant", content: [{ type: "text", text: "aye, holding task-7" }, { type: "toolCall", id: "t1" }] } },
+  { type: "message", message: { role: "assistant", content: [{ type: "text", text: "WILCO, holding task-7" }, { type: "toolCall", id: "t1" }] } },
   { type: "message", message: { role: "user", content: "⁣XO_OP: v1 watcher: operational injection" } },
   { type: "message", message: { role: "toolResult", content: "tool output stays in main" } },
   { type: "custom", message: { role: "custom", customType: "xo-branch-merge", content: "merged note" } },
@@ -2355,7 +2355,7 @@ if (!mirrored[0].content.startsWith("[captain] never merge task-7 without my wor
     !mirrored[0].content.endsWith("old-history-tail")) {
   throw new Error(`older captain history was not bounded: ${mirrored[0].content}`);
 }
-if (mirrored[1].content !== "[main] aye, holding task-7") throw new Error(`bad main mirror: ${mirrored[1].content}`);
+if (mirrored[1].content !== "[main] WILCO, holding task-7") throw new Error(`bad main mirror: ${mirrored[1].content}`);
 if (mirrored[2].content !== `[captain] ${entries[6].message.content}`) {
   throw new Error("current captain dialog was not preserved completely");
 }
