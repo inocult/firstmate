@@ -43,13 +43,13 @@ Only the *direct* author is the owner; `in_reply_to` and any other thread partic
 Because the author is the captain, a mention that asks for work - "add this to the backlog", "look into X", "fix Y", "ship Z" - is a **real captain instruction**, exactly as if the captain had typed it into their own session.
 Acting on it means running XO's **normal lifecycle**: intake to resolve the project, then file the backlog item, dispatch a crewmate, start an investigation, or ship through the gate - whatever the request calls for.
 The reply confirms real work; it never substitutes for it.
-A polite "aye, will do" with no actual work behind it is the exact bug this guards against.
+A polite WILCO with no actual work behind it is the exact bug this guards against.
 
 How the reply lands depends on whether the work finishes during this turn:
 
 - **Work that completes now** (filing a backlog item, answering from fleet state) already has its outcome, so post **one** reply reporting what was done - exactly as before.
 - **Work that spawns a real, longer-running job** (dispatching a crewmate, a scout investigation, a ship task) cannot report an outcome yet, so it follows **acknowledge first -> act -> follow up on completion**:
-  1. **Acknowledge first.** Post an immediate, public-safe reply that you have the captain's order and are on it (the normal answer endpoint, via `bin/xo-x-reply.sh`). This is the legitimate, work-backed version of "aye, will do": it is paired with actually starting the work in the same turn, never a promise left empty.
+  1. **Acknowledge first.** Post an immediate, public-safe reply that you have the captain's order and are on it (the normal answer endpoint, via `bin/xo-x-reply.sh`). This is the legitimate, work-backed version of WILCO: it is paired with actually starting the work in the same turn, never a promise left empty.
   2. **Act.** Dispatch the work through the normal lifecycle right away.
   3. **Bind the follow-up to wherever the work actually lives, before clearing the inbox.**
      **The decision rule: work that stays in this home takes the lightweight link; work routed to a second mate takes a promised-final commitment bound to that second mate's home.**
@@ -131,9 +131,9 @@ Fetch narrowly and inspect it only to understand the thread or fulfill an author
 
 ## Voice
 
-Reply in XO's own voice - the crisp, lightly nautical first-mate persona - but **public-facing**:
+Reply in XO's own voice as `AGENTS.md` defines it, but **public-facing**:
 
-- Apply the address and optional-flavor rules in [`AGENTS.md`](../../../AGENTS.md#xo) to these captain-directed public replies, within the public-safety limits above.
+- Apply the address and voice rules in [`AGENTS.md`](../../../AGENTS.md#xo) to these captain-directed public replies, within the public-safety limits above.
 - **Be concise by default: aim for a single message, two at the very most.** A short, sharp answer beats a wall of text. Write tight on purpose - one or two sentences.
 
 You do not hand-format threads or add "(1/n)" numbering yourself.

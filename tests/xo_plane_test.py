@@ -451,8 +451,8 @@ class AdapterTests(unittest.TestCase):
         return registry
 
     async def file_ticket(self, plane, state, labels):
-        """Model Control filing a ticket through the session connector; the adapter never creates one."""
-        filed = await plane.call("workitem", "create", project_id="project-1", name="Filed by Control",
+        """Model XO filing a ticket through the session connector; the adapter never creates one."""
+        filed = await plane.call("workitem", "create", project_id="project-1", name="Filed by XO",
                                  description="Acceptance: the filed work lands", state=state, labels=labels)
         return filed["id"]
 
@@ -506,7 +506,7 @@ class AdapterTests(unittest.TestCase):
                 await plane.call("workitem", "update", project_id="project-1", workitem_id=item,
                                  labels=[triage, "label-ready"])
                 self.assertEqual(await self.refused(service, item), "blocked")
-                # Control dispatches and lands through the connector's state field; still no pickup.
+                # XO dispatches and lands through the connector's state field; still no pickup.
                 await plane.call("workitem", "update", project_id="project-1", workitem_id=item, state="active")
                 self.assertEqual(await self.refused(service, item), "active")
                 await plane.call("workitem", "update", project_id="project-1", workitem_id=item, state="done")

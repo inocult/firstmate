@@ -1,4 +1,4 @@
-<h1 align="center">XO - Control edition</h1>
+<h1 align="center">XO</h1>
 <p align="center">
   <a
     href="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-blue?style=flat-square"
@@ -18,11 +18,11 @@
   /></a>
 </p>
 
-<h3 align="center">One point of contact. A team of operatives.</h3>
+<h3 align="center">One point of contact. A crew that does the work.</h3>
 
 XO is the Executive Officer, second in command, who runs the crew and carries out the commander's intent without assuming the commander's authority.
 
-This fork uses a restrained hacker / heist-operative persona and adds [Plane mission intake](docs/plane-missions.md) for teams using repo-local Pocock engineering skills.
+This fork ships an executive-officer voice - ACP 125 radiotelephone prowords, with answers shaped by [`AGENTS.md`](AGENTS.md) section 9 to be acted on rather than merely read - and adds [Plane mission intake](docs/plane-missions.md) for teams using repo-local Pocock engineering skills.
 Plane tickets remain the shared backlog, GitHub PRs carry implementation, and remote Git claims prevent duplicate pickup among participating XOs.
 Use `/sitrep` for status, `/debrief` for learnings, `/offgrid` for away supervision and `/refresh` for updates.
 The upstream architecture below remains the runtime foundation.
@@ -188,7 +188,7 @@ Claude and grok use the slash form shown here; codex uses the same names with `$
 | Skill              | What it does                                                                                                                                  |
 | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | `/operation`       | Plan work too big for one session as a shared map of decision tickets on your issue tracker, then resolve them one at a time until the way to the destination is clear |
-| `/prep`            | Prepare this home and a repository for Plane missions: Control writes the home's private Plane configuration and, only on your explicit confirmation of the exact list, creates any canonical triage label your shared Plane project is missing; a dispatched worker lands the project's domain-doc and tracker layout |
+| `/prep`            | Prepare this home and a repository for Plane missions: XO writes the home's private Plane configuration and, only on your explicit confirmation of the exact list, creates any canonical triage label your shared Plane project is missing; a dispatched worker lands the project's domain-doc and tracker layout |
 | `/overwatch on/off/status` | Enable, pause or inspect bounded automatic pickup of ready-for-agent Plane tickets |
 | `/breach PLAT-27` | Dispatch one claimed ticket through the Pocock-adapted implementation workflow |
 | `/afk`             | Enter away-mode supervision: the sub-supervisor self-handles routine notifications in bash, escalates captain-relevant events and bounded declared-external-wait rechecks as batched digests, and actively alerts if delivery gets stuck while you step away |

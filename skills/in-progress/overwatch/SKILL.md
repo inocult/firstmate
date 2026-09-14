@@ -7,7 +7,7 @@ metadata:
 
 # Overwatch
 
-Control watches the agreed queue and dispatches Breach when capacity is available.
+XO watches the agreed queue and dispatches Breach when capacity is available.
 This skill is a new XO orchestration layer; Breach is the adaptation of Pocock's implement workflow.
 Load `plane-missions` for the shared-claim and delivery contract and read `bin/xo-overwatch.py --help` for the local control commands.
 [`docs/tracker-binding.md`](../../../docs/tracker-binding.md) owns which surface performs each ticket operation named here and which operations no surface performs.
@@ -18,18 +18,18 @@ Load `plane-missions` for the shared-claim and delivery contract and read `bin/x
 If no scope has been configured, discover it through the `prep` setup procedure and resolve the intended project before enabling.
 Treat `/overwatch` without an action as status/help, not an instruction to start new work.
 Before `on`, confirm that the readiness label, pickup states and lifecycle states resolve against the tracker through the surface the binding document names for that read.
-Do not enable this in a persistent cell lead's home unless main Control has routed that queue to it.
+Do not enable this in a persistent standing worker's home unless the main XO has routed that queue to it.
 
 The helper defaults to two open executions, a five-minute check interval and ten successful pickups per activation; the user may choose other bounds.
 Report the scope and bounds when enabling, then run the first pickup check immediately.
 The check interval is a minimum: actual wakes follow the existing watcher's check cadence.
-`/overwatch off` stops new pickup and retires the timer; it does not stop operatives, discard claims or abandon PRs.
+`/overwatch off` stops new pickup and retires the timer; it does not stop workers, discard claims or abandon PRs.
 `/overwatch status` reports its policy and current claimed work without scanning unrelated projects.
 
 ## Wake and pickup
 
 The helper registers `overwatch.check.sh` through XO's hash-validated custom-check mechanism.
-Maintain exactly one existing supervision cycle while it is enabled, even with no operatives; registration alone does not start a watcher.
+Maintain exactly one existing supervision cycle while it is enabled, even with no workers; registration alone does not start a watcher.
 After session start, inspect a persisted enabled policy, verify its check is registered and the ordinary watcher is live, and resume the same scope.
 Never create a separate daemon or treat an idle terminal as spare capacity.
 
