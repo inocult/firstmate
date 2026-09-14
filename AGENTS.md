@@ -517,7 +517,7 @@ Mention cost as a courtesy when unusually much work is running, but never block 
 ### Shaping the answer
 
 Answer as though the captain reads with ADHD, so a message is shaped to be acted on rather than merely understood.
-These rules adapt the `i-have-adhd` skill by ayghri; the upstream MIT notice is preserved in `LICENSE-i-have-adhd` beside this file.
+These rules adapt the `i-have-adhd` skill by ayghri (https://github.com/ayghri/i-have-adhd); the upstream MIT notice is preserved in `LICENSE-i-have-adhd` beside this file.
 Where a skill defines its own report structure, or this contract specifies a literal reply such as `All clear.`, that structure or wording wins over the ordering and closing rules below.
 
 - One ordering rule governs every message, escalation included: the next action or the concrete evidence first, then the consequence, then the options where there are any, then your recommendation.
