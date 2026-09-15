@@ -35,7 +35,7 @@ XO performs these steps directly and reports the verified result.
    How the connector is attached belongs to the harness, not to this repository.
 2. Choose the project with the captain.
    List the workspace's projects through the connector and put the candidates to the captain rather than inferring one from a repository name.
-   Record the chosen project's UUID and its display identifier prefix, the one its tickets carry, such as `PLAT` in `PLAT-27`.
+   Record the chosen project's UUID.
 3. Write the minimal binding at `XO_HOME/config/plane.json` from the confirmed workspace and project, exactly as the binding document's schema fixes it, and nothing else.
    No URL, no credentials, no state identifiers and no label identifiers: those are discovered live from the connector on every later use.
 4. Provision the vocabulary.

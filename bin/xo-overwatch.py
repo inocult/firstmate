@@ -13,9 +13,8 @@ performed by XO itself. No ticket read, no GitHub write and no worker launch
 occurs here. The Overwatch skill owns selection and dispatch. The registered
 check emits a due event until XO records an outcome.
 
-The binding file must be a JSON object carrying `project_id` and
-`project_identifier`, plus exactly one of `workspace_slug` or `workspace_id`;
-docs/tracker-binding.md owns that schema.
+The binding file must be a JSON object carrying `workspace_slug` and
+`project_id`; docs/tracker-binding.md owns that schema.
 """
 import argparse
 import fcntl
@@ -43,14 +42,10 @@ def load_binding(path):
     binding = json.loads(path.read_text())
     if not isinstance(binding, dict):
         raise OverwatchError('tracker binding must be a JSON object')
-    for field in ('project_id', 'project_identifier'):
+    for field in ('workspace_slug', 'project_id'):
         if not isinstance(binding.get(field), str) or not binding[field].strip():
             raise OverwatchError('tracker binding must name ' + field)
-    workspaces = [field for field in ('workspace_slug', 'workspace_id')
-                  if isinstance(binding.get(field), str) and binding[field].strip()]
-    if len(workspaces) != 1:
-        raise OverwatchError('tracker binding must name exactly one of workspace_slug or workspace_id')
-    return binding, workspaces[0]
+    return binding
 
 
 def save(path, value):
@@ -94,15 +89,14 @@ def main():
         if args.command == 'on':
             if args.slots < 1 or args.interval < 60 or args.max_pickups < 1:
                 raise OverwatchError('slots/pickup budget must be positive; interval must be at least 60 seconds')
-            binding, workspace_field = load_binding(binding_path)
+            binding = load_binding(binding_path)
             if policy.get('enabled'):
                 raise OverwatchError('Overwatch is already enabled; inspect status or turn it off before replacing scope')
             shim = state / 'overwatch.check.sh'
             if shim.exists() or shim.is_symlink():
                 raise OverwatchError('existing Overwatch check needs off/reconciliation before enabling')
-            policy = {'enabled': True, 'project_id': binding['project_id'],
-                      'project_identifier': binding['project_identifier'],
-                      workspace_field: binding[workspace_field],
+            policy = {'enabled': True, 'workspace_slug': binding['workspace_slug'],
+                      'project_id': binding['project_id'],
                       'binding_sha256': hashlib.sha256(binding_path.read_bytes()).hexdigest(),
                       'slots': args.slots, 'interval': args.interval, 'max_pickups': args.max_pickups,
                       'picked': 0, 'empty_streak': 0, 'next_check': now}
@@ -125,7 +119,8 @@ def main():
         elif args.command == 'check':
             if not policy.get('enabled'):
                 return
-            if not binding_path.exists() or hashlib.sha256(binding_path.read_bytes()).hexdigest() != policy['binding_sha256']:
+            recorded = policy.get('binding_sha256', policy.get('config_sha256'))
+            if not binding_path.exists() or hashlib.sha256(binding_path.read_bytes()).hexdigest() != recorded:
                 print('overwatch: tracker binding changed; pause and reconcile before pickup')
             elif policy['picked'] >= policy['max_pickups']:
                 print('overwatch: pickup budget reached; turn off and report')

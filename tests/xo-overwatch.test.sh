@@ -17,8 +17,7 @@ write_binding() {  # [project_id]
   cat > "$BINDING" <<JSON
 {
   "workspace_slug": "at-bryde-ud",
-  "project_id": "${1:-project-uuid-1}",
-  "project_identifier": "PLAT"
+  "project_id": "${1:-project-uuid-1}"
 }
 JSON
 }
@@ -49,7 +48,6 @@ test_enabling_records_scope_and_registers_the_check() {
   overwatch 0 on
   assert_contains "$OVERWATCH_OUT" '"enabled": true' "on enables the policy"
   assert_equals project-uuid-1 "$(policy_field project_id)" "the policy records the bound project"
-  assert_equals PLAT "$(policy_field project_identifier)" "the policy records the project identifier"
   assert_equals at-bryde-ud "$(policy_field workspace_slug)" "the policy records the bound workspace"
   assert_present "$HOME_DIR/state/overwatch.check.sh" "enabling writes the registered check"
   bash -c '. "$1"; . "$2"; xo_custom_check_registered "$3" overwatch' test \
@@ -128,7 +126,7 @@ test_an_error_outcome_pauses_pickup() {
 
 test_an_incomplete_binding_refuses_to_enable() {
   local field
-  for field in project_id project_identifier workspace_slug; do
+  for field in workspace_slug project_id; do
     write_binding
     python3 -c 'import json,sys
 path = sys.argv[1]
@@ -139,13 +137,31 @@ json.dump(binding, open(path, "w"))' "$BINDING" "$field"
     assert_absent "$HOME_DIR/state/overwatch.check.sh" \
       "enabling without $field must register no check"
   done
-  printf '{"workspace_slug":"a","workspace_id":"b","project_id":"p","project_identifier":"PLAT"}\n' > "$BINDING"
-  overwatch 1 on
   rm -f "$BINDING"
   overwatch 1 on
   assert_absent "$HOME_DIR/state/overwatch.check.sh" \
     "enabling without a binding at all must register no check"
-  pass "an incomplete, ambiguous or missing tracker binding refuses to enable"
+  pass "an incomplete or missing tracker binding refuses to enable"
+}
+
+test_a_policy_recorded_under_the_legacy_hash_key_still_checks() {
+  rm -rf "$HOME_DIR/state"
+  write_binding
+  overwatch 0 on
+  python3 -c 'import json,sys
+path = sys.argv[1]
+policy = json.load(open(path))
+policy["config_sha256"] = policy.pop("binding_sha256")
+json.dump(policy, open(path, "w"))' "$HOME_DIR/state/overwatch.json"
+  overwatch 0 check
+  assert_contains "$OVERWATCH_OUT" "pickup check due" \
+    "a policy carrying only the legacy hash key still emits the due wake"
+  write_binding project-uuid-2
+  overwatch 0 check
+  assert_contains "$OVERWATCH_OUT" "tracker binding changed" \
+    "a policy carrying only the legacy hash key still notices a changed binding"
+  overwatch 0 off
+  pass "a policy persisted with the legacy hash key keeps checking instead of failing silently"
 }
 
 test_the_helper_reaches_no_tracker() {
@@ -153,7 +169,7 @@ test_the_helper_reaches_no_tracker() {
   # names a project that exists nowhere still enables: proving by contrast that
   # nothing here resolves a ticket, a state or a label against a live tracker.
   rm -rf "$HOME_DIR/state"
-  printf '{"workspace_slug":"nowhere","project_id":"no-such-project","project_identifier":"ZZZ"}\n' > "$BINDING"
+  printf '{"workspace_slug":"nowhere","project_id":"no-such-project"}\n' > "$BINDING"
   overwatch 0 on
   assert_equals no-such-project "$(policy_field project_id)" \
     "the policy records the bound project without resolving it anywhere"
@@ -171,4 +187,5 @@ test_off_retires_the_check_and_preserves_work
 test_bounds_and_double_enable_are_refused
 test_an_error_outcome_pauses_pickup
 test_an_incomplete_binding_refuses_to_enable
+test_a_policy_recorded_under_the_legacy_hash_key_still_checks
 test_the_helper_reaches_no_tracker

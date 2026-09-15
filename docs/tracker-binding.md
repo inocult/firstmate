@@ -16,13 +16,10 @@ That binding file carries the workspace and the project and nothing else:
 ```json
 {
   "workspace_slug": "YOUR_WORKSPACE",
-  "project_id": "YOUR_PROJECT_UUID",
-  "project_identifier": "PLAT"
+  "project_id": "YOUR_PROJECT_UUID"
 }
 ```
 
-`workspace_id` may stand in for `workspace_slug`, and exactly one of the two is named.
-`project_identifier` is the display prefix the tracker puts on the project's tickets, such as `PLAT` in `PLAT-27`, so a ticket named in conversation can be checked against the configured project before any operation runs.
 The file holds no URL, because the connector already knows where its workspace lives; no credentials, because the harness owns the connector's authentication; and no state or label identifiers, because those are discovered live from the connector on each use, by exact name.
 The names discovered that way are the readiness label `ready-for-agent`, the triage label `needs-triage`, and the project's `Backlog`, `Todo`, `In Progress`, `In Review`, `Blocked` and `Done` states.
 A name that resolves to no state or label, or to more than one, stops the operation rather than being guessed at.
@@ -46,7 +43,7 @@ It is not a tracker surface: it performs no ticket read or write, and the pickup
 | --- | --- |
 | ticket | a work item in the configured project, addressed by its UUID, or by its display identifier where a connector tool accepts one |
 | the tracker | the Plane workspace the session connector resolves to, which must be the workspace the binding names |
-| the configured project | the one project every operation acts on, named by `project_id` and displayed as `project_identifier` |
+| the configured project | the one project every operation acts on, named by `project_id` |
 | readiness label | the project label named exactly `ready-for-agent`, the planning team's promise that the ticket is specified well enough for an agent |
 | triage label | the project label named exactly `needs-triage`, carried by work filed but not yet classified |
 | pickup states | the project states a ticket may be claimed from: `Backlog` and `Todo` |
