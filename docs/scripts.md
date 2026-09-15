@@ -125,6 +125,7 @@ The shared no-mistakes gate refusal for fleet lifecycle entrypoints is summarize
 | `xo-check-register.sh`   | Bind an intentional custom watcher check to its current bytes                       |
 | `xo-check-unregister.sh` | Retire a custom watcher check and its trust binding by validated task id            |
 | `xo-check-lib.sh`        | Validate custom-check registrations and prepare private execution snapshots          |
+| `xo-overwatch.py`        | Persist the bounded ticket auto-pickup policy and its registered check; reads only the home's tracker binding, never the tracker ([tracker-binding.md](tracker-binding.md)) |
 | `xo-tool-update-check.sh` | Report watched tooling with an update available, and updates installed but left inert by PATH order |
 | `xo-pr-lib.sh`           | Own canonical task and PR validation plus private atomic PR-poll publication, merge-notification identity, and retirement |
 | `xo-pr-poll.sh`          | Provide the byte-static watcher program for validated PR/MR-poll sidecars           |

@@ -119,6 +119,9 @@ def main():
         elif args.command == 'check':
             if not policy.get('enabled'):
                 return
+            # Policies enabled before the binding rename recorded the hash as
+            # config_sha256; read it so an upgraded home still gets its wake
+            # instead of a silent KeyError the watcher never sees.
             recorded = policy.get('binding_sha256', policy.get('config_sha256'))
             if not binding_path.exists() or hashlib.sha256(binding_path.read_bytes()).hexdigest() != recorded:
                 print('overwatch: tracker binding changed; pause and reconcile before pickup')
