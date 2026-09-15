@@ -534,10 +534,6 @@
       "audience": "operator-current"
     },
     {
-      "path": "bin/requirements-plane.txt",
-      "audience": "operator-example"
-    },
-    {
       "path": "skills/playbooks/debrief/SKILL.md",
       "audience": "agent-runtime"
     },

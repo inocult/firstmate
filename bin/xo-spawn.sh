@@ -2259,13 +2259,6 @@ if [ "$RELAUNCH" -eq 0 ] && [ "$KIND" != secondmate ] && [ "$BACKEND" != orca ];
   SPAWN_TREEHOUSE_PROJECT_LOCK_HELD=1
 fi
 [ -f "$BRIEF" ] || { echo "error: task $ID has no brief at inaccessible data path $BRIEF" >&2; exit 1; }
-# Shared Plane ownership applies to every worker harness, including relaunch.
-if [ "$KIND" != secondmate ] && [ -f "$DATA/$ID/plane.json" ]; then
-  "${XO_PLANE_PYTHON:-python3}" "$SCRIPT_DIR/xo-plane.py" check --task "$ID" >/dev/null || {
-    echo "error: Plane execution claim is not valid for this task; reconcile before dispatch" >&2
-    exit 1
-  }
-fi
 if [ "$KIND" = ship ] || [ "$KIND" = scout ]; then
   if xo_brief_task_placeholders_present "$BRIEF"; then
     echo "error: $BRIEF still contains {TASK} or {XO_SPEC}; fill ## Captain's intent and ## XO spec before spawn" >&2

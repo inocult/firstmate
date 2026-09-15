@@ -23,7 +23,7 @@
 XO is the Executive Officer, second in command, who runs the crew and carries out the commander's intent without assuming the commander's authority.
 
 This fork ships an executive-officer voice - ACP 125 radiotelephone prowords, with answers shaped by [`AGENTS.md`](AGENTS.md) section 9 to be acted on rather than merely read - and adds [Plane mission intake](docs/plane-missions.md) for teams using repo-local Pocock engineering skills.
-Plane tickets remain the shared backlog, GitHub PRs carry implementation, and remote Git claims prevent duplicate pickup among participating XOs.
+Plane tickets remain the shared backlog and GitHub PRs carry implementation; the XO reads and writes those tickets through the Plane connector its session already has, so nothing here stores tracker credentials.
 Use `/sitrep` for status, `/debrief` for learnings, `/offgrid` for away supervision and `/refresh` for updates.
 The upstream architecture below remains the runtime foundation.
 
@@ -188,9 +188,9 @@ Claude and grok use the slash form shown here; codex uses the same names with `$
 | Skill              | What it does                                                                                                                                  |
 | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | `/operation`       | Plan work too big for one session as a shared map of decision tickets on your issue tracker, then resolve them one at a time until the way to the destination is clear |
-| `/prep`            | Prepare this home and a repository for Plane missions: XO writes the home's private Plane configuration and, only on your explicit confirmation of the exact list, creates any canonical triage label your shared Plane project is missing; a dispatched worker lands the project's domain-doc and tracker layout |
+| `/prep`            | Prepare this home and a repository for Plane missions: XO confirms the session's Plane connector, writes the home's private note of which workspace and project it works in and, only on your explicit confirmation of the exact list, creates any canonical triage label your shared Plane project is missing; a dispatched worker lands the project's domain-doc and tracker layout |
 | `/overwatch on/off/status` | Enable, pause or inspect bounded automatic pickup of ready-for-agent Plane tickets |
-| `/breach PLAT-27` | Dispatch one claimed ticket through the Pocock-adapted implementation workflow |
+| `/breach PLAT-27` | Dispatch one ticket through the Pocock-adapted implementation workflow |
 | `/afk`             | Enter away-mode supervision: the sub-supervisor self-handles routine notifications in bash, escalates captain-relevant events and bounded declared-external-wait rechecks as batched digests, and actively alerts if delivery gets stuck while you step away |
 | `/ahoy`            | Recap visible session events since the prior real captain message plus visibly unanswered captain decisions, then guide the captain through any open decisions one at a time in agent-judged impact order; fall back to Bearings when invoked as the session's first real captain message |
 | `/bearings`        | Generate a concise four-section chat digest from bounded fleet state, including registered remote-home ledgers; use `/bearings file` to also replace today's dated report in `data/`, and add `include PRs` for live GitHub enrichment |

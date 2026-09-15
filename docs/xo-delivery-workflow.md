@@ -17,7 +17,7 @@ flowchart TD
     E --> F["Overwatch: select eligible work"]
     E --> G["Breach: explicitly selected ticket"]
     F --> G
-    G --> H["Shared claim and isolated worker"]
+    G --> H["Claim the ticket; isolated worker"]
     H --> I["Implementation and validation"]
     I --> J["Separate code-review: Standards + Spec"]
     J --> K{"Blocking findings?"}
@@ -38,22 +38,22 @@ An empty queue is a valid outcome.
 | `/to-spec` | Planning session | Keep synthesis, agreed testing seams and publication to the configured tracker. |
 | `/to-tickets` | Planning session | Keep approved vertical slices, native blockers and the `ready-for-agent` label. |
 | `/overwatch` | XO | New optional automatic intake policy; selects eligible implementation tickets within an agreed scope. |
-| `/breach <ticket>` | XO and a worker | Adapted implementation entrypoint; shared claim, isolated worktree, engineering practices and supervised delivery. |
+| `/breach <ticket>` | XO and a worker | Adapted implementation entrypoint; claimed ticket, isolated worktree, engineering practices and supervised delivery. |
 | `/code-review` | Fresh reviewer context or the configured review pipeline | Keep Pocock's Standards and Spec axes; supply the claimed ticket and exact commit range explicitly. |
 | Corrections | Original worker | Update the same implementation branch and PR; refresh review evidence after changes. |
 | Merge | Authorized identity or configured merge process | Existing branch protection, required checks and approval rules still apply. |
-| Done | XO through the Plane adapter | Verify merged PR and acceptance criteria before completing the implementation ticket. |
+| Done | XO through the session connector | Verify merged PR and acceptance criteria before completing the implementation ticket. |
 
 Planning can happen in a project session or through a planning worker routed by XO.
 Keeping those skills unchanged does not mean running their project edits directly in the supervisor's own checkout.
-The project's existing Plane tracker configuration remains essential.
+The session's Plane connector and the home's tracker binding remain essential; [`docs/tracker-binding.md`](tracker-binding.md) owns both.
 
 ## Readiness is a label, not a status
 
 Your Platform project already has the `ready-for-agent` label.
 Its description means the work is specified well enough for an agent to execute without further clarification.
 Plane states continue to represent progress: Backlog/Todo → In Progress → In Review → Done.
-Claimed work that becomes blocked is reconciled explicitly and remains claimed until a deliberate release or handoff; the Blocked state itself is outside that progression, and [`docs/tracker-binding.md`](tracker-binding.md) records its role.
+Claimed work that becomes blocked is reconciled explicitly and stays in the implementing state until a deliberate hand-back or handoff; the Blocked state itself is outside that progression, and [`docs/tracker-binding.md`](tracker-binding.md) records its role.
 
 Both upstream `/to-spec` and `/to-tickets` apply the readiness label.
 Therefore automatic pickup must distinguish a parent specification from its implementation slices.
@@ -61,8 +61,8 @@ The normal automatic queue contains implementation tickets from the approved bre
 A label alone is insufficient authorization to implement an entire parent feature.
 
 For each candidate, XO checks its role, acceptance criteria, parent/child relationships, native blocking dependencies and package/interface overlap.
-The adapter enforces the configured readiness label, allowed pickup states, supported dependencies, existing PR links and shared execution claim.
-Parent/spec classification and cross-ticket overlap assessment remain agent responsibilities in this version; they are not machine-enforced by the adapter.
+The claim boundary [`docs/tracker-binding.md`](tracker-binding.md) fixes is checked against the connector's live reads immediately before claiming.
+Parent/spec classification and cross-ticket overlap assessment are agent responsibilities too; nothing here enforces them mechanically.
 When classification is unclear, XO holds that ticket for clarification instead of assuming it is a build task.
 
 Do not automatically close the parent specification or operation map when one implementation ticket finishes.
@@ -73,7 +73,7 @@ Their completion follows the planning workflow and aggregate acceptance criteria
 | Command | Meaning |
 | --- | --- |
 | `/breach PLAT-27` | Implement this selected ticket once, through a worker. |
-| `/overwatch on` | Enable bounded automatic pickup for this home's configured Plane project and repository. |
+| `/overwatch on` | Enable bounded automatic pickup for this home's configured Plane project. |
 | `/overwatch status` | Show the active scope, limits and claimed work. |
 | `/overwatch off` | Stop taking new tickets; preserve active implementations and PR supervision. |
 
@@ -88,12 +88,12 @@ The planning skills remain project-owned, while these two orchestration skills l
 
 Overwatch is disabled until explicitly enabled for a configured scope.
 The initial defaults are two open executions, a five-minute check interval and ten successful claims per activation; these bounds can be changed when enabling.
-Open executions include reservations, blocked/held work and PRs awaiting review, so implementation does not produce an unlimited review backlog.
+Open executions include held work and PRs awaiting review, so implementation does not produce an unlimited review backlog.
 
 XO's watcher can suppress unchanged heartbeats.
 Overwatch therefore registers a lightweight custom check through the existing hash-validated check mechanism.
-The check emits a pickup-due event; XO reads Plane and reasons about selection when woken.
-The helper itself neither claims tickets nor starts workers.
+The check emits a pickup-due event; XO reads Plane through its session connector and reasons about selection when woken.
+The helper itself reads no ticket, claims none and starts no worker: it holds local policy only.
 
 A live supported XO agent and its single existing supervision cycle are required, even while the execution queue is empty.
 A registered timer is not proof that a supervisor is running.
@@ -101,25 +101,26 @@ Wake timing follows the watcher's check cadence, so the configured interval is a
 
 On a due wake, XO first reconciles its existing claims, workers and PRs.
 If capacity exists, it reads the queue, works the set of tickets whose blockers have completed, and selects by priority with deterministic tie-breaking.
-It claims one candidate at a time and dispatches only after ownership is confirmed.
+It claims one candidate at a time, by moving that ticket to the implementing state, and dispatches only after that move is confirmed.
 An empty queue backs off polling to at most one hour and produces no routine chat noise.
 
-Configuration changes, ambiguous claim outcomes, access failures or unresolved authorization questions pause new intake.
+A changed tracker binding, an ambiguous claim outcome, an access failure or an unresolved authorization question pauses new intake.
 Reaching the pickup budget stops further intake until deliberately re-enabled.
-Stopping pickup does not release claims, cancel workers or merge PRs.
+Stopping pickup does not hand tickets back, cancel workers or merge PRs.
 
-The capacity and classification decisions are performed by the skill; shared-claim exclusion is enforced by Git's expected-ref update.
+The capacity and classification decisions are performed by the skill; duplicate pickup is excluded by the ticket's own state, because a ticket that has left its pickup state is no longer eligible.
 The timer's local counter is a pickup limit, not a model-token billing limit.
 
 ## Multiple people and parallel workers
 
 Every person may run their own XO instance and choose their own queue scope.
 The human assignee on a Plane ticket remains unchanged when an agent claims execution.
-All participating instances must use the same canonical Plane identity and shared coordination remote for the same tickets.
+All participating instances must work the same canonical Plane workspace and project for the same tickets.
 
-Two instances may see the same labelled ticket, but only one shared claim update succeeds.
-The other instance skips or reconciles that ticket rather than starting duplicate implementation.
-Claims remain active during review and do not expire merely because a worker becomes idle.
+Two instances may see the same labelled ticket, but the first one to move it out of its pickup state has it.
+The other instance re-reads the ticket before dispatching, finds it already implementing, and skips or reconciles it rather than starting duplicate implementation.
+That window is narrow rather than absent, so a claim is always immediately preceded by a fresh read.
+A claimed ticket stays claimed during review and does not expire merely because a worker becomes idle.
 
 Different tickets may run in parallel in isolated worktrees when their interfaces and dependencies permit it.
 Isolation does not prevent semantic conflicts in schemas, APIs, root configuration or shared packages.
@@ -132,7 +133,7 @@ Breach is an attributed adaptation of Matt Pocock's small `implement` skill, not
 It preserves the engineering sequence: implement agreed scope, use TDD where appropriate, run typechecking and focused tests, validate the completed change, then review.
 
 The main differences are ownership and context.
-XO receives the ticket, obtains the claim, creates the task brief and dispatches the worker.
+XO receives the ticket, claims it, creates the task brief and dispatches the worker.
 The worker uses the assigned implementation branch in its isolated worktree rather than assuming the user's current branch is the right place to commit.
 Existing project and package instructions, skill invocation policies and delivery-mode rules still apply.
 
@@ -156,7 +157,7 @@ Use models and harnesses actually configured and verified in the environment rat
 | --- | --- |
 | Exact implementation head SHA | Binds findings to the code actually reviewed. |
 | Base/merge-base SHA and commit range | Prevents a moving branch name from changing the review silently. |
-| Plane implementation ticket and parent spec | Gives the reviewer the acceptance criteria and design context. |
+| The implementation ticket and its parent spec | Gives the reviewer the acceptance criteria and design context. |
 | Repo/package standards and relevant decisions | Gives the Standards axis authoritative rules. |
 | Test and CI evidence | Identifies what has and has not been verified. |
 
@@ -179,10 +180,10 @@ XO preserves one canonical implementation PR for the ticket and supervises corre
 Review findings alone do not move the ticket to Done.
 
 Completion requires accepted criteria, required validation and review under the team's policy, any required approvals, and a verified merge.
-The adapter checks GitHub's merged result and requires an explicit acceptance-verification flag before changing Plane to Done.
-It does not independently implement every GitHub review rule and does not merge the PR itself; branch protection and the configured delivery process enforce those requirements.
+XO confirms GitHub's merged result and verifies acceptance before moving the ticket to Done.
+Nothing here implements every GitHub review rule or merges the PR; branch protection and the configured delivery process enforce those requirements.
 
-After completion, XO reconciles the execution ledger and shared claim, preserves delivery evidence, tears down only landed work through normal XO procedures, and lets enabled Overwatch evaluate newly unblocked tickets.
+After completion, XO reconciles the local ledger against the ticket, preserves delivery evidence, tears down only landed work through normal XO procedures, and lets enabled Overwatch evaluate newly unblocked tickets.
 If deployment is part of acceptance, its authorization and verification must be handled explicitly before acceptance is declared.
 A merge alone is not proof of deployment.
 
@@ -191,15 +192,14 @@ A merge alone is not proof of deployment.
 | Component | Included behavior |
 | --- | --- |
 | XO persona | Executive-officer vocabulary with runtime identifiers preserved for compatibility, defined in AGENTS.md. |
-| Plane adapter | Label readiness, eligible states, shared claims, PR links, recovery and merge-verified completion. |
-| Overwatch | Scoped policy helper, registered timer and skill instructions for automatic intake. |
+| Tracker binding | The home's minimal private note of which workspace and project its tickets live in, with every read and write performed by XO through the session's Plane connector. |
+| Overwatch | Scoped local policy helper, registered timer and skill instructions for automatic intake. |
 | Breach | Pocock-adapted implementation and separate reviewer handoff. |
 | Runtime integration | Skill discovery and supervisor instructions for startup, check wakes and freed capacity. |
-| Documentation and tests | Setup guide, this workflow and offline adapter/timer behavior tests. |
+| Documentation and tests | Setup guide, this workflow and offline policy/timer behavior tests. |
 
-This patch has not been published or merged on GitHub.
-Offline adapter/timer tests and skill/schema checks have passed; live automatic pickup, actual model routing, end-to-end worker dispatch and the full no-mistakes gate still require validation in the configured XO runtime.
-The patch adds capabilities; it does not activate automatic work in your live Plane project.
+Offline policy/timer tests and skill/schema checks pass; live automatic pickup, actual model routing and end-to-end worker dispatch still require validation in the configured XO runtime.
+This adds capabilities; it does not activate automatic work in your live Plane project.
 
 ## Upstream references
 
