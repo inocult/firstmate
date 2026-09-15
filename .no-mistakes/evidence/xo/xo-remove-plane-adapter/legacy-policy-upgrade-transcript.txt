@@ -1,0 +1,44 @@
+# 1. A home enabled under the OLD adapter (base commit c1f0352, temp extraction) with the old full config
+$ (base) xo-overwatch.py on
+{
+  "enabled": true,
+  "project_id": "project-uuid-1",
+  "repository_url": "https://github.com/inocult/firstmate",
+  "executor": "xo-control",
+  "config_sha256": "0325b9e4a61e29e9780c08d3b09b469cb8a3d001db61f387e1dd1f0959292d84",
+  "slots": 2,
+  "interval": 300,
+  "max_pickups": 10,
+  "picked": 0,
+  "empty_streak": 0,
+  "next_check": 1789442759
+}
+exit: 0
+
+$ persisted policy keys (legacy record):
+['config_sha256', 'empty_streak', 'enabled', 'executor', 'interval', 'max_pickups', 'next_check', 'picked', 'project_id', 'repository_url', 'slots']
+
+# 2. Upgrade: binding trimmed to the two fields the new schema keeps, hash re-recorded the way an operator's file would already match
+#    (the legacy record's config_sha256 covered the old file; keep the old file in place so the hash is unchanged)
+
+# 3. UNMIGRATED helper (53cd699) check, captured the way the watcher captures it: stdout only, stderr to /dev/null
+$ (53cd699) xo-overwatch.py check >out 2>/dev/null
+exit: 1
+stdout bytes: 0  (empty = watcher sees nothing, no wake)
+$ (53cd699) status still claims enabled?
+  "enabled": true,
+
+# 4. TARGET helper (2f09132) check against the same legacy record
+$ (2f09132) xo-overwatch.py check >out 2>/dev/null
+exit: 0
+stdout:
+overwatch: pickup check due; load overwatch skill
+
+# 5. Binding file edited underneath the legacy record (project rebound)
+$ (2f09132) xo-overwatch.py check
+overwatch: tracker binding changed; pause and reconcile before pickup
+exit: 0
+
+$ (2f09132) xo-overwatch.py off
+exit: 0
+check shim retired? yes

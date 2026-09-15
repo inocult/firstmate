@@ -1,0 +1,19 @@
+# TARGET tree (2f09132)
+tree: /home/inocult/.no-mistakes/worktrees/930731c14da1/01M2HGV0KH44E34JT5WBQT970P
+stale claim file: /tmp/xo-spawn-stale-plane.E9k4ka/case/home/data/stale-plane-z1/plane.json
+spawn exit: 0
+spawn output:
+warning: /tmp/xo-spawn-stale-plane.E9k4ka/case/home/data/stale-plane-z1/launch-brief.md records no delivery contract line (scaffolded before ship briefs recorded one); launching on the explicit --mode no-mistakes - confirm its definition of done matches
+/tmp/xo-spawn-stale-plane.E9k4ka/case/fake/fakebin/timeout: line 3: exec: 1: not found
+/tmp/xo-spawn-stale-plane.E9k4ka/case/fake/fakebin/timeout: line 3: exec: 1: not found
+spawned stale-plane-z1 harness=claude kind=ship mode=no-mistakes yolo=off window=xo:xo-stale-plane-z1 worktree=/tmp/xo-spawn-stale-plane.E9k4ka/case/wt
+launch command recorded by fake tmux: yes
+
+# BASE tree (c1f0352, temp extraction) for contrast
+tree: /tmp/xo-base-c1f0352
+stale claim file: /tmp/xo-spawn-stale-plane.z0NSmt/case/home/data/stale-plane-z1/plane.json
+spawn exit: 1
+spawn output:
+{"error": "adapter operation failed; claim retained; inspect connectivity/configuration"}
+error: Plane execution claim is not valid for this task; reconcile before dispatch
+launch command recorded by fake tmux: no

@@ -1,0 +1,17 @@
+XO_TEST_BEGIN 2026-09-15T03:24:10Z tests/xo-overwatch.test.sh family=standalone expected_gate_skip=none
+ok - Overwatch is disabled by default and its check stays silent
+ok - enabling records the bound scope and registers the watcher check
+ok - the registered check keeps emitting a due wake until an outcome lands
+ok - empty outcomes back the timer off and a pickup clears the streak
+ok - the pickup budget stops new intake and asks for a deliberate decision
+ok - a changed tracker binding pauses pickup instead of claiming under the old scope
+ok - off retires the check and leaves existing work untouched
+ok - invalid bounds and a second enable are refused without leaking the binding
+ok - an error outcome pauses pickup until it is re-enabled deliberately
+ok - an incomplete or missing tracker binding refuses to enable
+ok - a policy persisted with the legacy hash key keeps checking instead of failing silently
+ok - enabling resolves nothing against a tracker, only the local binding
+XO_TEST_END 2026-09-15T03:24:12Z tests/xo-overwatch.test.sh exit=0 duration_ms=1819 gate_skip=false
+XO_TEST_SUMMARY total=1 failed=0 skipped_gate=0 duration_ms=1861
+XO_TEST_SUMMARY_FAMILY family=standalone count=1 duration_ms=1819 failed=0
+XO_TEST_SLOWEST rank=1 script=tests/xo-overwatch.test.sh duration_ms=1819

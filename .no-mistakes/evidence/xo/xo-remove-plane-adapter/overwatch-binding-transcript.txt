@@ -1,0 +1,135 @@
+# Two-field binding at XO_HOME/config/plane.json
+{"workspace_slug": "at-bryde-ud", "project_id": "project-uuid-1"}
+
+$ xo-overwatch.py on --slots 2 --interval 300 --max-pickups 10
+{
+  "enabled": true,
+  "workspace_slug": "at-bryde-ud",
+  "project_id": "project-uuid-1",
+  "binding_sha256": "3667b066d831cb00d1ee3a001c28d47256e48d229fa9e2b7adf53796bb35de74",
+  "slots": 2,
+  "interval": 300,
+  "max_pickups": 10,
+  "picked": 0,
+  "empty_streak": 0,
+  "next_check": 1789442732
+}
+exit: 0
+
+$ cat state/overwatch.json  (persisted policy record)
+{
+    "enabled": true,
+    "workspace_slug": "at-bryde-ud",
+    "project_id": "project-uuid-1",
+    "binding_sha256": "3667b066d831cb00d1ee3a001c28d47256e48d229fa9e2b7adf53796bb35de74",
+    "slots": 2,
+    "interval": 300,
+    "max_pickups": 10,
+    "picked": 0,
+    "empty_streak": 0,
+    "next_check": 1789442732
+}
+
+$ cat state/overwatch.check.sh  (registered watcher check)
+#!/bin/sh
+exec env XO_HOME=/tmp/xo-ow-binding.OYCgl3 XO_STATE_OVERRIDE=/tmp/xo-ow-binding.OYCgl3/state /usr/bin/python3 /home/inocult/.no-mistakes/worktrees/930731c14da1/01M2HGV0KH44E34JT5WBQT970P/bin/xo-overwatch.py check
+
+$ registered with the watcher?
+registered=yes
+
+$ xo-overwatch.py check
+overwatch: pickup check due; load overwatch skill
+exit: 0
+
+$ xo-overwatch.py status
+{
+  "enabled": true,
+  "workspace_slug": "at-bryde-ud",
+  "project_id": "project-uuid-1",
+  "binding_sha256": "3667b066d831cb00d1ee3a001c28d47256e48d229fa9e2b7adf53796bb35de74",
+  "slots": 2,
+  "interval": 300,
+  "max_pickups": 10,
+  "picked": 0,
+  "empty_streak": 0,
+  "next_check": 1789442732
+}
+exit: 0
+
+$ xo-overwatch.py off
+{
+  "enabled": false,
+  "workspace_slug": "at-bryde-ud",
+  "project_id": "project-uuid-1",
+  "binding_sha256": "3667b066d831cb00d1ee3a001c28d47256e48d229fa9e2b7adf53796bb35de74",
+  "slots": 2,
+  "interval": 300,
+  "max_pickups": 10,
+  "picked": 0,
+  "empty_streak": 0,
+  "next_check": 1789442732
+}
+exit: 0
+
+# --- adversarial: legacy workspace_id alias instead of workspace_slug
+{"workspace_id": "ws-uuid", "project_id": "project-uuid-1"}
+$ xo-overwatch.py on
+exit: 1
+stderr:
+Overwatch operation failed: inspect the tracker binding and registered check state.
+
+check shim present? no
+
+# --- adversarial: project_identifier prefix instead of project_id
+{"workspace_slug": "at-bryde-ud", "project_identifier": "PLAT"}
+$ xo-overwatch.py on
+exit: 1
+stderr:
+Overwatch operation failed: inspect the tracker binding and registered check state.
+
+check shim present? no
+
+# --- adversarial: old adapter-era connection block with credentials, still only two fields matter
+{"workspace_slug": "at-bryde-ud", "project_id": "project-uuid-1", "plane_url": "https://plane.example", "api_key": "SECRET-KEY-123", "mcp": {"url": "https://mcp.example"}}
+$ xo-overwatch.py on
+{
+  "enabled": true,
+  "workspace_slug": "at-bryde-ud",
+  "project_id": "project-uuid-1",
+  "binding_sha256": "93e35931149b0ed4abe5a9defd9e8de216fb0cf35bc2e6a7cf0f33cfe5e82ff3",
+  "slots": 2,
+  "interval": 300,
+  "max_pickups": 10,
+  "picked": 0,
+  "empty_streak": 0,
+  "next_check": 1789442732
+}
+exit: 0
+
+$ recorded policy keys:
+['binding_sha256', 'empty_streak', 'enabled', 'interval', 'max_pickups', 'next_check', 'picked', 'project_id', 'slots', 'workspace_slug']
+$ does the policy record or stderr carry the api key?
+/tmp/xo-ow-binding.OYCgl3/stderr:0
+/tmp/xo-ow-binding.OYCgl3/state/overwatch.json:0
+$ xo-overwatch.py off
+{
+  "enabled": false,
+  "workspace_slug": "at-bryde-ud",
+  "project_id": "project-uuid-1",
+  "binding_sha256": "93e35931149b0ed4abe5a9defd9e8de216fb0cf35bc2e6a7cf0f33cfe5e82ff3",
+  "slots": 2,
+  "interval": 300,
+  "max_pickups": 10,
+  "picked": 0,
+  "empty_streak": 0,
+  "next_check": 1789442732
+}
+exit: 0
+
+# --- adversarial: symlinked binding
+$ xo-overwatch.py on
+exit: 1
+stderr:
+Overwatch operation failed: inspect the tracker binding and registered check state.
+
+check shim present? no

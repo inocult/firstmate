@@ -1,0 +1,36 @@
+# NOTE: the first --check-coverage call below ran under the host LANG=en_US.UTF-8 and hit a pre-existing comm sort-order
+# quirk that also fails on the base commit; check-coverage-transcript.txt shows it passing under LC_ALL=C on both base and target.
+
+$ bin/xo-test-run.sh --check-coverage
+comm: file 2 is not in sorted order
+comm: input is not in sorted order
+exit: 1
+
+$ bin/xo-test-run.sh --list --all | grep -c plane
+0
+(0 = no plane test scheduled)
+
+$ ls bin/xo-plane.py bin/xo_plane bin/requirements-plane.txt tests/xo-plane.test.sh tests/xo_plane_test.py tests/plane_mcp_fixture.py
+ls: cannot access 'bin/xo-plane.py': No such file or directory
+ls: cannot access 'bin/xo_plane': No such file or directory
+ls: cannot access 'bin/requirements-plane.txt': No such file or directory
+ls: cannot access 'tests/xo-plane.test.sh': No such file or directory
+ls: cannot access 'tests/xo_plane_test.py': No such file or directory
+ls: cannot access 'tests/plane_mcp_fixture.py': No such file or directory
+
+$ python3 bin/xo-plane.py check --task demo
+python3: can't open file '/home/inocult/.no-mistakes/worktrees/930731c14da1/01M2HGV0KH44E34JT5WBQT970P/bin/xo-plane.py': [Errno 2] No such file or directory
+exit: 2
+
+$ (cd bin && python3 -c "import xo_plane")
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import xo_plane
+ModuleNotFoundError: No module named 'xo_plane'
+exit: 1
+
+$ grep -rnE "xo-plane|xo_plane|XO_PLANE_PYTHON|requirements-plane|plane_mcp_fixture" --exclude-dir=.git . 
+exit: 1 (1 = no matches)
+
+$ python3 -c "yaml jobs of .github/workflows/ci.yml"
+['invariants', 'lint', 'macos-stock-bash', 'test-coverage', 'tests-herdr', 'tests-portable-parallel-1', 'tests-portable-parallel-2', 'tests-portable-serial', 'tests-timing-aggregate']

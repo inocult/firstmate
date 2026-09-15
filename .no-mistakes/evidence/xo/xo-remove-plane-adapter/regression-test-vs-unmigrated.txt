@@ -1,0 +1,16 @@
+# target tests/xo-overwatch.test.sh run over the UNMIGRATED tree (53cd699), fixture widened with the project_identifier
+# field that helper still demanded, so every case other than the legacy-hash regression can reach its assertion
+ok - Overwatch is disabled by default and its check stays silent
+ok - enabling records the bound scope and registers the watcher check
+ok - the registered check keeps emitting a due wake until an outcome lands
+ok - empty outcomes back the timer off and a pickup clears the streak
+ok - the pickup budget stops new intake and asks for a deliberate decision
+ok - a changed tracker binding pauses pickup instead of claiming under the old scope
+ok - off retires the check and leaves existing work untouched
+ok - invalid bounds and a second enable are refused without leaking the binding
+ok - an error outcome pauses pickup until it is re-enabled deliberately
+ok - an incomplete or missing tracker binding refuses to enable
+not ok - xo-overwatch.py check: expected exit 0, got 1
+XO_TEST_END 2026-09-15T03:26:21Z tests/xo-overwatch.test.sh exit=1 duration_ms=1554 gate_skip=false
+XO_TEST_SUMMARY total=1 failed=1 skipped_gate=0 duration_ms=1591
+runner exit: 1

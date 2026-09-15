@@ -1,0 +1,8 @@
+locale: LANG=en_US.UTF-8 LC_ALL=
+$ LC_ALL=C bin/xo-test-run.sh --check-coverage   (target 2f09132)
+XO_TEST_COVERAGE ok total=201 parallel=24 parallel_max_ms=417163 parallel_imbalance_ms=2894 parallel_unhinted=0 serial=161 serial_shards=5 serial_unhinted=14 herdr=16
+exit: 0
+
+$ LC_ALL=C bin/xo-test-run.sh --check-coverage   (base c1f0352, temp extraction)
+XO_TEST_COVERAGE ok total=201 parallel=24 parallel_max_ms=417163 parallel_imbalance_ms=2894 parallel_unhinted=0 serial=161 serial_shards=5 serial_unhinted=14 herdr=16
+exit: 0
