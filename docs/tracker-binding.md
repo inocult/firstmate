@@ -2,86 +2,91 @@
 
 This document is the single owner of which tracker holds this home's tickets, how that tracker is reached, which project the tickets belong to, which surface performs each ticket operation, and which operations no surface in this repository performs.
 Skills speak only in the neutral vocabulary defined here and point here instead of asserting what a surface can do, so each capability is stated once and never assumed separately in a skill.
-[`plane-missions.md`](plane-missions.md) owns the configuration schema, its limits, the shared claim mechanics and recovery, `bin/xo-plane.py --help` owns command syntax, and this document owns only the binding.
+[`plane-missions.md`](plane-missions.md) owns the operating model, the filing rules and the lifecycle, and this document owns only the binding.
 
 ## This home's tracker
 
 For this home, tickets live in Plane.
-They are reached through the Plane MCP.
-They belong to one configured project: the project whose identifier the home's private tracker configuration at `XO_HOME/config/plane.json` records, in the workspace and at the URL that same file names.
+They are reached through the session connector, and through nothing else: no script in this repository talks to the tracker.
+They belong to one configured project, named by the home's private binding at `XO_HOME/config/plane.json`.
 Every ticket operation in this repository acts on that project alone, and a blocking edge into another project is refused rather than followed.
 
-## Surfaces
+That binding file carries the workspace and the project and nothing else:
 
-Two surfaces exist.
+```json
+{
+  "workspace_slug": "YOUR_WORKSPACE",
+  "project_id": "YOUR_PROJECT_UUID",
+  "project_identifier": "PLAT"
+}
+```
+
+`workspace_id` may stand in for `workspace_slug`, and exactly one of the two is named.
+`project_identifier` is the display prefix the tracker puts on the project's tickets, such as `PLAT` in `PLAT-27`, so a ticket named in conversation can be checked against the configured project before any operation runs.
+The file holds no URL, because the connector already knows where its workspace lives; no credentials, because the harness owns the connector's authentication; and no state or label identifiers, because those are discovered live from the connector on each use, by exact name.
+The names discovered that way are the readiness label `ready-for-agent`, the triage label `needs-triage`, and the project's `Backlog`, `Todo`, `In Progress`, `In Review`, `Blocked` and `Done` states.
+A name that resolves to no state or label, or to more than one, stops the operation rather than being guessed at.
+
+## The surface
+
+One surface exists, plus the captain acting by hand in the tracker.
 A skill names the operation, and this document names the surface.
 
-The adapter is `bin/xo-plane.py`, invoked with the interpreter `XO_PLANE_PYTHON` names.
-It reaches the tracker through its own MCP client, which the tracker configuration points either at a stdio server the adapter starts for each command or at a remote streamable HTTP server.
-That client lives inside the adapter's process: the session cannot call its tools, and no skill may describe the adapter's server as a surface the session reaches.
-Every adapter command except `check` opens that connection before dispatching, so a command that changes nothing in the tracker still fails when the tracker is unreachable; only `check` runs without it.
-`doctor` proves only that this client connects and which tools that server advertises; it proves nothing about any operation outside the table below, so a passing `doctor` never licenses an operation this document does not list.
-
-The session connector is a Plane MCP server the harness itself attaches to the session, when one is configured.
+The session connector is a Plane MCP server the harness itself attaches to the session.
 This repository does not provision, configure, or verify it, so nothing in this repository assumes it exists, and its tools are whatever the session discovers.
-Before any write through it, confirm it resolves to the same workspace and the same project as the tracker configuration; a connector that resolves elsewhere is not a surface for this home's tickets.
-Apart from the captain acting by hand in the tracker, it is the only surface through which an operation from the last section can happen, and a skill's own procedure says whether either is allowed.
+Before any write through it, confirm it resolves to the same workspace and the same project as the binding above; a connector that resolves elsewhere is not a surface for this home's tickets.
+When the session has no connector, every operation below is reported for the captain to perform by hand; a skill never routes around the missing surface.
+
+`bin/xo-overwatch.py` reads the binding file to record the scope its policy was enabled for and to notice that the binding changed underneath it.
+It is not a tracker surface: it performs no ticket read or write, and the pickup it schedules is performed by XO through the connector.
 
 ## Vocabulary
 
-| Neutral term | Plane concept | Bound by |
-| --- | --- | --- |
-| ticket | a work item in the configured project, addressed by its UUID and never by its display identifier | the item argument of every adapter lifecycle command |
-| the tracker | the Plane instance at the configured URL and workspace | `plane_url` and `workspace_slug` |
-| the configured project | the one project every operation acts on | `project_id` |
-| readiness label | the project label named exactly `ready-for-agent`, the planning team's promise that the ticket is specified well enough for an agent | `ready_label_id`, the only label identifier any surface reads |
-| pickup states | the states a ticket may be claimed from, drawn from the tracker's backlog and unstarted groups | `pickup_state_ids` |
-| claim | the shared record at `refs/heads/xo-plane/<hash>` on the coordination remote that gives one executor the ticket, together with the move to implementing | `coordination_remote` and `executor` |
-| lifecycle states (implementing, review, done) | the three project states a ticket moves through, whether claimed through the adapter or moved by XO through the session connector | `states.implementing`, `states.review` and `states.done` |
-| the Blocked state | the project state named `Blocked`, whose own definition is waiting on an external dependency, decision or resource, where XO files commissioned work it must queue behind a dependency or time gate | no stored identifier; it is never among `pickup_state_ids` |
-| parent and child | the parent work-item link that makes one ticket a slice of another | the `parent` field the tracker returns on a ticket, which the adapter passes through and never interprets |
-| blocking edges | the native work-item relations `blocked_by`, `start_after` and `finish_after` | the relation listing `claim` reads |
+| Neutral term | Plane concept |
+| --- | --- |
+| ticket | a work item in the configured project, addressed by its UUID, or by its display identifier where a connector tool accepts one |
+| the tracker | the Plane workspace the session connector resolves to, which must be the workspace the binding names |
+| the configured project | the one project every operation acts on, named by `project_id` and displayed as `project_identifier` |
+| readiness label | the project label named exactly `ready-for-agent`, the planning team's promise that the ticket is specified well enough for an agent |
+| triage label | the project label named exactly `needs-triage`, carried by work filed but not yet classified |
+| pickup states | the project states a ticket may be claimed from: `Backlog` and `Todo` |
+| lifecycle states (implementing, review, done) | the project states `In Progress`, `In Review` and `Done`, which a ticket moves through during delivery |
+| the Blocked state | the project state named `Blocked`, whose own definition is waiting on an external dependency, decision or resource, where XO files commissioned work it must queue behind a dependency or time gate; it is never a pickup state |
+| claim | XO's move of the ticket to `In Progress` through the connector, which is what marks the ticket as being worked |
+| parent and child | the parent work-item link that makes one ticket a slice of another |
+| blocking edges | the native work-item relations `blocked_by`, `start_after` and `finish_after` |
 
-The five canonical triage labels, of which the readiness label is one, are owned by the `prep` skill; this document binds only the one label identifier the home stores.
+The five canonical triage labels, of which the readiness label and the triage label are two, are owned by the `prep` skill; this document names only the two that a ticket operation reads.
 
 ## Operations and their surfaces
 
-| Operation | Surface | Boundary |
-| --- | --- | --- |
-| Discover the project's states and labels | adapter `doctor` | loads the setup-stage configuration, which skips the identifier checks so it runs before the label, pickup and lifecycle identifiers exist; reads every state and label and suggests the readiness label id and the pickup candidates; writes nothing |
-| Provision a project label | adapter `ensure-label` | loads the setup-stage configuration, which skips the identifier checks so it runs before the label, pickup and lifecycle identifiers exist; creates the named label in the configured project, or adopts the one already carrying that exact name; refuses a name that exists twice or differs only by case, separators or punctuation; refuses when the connected server advertises no label-create tool; never applies a label to a ticket |
-| List tickets | adapter `list` | returns one unfiltered page of the configured project's work items with pagination metadata; readiness and pickup-state selection happens by reading the page and is verified again at claim |
-| Read one ticket | inside adapter `claim`, `sync`, `bind`, `complete` and `release`, and inside `pr`, `review` and `resume` through `sync` | retrieves the ticket by UUID as part of those commands; there is no standalone read |
-| Verify eligibility and claim | adapter `claim` | requires the readiness label, a pickup state, a title and description, no archived or draft flag, no linked PR, and every blocking edge inside the configured project finished; then writes the claim record and moves the ticket to implementing |
-| Inspect a claim | adapter `status` | reads the claim record and changes nothing in the tracker, but still requires the adapter's tracker connection to open |
-| Repair the tracker projection | adapter `sync` | re-applies the claimed phase's lifecycle state and PR link after an interrupted update |
-| Bind a local task | adapter `bind` | scaffolds the brief and writes the private execution receipt `data/<id>/plane.json` |
-| Validate ownership at dispatch | adapter `check` | run by `bin/xo-spawn.sh` whenever that receipt exists; reads the claim record only and never the tracker |
-| Record the PR on the ticket | adapter `pr` | adds one work-item link, but shares its dispatch with `review` and `resume`, so it also rewrites the claim phase to implementing and writes the implementing lifecycle state to the ticket; re-registering a PR URL on an execution already in review moves the ticket backwards, so the call is not idempotent and must run before `review`, and `sync` is the surface that repairs a missing link without changing phase |
-| Move to review, return to implementing | adapter `review` and adapter `resume` | sets the lifecycle state while preserving the claim |
-| Complete | adapter `complete` | confirms the linked PR merged through the GitHub API and then sets done; never merges |
-| Release an unstarted claim | adapter `release` | restores the pickup state recorded at claim; refused once a PR is registered |
-| Transfer to another executor | adapter `transfer` | rewrites the claim record and changes nothing in the tracker, but still requires the adapter's tracker connection to open |
-| Resolve a display identifier such as `PLAT-27` to a ticket UUID | session connector | its work-item tool declares a retrieve-by-identifier action for exactly this; use it only after confirming, as the Surfaces section requires, that the connector resolves to the same workspace and the same project as the tracker configuration, and hand the returned UUID to the adapter |
-| Move an XO-filed ticket, one with no claim record, out of the Blocked state or between lifecycle states | session connector | its work-item update with a state field moves the ticket to implementing at dispatch and to done at landing; no adapter command can do this because every adapter lifecycle move runs on a claim record; use it only after confirming, as the Surfaces section requires, that the connector resolves to the same workspace and the same project as the tracker configuration, and only for a ticket XO filed and dispatched itself, never for one under a claim |
+Every operation below runs through the session connector, after the confirmation the last section requires, or is reported for the captain to perform by hand when no connector is available.
 
-The adapter reaches the tracker with these MCP calls and no others: `state/list`, `label/list`, `label/create`, `workitem/list`, `workitem/retrieve`, `workitem/update` restricted to the state field, `workitem_link/list`, `workitem_link/create` and `workitem_relation/list`, falling back to the legacy tool names the server advertises when the resource tools are absent.
+| Operation | Boundary |
+| --- | --- |
+| Resolve a display identifier such as `PLAT-27` to a ticket | the connector's work-item retrieve; confirm the returned ticket's project is the configured one before acting on it |
+| Discover the project's states and labels | the connector's state and label listings, read by exact name at the moment of use and never cached into the binding |
+| Create a project label | the connector's label create; used only by `prep`, which creates a missing canonical triage role and never applies a label to a ticket |
+| List and filter tickets | the connector's work-item listing, filtered by label, state, parent and relation as far as its query surface allows; whatever the query cannot express is checked by reading the tickets it returns |
+| Read one ticket | the connector's work-item retrieve, including its labels, state, parent and relations |
+| Create a ticket | the connector's work-item create, with `needs-triage` at creation and never the readiness label |
+| Verify eligibility and claim | read the ticket, confirm the readiness label, a pickup state, a title and description, no archived or draft flag, no linked PR, and every blocking edge inside the configured project finished; then move it to `In Progress` |
+| Move a ticket between states | the connector's work-item update with a state field: to `In Progress` at dispatch or when correction work resumes, to `In Review` when the PR is ready, to `Blocked` when commissioned work must queue, and to `Done` at landing |
+| Record the PR on the ticket | the connector's work-item link create, adding the canonical PR URL and changing nothing else on the ticket |
+| Set or read a parent link | the connector's work-item update for the parent field, and its child listing for the reverse direction |
+| Read and create blocking edges | the connector's work-item relation listing and create, within the configured project only |
+| Comment on a ticket | the connector's work-item comment create, used when a state's own convention requires the reason in writing |
+| Complete | confirm through GitHub that the linked PR merged and the acceptance criteria hold, then move the ticket to `Done` |
 
 ## Operations no surface in this repository performs
 
-A skill must never assume one of these from the adapter, from a passing `doctor`, or from a server the adapter starts for itself.
+A skill must never assume one of these, and must never infer one from a connector tool's name.
 
-- Create a ticket, or change its title, description, assignees, priority, labels or any other content.
-- Apply a label to a ticket or remove one, including the readiness label; `ensure-label` writes the project vocabulary and touches no ticket.
-- Filter a listing by label, state, parent or any other field; `list` returns one unfiltered page.
-- List a parent's children, set or clear a parent, or compute the frontier, the open and unblocked children of a parent.
-- Create, change or remove a blocking edge; `claim` reads them and refuses on an unfinished one.
 - Follow a blocking edge into another project, interpret a custom relation, or infer a dependency stated only in prose.
-- Comment on a ticket, or read its comments.
-- Move a ticket to any state other than its recorded pickup state or the three lifecycle states.
-- Discover a PR that was never linked to the ticket.
-- Merge a PR.
-- Prove that a session connector exists or that it resolves to the configured project.
+- Move a ticket in a project other than the configured one.
+- Merge a PR, or discover a PR that was never linked to the ticket.
+- Prove that a session connector exists or that it resolves to the configured project; that is confirmed at the moment of use, never assumed.
+- Apply the readiness label to any ticket, which is the planning team's promise and never XO's.
 
 When a skill's procedure needs one of these, the skill does not route around this list.
-It performs the operation through a session connector confirmed as above when its procedure allows that, reports the missing operation for the captain to perform by hand when its procedure allows that, and otherwise stops and reports the specific missing operation.
+It reports the missing operation for the captain to perform by hand when its procedure allows that, and otherwise stops and reports the specific missing operation.

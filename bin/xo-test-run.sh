@@ -388,7 +388,8 @@ family_for_basename() {
     xo-busy-state.test.sh|xo-classify-corr-token.test.sh|\
     xo-claude-stop-autoarm.test.sh|xo-cursor-harness.test.sh|\
     xo-extension-binding.test.sh|xo-gitignore-config.test.sh|\
-    xo-no-mistakes-required.test.sh|xo-plane.test.sh|xo-peek-remote.test.sh|\
+    xo-no-mistakes-required.test.sh|xo-overwatch.test.sh|\
+    xo-peek-remote.test.sh|\
     xo-pending-reply.test.sh|xo-pi-branch-extension.test.sh|\
     xo-procevent-quota.test.sh|xo-procevent-when.test.sh|xo-procevent.test.sh|\
     xo-live-gate.test.sh|\

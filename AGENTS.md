@@ -542,8 +542,8 @@ Before sending, cut the sentence that announces what you are about to do, the se
 ## 10. Backlog contract
 
 For tracker-backed work, load `plane-missions` before filing, pickup, dispatch, PR delivery or recovery; the tracker remains the shared backlog and the local queue is only this home's execution ledger.
-Work XO discovers or commissions is filed to that shared backlog too, as a ticket in the configured project carrying the `needs-triage` label and never the readiness label, and the local ledger row records the ticket's identifier; `plane-missions` owns the filing procedure, and work XO commissions is never filed in a pickup state, is moved only through the surface the binding document names for that move, and is never claimable by pickup.
-[`docs/tracker-binding.md`](docs/tracker-binding.md) is the single owner of which tracker holds this home's tickets, which surface performs each ticket operation, and which operations no surface performs; skills speak only in its neutral vocabulary and point there instead of asserting a capability.
+Work XO discovers or commissions is filed to that shared backlog too, as a ticket in the configured project carrying the `needs-triage` label and never the readiness label, and the local ledger row records the ticket's identifier; `plane-missions` owns the filing procedure, and work XO commissions is never filed in a pickup state and is never claimable by pickup.
+[`docs/tracker-binding.md`](docs/tracker-binding.md) is the single owner of which tracker holds this home's tickets, which surface performs each ticket operation, and which operations no surface performs; no script here reaches the tracker, XO performs every ticket operation itself through the session's tracker connector, and skills speak only in that document's neutral vocabulary and point there instead of asserting a capability.
 Load `operation` when the captain invokes `/operation` with a loose idea too big for one session, or with an existing map to work through; it plans that effort as a map of decision tickets and resolves them one at a time.
 
 The configured `tasks-axi` backend is the durable queue; the tracked default is `data/backlog.md`.
@@ -594,7 +594,7 @@ These skills are not captain-invocable; load them only at their precise triggers
 
 - `overwatch` - load for automatic ticket pickup requests or an `overwatch:` check wake; its policy owns bounded intake and watcher continuity.
 - `breach` - load for an explicit ticket implementation request or a selected ticket routed by Overwatch.
-- `plane-missions` - load before working with tracker tickets, a task containing `data/<id>/plane.json`, or a request to implement a Pocock-created ticket.
+- `plane-missions` - load before working with tracker tickets, a task whose ledger row names a ticket, or a request to implement a Pocock-created ticket.
 
 - `bootstrap-diagnostics` - load whenever the session-start digest's bootstrap or network-checks section prints an actionable diagnostic line (`MISSING:`, `MISSING_MANUAL:`, `PRESENTATION_UNAVAILABLE:`, `BACKEND_INVALID:`, `NEEDS_GH_AUTH`, `TANGLE:`, `STARTUP_MEMORY_BUDGET:`, `CREW_DISPATCH: invalid`, `FLEET_SYNC:`, `NETWORK_CHECKS:`, `HOME_SUMMARY:`, `BACKLOG_RECONCILE:`, `SECONDMATE_SYNC:`, `SECONDMATE_LIVENESS:`, `SECONDMATE_HANDOFF:`, `NUDGE_SECONDMATES:`, or `XOX:`), or when `BOOTSTRAP_INFO:` says an interrupted backlog cleanup may have left an endpoint or local copy; silence and other `BOOTSTRAP_INFO:` facts need no load.
 - `diagnostic-reasoning` - load before scoping a reported bug and before acting on a diagnostic report.
